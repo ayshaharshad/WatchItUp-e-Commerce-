@@ -1,0 +1,25 @@
+ERROR 2025-08-29 14:44:04,080 log 17772 23540 Internal Server Error: /verify-otp/signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\__init__.py", line 57, in _get_backend_from_user
+    backend = backend or user.backend
+                         ^^^^^^^^^^^^
+AttributeError: 'CustomUser' object has no attribute 'backend'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 201, in verify_otp_view
+    login(request, user)
+    ~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\__init__.py", line 189, in login
+    backend = _get_backend_from_user(user=user, backend=backend)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\__init__.py", line 63, in _get_backend_from_user
+    raise ValueError(
+    ...<3 lines>...
+    )
+ValueError: You have multiple authentication backends configured and therefore must provide the `backend` argument or set the `backend` attribute on the user.
+ERROR 2025-08-29 14:44:04,084 basehttp 17772 23540 "POST /verify-otp/signup/ HTTP/1.1" 500 90088

@@ -1,0 +1,2038 @@
+ERROR 2025-08-11 00:11:32,779 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 121, in root_redirect_view
+    return redirect("users:login")
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'users' is not a registered namespace
+ERROR 2025-08-11 00:11:32,779 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 121, in root_redirect_view
+    return redirect("users:login")
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'users' is not a registered namespace
+ERROR 2025-08-11 00:11:32,784 basehttp "GET / HTTP/1.1" 500 94457
+ERROR 2025-08-11 00:11:32,784 basehttp "GET / HTTP/1.1" 500 94457
+ERROR 2025-08-11 00:11:45,171 log Internal Server Error: /users/login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 27, in _wrapped
+    return fn(request, *args, **kw)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 271, in login_view
+    return render(request, "users/login.html", {"form": form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'users' is not a registered namespace
+ERROR 2025-08-11 00:11:45,171 log Internal Server Error: /users/login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 81, in reverse
+    extra, resolver = resolver.namespace_dict[ns]
+                      ~~~~~~~~~~~~~~~~~~~~~~~^^^^
+KeyError: 'users'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 27, in _wrapped
+    return fn(request, *args, **kw)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 271, in login_view
+    return render(request, "users/login.html", {"form": form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\urls\base.py", line 92, in reverse
+    raise NoReverseMatch("%s is not a registered namespace" % key)
+django.urls.exceptions.NoReverseMatch: 'users' is not a registered namespace
+ERROR 2025-08-11 00:11:45,196 basehttp "GET /users/login/ HTTP/1.1" 500 171194
+ERROR 2025-08-11 00:11:45,196 basehttp "GET /users/login/ HTTP/1.1" 500 171194
+ERROR 2025-08-11 11:03:58,850 log Internal Server Error: /products/men/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column products_product.category does not exist
+LINE 1: ...UNT(*) AS "__count" FROM "products_product" WHERE "products_...
+                                                             ^
+HINT:  Perhaps you meant to reference the column "products_product.category_id".
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\products\views.py", line 39, in men_products
+    page_obj = paginator.get_page(page_number)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 85, in get_page
+    return self.page(number)
+           ~~~~~~~~~^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 89, in page
+    number = self.validate_number(number)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 70, in validate_number
+    if number > self.num_pages:
+                ^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 116, in num_pages
+    if self.count == 0 and not self.allow_empty_first_page:
+       ^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 110, in count
+    return c()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 604, in count
+    return self.query.get_count(using=self.db)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 644, in get_count
+    return obj.get_aggregation(using, {"__count": Count("*")})["__count"]
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 626, in get_aggregation
+    result = compiler.execute_sql(SINGLE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column products_product.category does not exist
+LINE 1: ...UNT(*) AS "__count" FROM "products_product" WHERE "products_...
+                                                             ^
+HINT:  Perhaps you meant to reference the column "products_product.category_id".
+
+ERROR 2025-08-11 11:03:58,850 log Internal Server Error: /products/men/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column products_product.category does not exist
+LINE 1: ...UNT(*) AS "__count" FROM "products_product" WHERE "products_...
+                                                             ^
+HINT:  Perhaps you meant to reference the column "products_product.category_id".
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\products\views.py", line 39, in men_products
+    page_obj = paginator.get_page(page_number)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 85, in get_page
+    return self.page(number)
+           ~~~~~~~~~^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 89, in page
+    number = self.validate_number(number)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 70, in validate_number
+    if number > self.num_pages:
+                ^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 116, in num_pages
+    if self.count == 0 and not self.allow_empty_first_page:
+       ^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\paginator.py", line 110, in count
+    return c()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 604, in count
+    return self.query.get_count(using=self.db)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 644, in get_count
+    return obj.get_aggregation(using, {"__count": Count("*")})["__count"]
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 626, in get_aggregation
+    result = compiler.execute_sql(SINGLE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: column products_product.category does not exist
+LINE 1: ...UNT(*) AS "__count" FROM "products_product" WHERE "products_...
+                                                             ^
+HINT:  Perhaps you meant to reference the column "products_product.category_id".
+
+ERROR 2025-08-11 11:03:58,870 basehttp "GET /products/men/ HTTP/1.1" 500 159606
+ERROR 2025-08-11 11:03:58,870 basehttp "GET /products/men/ HTTP/1.1" 500 159606
+ERROR 2025-08-20 17:03:44,953 log Internal Server Error: /users/forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-20 17:03:44,953 log Internal Server Error: /users/forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-20 17:03:44,976 basehttp "POST /users/forgot-password/ HTTP/1.1" 500 157796
+ERROR 2025-08-20 17:03:44,976 basehttp "POST /users/forgot-password/ HTTP/1.1" 500 157796
+ERROR 2025-08-21 01:47:51,506 log Internal Server Error: /admin_panel/products/edit/1/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\admin_panel\views.py", line 153, in edit_product
+    return render(request, "admin_panel/edit_product.html", {"form": form, "product": product})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 7: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 01:47:51,506 log Internal Server Error: /admin_panel/products/edit/1/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\admin_panel\views.py", line 153, in edit_product
+    return render(request, "admin_panel/edit_product.html", {"form": form, "product": product})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 7: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 01:47:51,513 basehttp "GET /admin_panel/products/edit/1/ HTTP/1.1" 500 194457
+ERROR 2025-08-21 01:47:51,513 basehttp "GET /admin_panel/products/edit/1/ HTTP/1.1" 500 194457
+ERROR 2025-08-21 01:53:42,791 log Internal Server Error: /admin_panel/products/edit/1/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\admin_panel\views.py", line 153, in edit_product
+    return render(request, "admin_panel/edit_product.html", {"form": form, "product": product})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 7: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 01:53:42,791 log Internal Server Error: /admin_panel/products/edit/1/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\admin_panel\views.py", line 153, in edit_product
+    return render(request, "admin_panel/edit_product.html", {"form": form, "product": product})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 7: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 01:53:42,802 basehttp "GET /admin_panel/products/edit/1/ HTTP/1.1" 500 194457
+ERROR 2025-08-21 01:53:42,802 basehttp "GET /admin_panel/products/edit/1/ HTTP/1.1" 500 194457
+ERROR 2025-08-21 18:17:18,913 log Internal Server Error: /products/men/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\__init__.py", line 2128, in get_prep_value
+    return int(value)
+ValueError: invalid literal for int() with base 10: 'Men'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\products\views.py", line 35, in men_products
+    products = Product.objects.filter(category='Men')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1493, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1511, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1518, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1646, in add_q
+    clause, _ = self._add_q(q_object, can_reuse)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1678, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<7 lines>...
+        update_join_types=update_join_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1588, in build_filter
+    condition = self.build_lookup(lookups, col, value)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1415, in build_lookup
+    lookup = lookup_class(lhs, rhs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\lookups.py", line 38, in __init__
+    self.rhs = self.get_prep_lookup()
+               ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\related_lookups.py", line 112, in get_prep_lookup
+    self.rhs = target_field.get_prep_value(self.rhs)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\__init__.py", line 2130, in get_prep_value
+    raise e.__class__(
+        "Field '%s' expected a number but got %r." % (self.name, value),
+    ) from e
+ValueError: Field 'id' expected a number but got 'Men'.
+ERROR 2025-08-21 18:17:18,913 log Internal Server Error: /products/men/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\__init__.py", line 2128, in get_prep_value
+    return int(value)
+ValueError: invalid literal for int() with base 10: 'Men'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\products\views.py", line 35, in men_products
+    products = Product.objects.filter(category='Men')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1493, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1511, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\query.py", line 1518, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1646, in add_q
+    clause, _ = self._add_q(q_object, can_reuse)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1678, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<7 lines>...
+        update_join_types=update_join_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1588, in build_filter
+    condition = self.build_lookup(lookups, col, value)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\sql\query.py", line 1415, in build_lookup
+    lookup = lookup_class(lhs, rhs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\lookups.py", line 38, in __init__
+    self.rhs = self.get_prep_lookup()
+               ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\related_lookups.py", line 112, in get_prep_lookup
+    self.rhs = target_field.get_prep_value(self.rhs)
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\db\models\fields\__init__.py", line 2130, in get_prep_value
+    raise e.__class__(
+        "Field '%s' expected a number but got %r." % (self.name, value),
+    ) from e
+ValueError: Field 'id' expected a number but got 'Men'.
+ERROR 2025-08-21 18:17:18,929 basehttp "GET /products/men/ HTTP/1.1" 500 135599
+ERROR 2025-08-21 18:17:18,929 basehttp "GET /products/men/ HTTP/1.1" 500 135599
+ERROR 2025-08-21 18:22:59,251 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-21 18:22:59,251 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-21 18:22:59,267 basehttp "POST /login/ HTTP/1.1" 500 158047
+ERROR 2025-08-21 18:22:59,267 basehttp "POST /login/ HTTP/1.1" 500 158047
+ERROR 2025-08-21 19:20:30,010 log Internal Server Error: /signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-21 19:20:30,010 log Internal Server Error: /signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\decorators.py", line 19, in _wrapped
+    ratelimited = is_ratelimited(request=request, group=group, fn=fn,
+                                 key=key, rate=rate, method=method,
+                                 increment=True)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 153, in is_ratelimited
+    usage = get_usage(request, group, fn, key, rate, method, increment)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django_ratelimit\core.py", line 231, in get_usage
+    added = cache.add(cache_key, initial_value, period + EXPIRATION_FUDGE)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 184, in add
+    return self._cache.add(key, value, self.get_backend_timeout(timeout))
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 96, in add
+    return bool(client.set(key, value, ex=timeout, nx=True))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-21 19:20:30,025 basehttp "POST /signup/ HTTP/1.1" 500 158522
+ERROR 2025-08-21 19:20:30,025 basehttp "POST /signup/ HTTP/1.1" 500 158522
+ERROR 2025-08-21 19:25:38,594 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 19:25:38,938 log Internal Server Error: /verify-otp/password_reset/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 137, in verify_otp_view
+    return render(request, "users/verify_otp.html", {
+        "form": form,
+    ...<2 lines>...
+        "can_resend": otp_time_remaining(request, purpose) > 0
+    })
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 6: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 19:25:38,938 log Internal Server Error: /verify-otp/password_reset/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 137, in verify_otp_view
+    return render(request, "users/verify_otp.html", {
+        "form": form,
+    ...<2 lines>...
+        "can_resend": otp_time_remaining(request, purpose) > 0
+    })
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 523, in parse
+    self.unclosed_block_tag(parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\watchitup_env\Lib\site-packages\django\template\base.py", line 590, in unclosed_block_tag
+    raise self.error(token, msg)
+django.template.exceptions.TemplateSyntaxError: Unclosed tag on line 6: 'block'. Looking for one of: endblock.
+ERROR 2025-08-21 19:25:38,958 basehttp "GET /verify-otp/password_reset/ HTTP/1.1" 500 192085
+ERROR 2025-08-21 19:25:38,958 basehttp "GET /verify-otp/password_reset/ HTTP/1.1" 500 192085
+ERROR 2025-08-21 19:28:48,633 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 19:46:17,808 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 20:26:32,958 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 20:27:12,490 views OTP email failed to ayshaharshad39@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 20:35:35,591 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-21 21:18:48,405 forms Forgot password attempted with non-existent email: ameliaraha2023@gmail.com
+ERROR 2025-08-21 21:18:52,496 forms Forgot password attempted with non-existent email: ameliaraha2023@gmail.com
+ERROR 2025-08-21 21:19:02,145 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 00:25:45,695 views OTP email failed to ayishasafa8589@gmail.com: No module named 'users.email_backend'
+ERROR 2025-08-22 02:08:03,773 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:08:26,316 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:09:07,370 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:14:10,878 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:19:30,496 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:50:47,655 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 02:55:03,777 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 03:01:25,439 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 13:03:10,844 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 13:24:05,448 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 13:25:10,089 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-22 13:31:10,921 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-24 10:09:03,775 views OTP email failed to ayishasafa8589@gmail.com: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Basic Constraints of CA cert not marked critical (_ssl.c:1028)
+ERROR 2025-08-26 19:47:14,622 forms Signup password too short
+ERROR 2025-08-26 19:48:55,425 forms Signup password lacks uppercase letter
+ERROR 2025-08-26 19:49:26,521 forms Signup password lacks uppercase letter
+ERROR 2025-08-28 00:16:53,983 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:16:53,983 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:16:53,987 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 00:16:53,987 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 00:18:17,172 log Internal Server Error: /reset-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 128, in reset_password_view
+    return redirect('forgot_password')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'forgot_password' not found. 'forgot_password' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:18:17,172 log Internal Server Error: /reset-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 128, in reset_password_view
+    return redirect('forgot_password')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'forgot_password' not found. 'forgot_password' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:18:17,176 basehttp "GET /reset-password/ HTTP/1.1" 500 92893
+ERROR 2025-08-28 00:18:17,176 basehttp "GET /reset-password/ HTTP/1.1" 500 92893
+ERROR 2025-08-28 00:19:09,238 log Internal Server Error: /verify-otp/signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 96, in verify_otp_view
+    return render(request, 'users/verify_otp.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'resend_otp' with keyword arguments '{'purpose': ''}' not found. 1 pattern(s) tried: ['resend\\-otp/(?P<purpose>[^/]+)/\\Z']
+ERROR 2025-08-28 00:19:09,238 log Internal Server Error: /verify-otp/signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 96, in verify_otp_view
+    return render(request, 'users/verify_otp.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'resend_otp' with keyword arguments '{'purpose': ''}' not found. 1 pattern(s) tried: ['resend\\-otp/(?P<purpose>[^/]+)/\\Z']
+ERROR 2025-08-28 00:19:09,252 basehttp "GET /verify-otp/signup/ HTTP/1.1" 500 167313
+ERROR 2025-08-28 00:19:09,252 basehttp "GET /verify-otp/signup/ HTTP/1.1" 500 167313
+ERROR 2025-08-28 00:24:18,133 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:24:18,133 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 00:24:18,136 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 00:24:18,136 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 01:25:00,829 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 01:25:00,829 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 01:25:00,833 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 01:25:00,833 basehttp "GET / HTTP/1.1" 500 92340
+ERROR 2025-08-28 16:45:50,023 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 16:45:50,023 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 16:45:50,027 basehttp "GET / HTTP/1.1" 500 92035
+ERROR 2025-08-28 16:45:50,027 basehttp "GET / HTTP/1.1" 500 92035
+ERROR 2025-08-28 17:00:45,918 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:00:45,918 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:00:45,929 basehttp "GET / HTTP/1.1" 500 91880
+ERROR 2025-08-28 17:00:45,929 basehttp "GET / HTTP/1.1" 500 91880
+ERROR 2025-08-28 17:03:11,584 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 510, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'endcomment'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 66, in login_view
+    return render(request, 'users/login.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 512, in parse
+    self.invalid_block_tag(token, command, parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 577, in invalid_block_tag
+    raise self.error(
+    ...<3 lines>...
+    )
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 56: 'endcomment'. Did you forget to register or load this tag?
+ERROR 2025-08-28 17:03:11,584 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 510, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'endcomment'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 66, in login_view
+    return render(request, 'users/login.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 512, in parse
+    self.invalid_block_tag(token, command, parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 577, in invalid_block_tag
+    raise self.error(
+    ...<3 lines>...
+    )
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 56: 'endcomment'. Did you forget to register or load this tag?
+ERROR 2025-08-28 17:03:11,594 basehttp "GET /login/ HTTP/1.1" 500 168558
+ERROR 2025-08-28 17:03:11,594 basehttp "GET /login/ HTTP/1.1" 500 168558
+ERROR 2025-08-28 17:03:13,215 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 510, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'endcomment'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 66, in login_view
+    return render(request, 'users/login.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 512, in parse
+    self.invalid_block_tag(token, command, parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 577, in invalid_block_tag
+    raise self.error(
+    ...<3 lines>...
+    )
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 56: 'endcomment'. Did you forget to register or load this tag?
+ERROR 2025-08-28 17:03:13,215 log Internal Server Error: /login/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 510, in parse
+    compile_func = self.tags[command]
+                   ~~~~~~~~~^^^^^^^^^
+KeyError: 'endcomment'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 66, in login_view
+    return render(request, 'users/login.html', {'form': form})
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 512, in parse
+    self.invalid_block_tag(token, command, parse_until)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 577, in invalid_block_tag
+    raise self.error(
+    ...<3 lines>...
+    )
+django.template.exceptions.TemplateSyntaxError: Invalid block tag on line 56: 'endcomment'. Did you forget to register or load this tag?
+ERROR 2025-08-28 17:03:13,225 basehttp "GET /login/ HTTP/1.1" 500 168284
+ERROR 2025-08-28 17:03:13,225 basehttp "GET /login/ HTTP/1.1" 500 168284
+ERROR 2025-08-28 17:04:57,502 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 77, in forgot_password_view
+    cache.set(f'otp_reset_{email}', {'otp': otp, 'expiry': expiry}, timeout=OTP_EXPIRY_TIME)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 192, in set
+    self._cache.set(key, value, self.get_backend_timeout(timeout))
+    ^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 173, in _cache
+    return self._class(self._servers, **self._options)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 40, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+ERROR 2025-08-28 17:04:57,502 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 77, in forgot_password_view
+    cache.set(f'otp_reset_{email}', {'otp': otp, 'expiry': expiry}, timeout=OTP_EXPIRY_TIME)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 192, in set
+    self._cache.set(key, value, self.get_backend_timeout(timeout))
+    ^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 173, in _cache
+    return self._class(self._servers, **self._options)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 40, in __init__
+    import redis
+ModuleNotFoundError: No module named 'redis'
+ERROR 2025-08-28 17:04:57,509 basehttp "POST /forgot-password/ HTTP/1.1" 500 92628
+ERROR 2025-08-28 17:04:57,509 basehttp "POST /forgot-password/ HTTP/1.1" 500 92628
+ERROR 2025-08-28 17:11:21,961 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 77, in forgot_password_view
+    cache.set(f'otp_reset_{email}', {'otp': otp, 'expiry': expiry}, timeout=OTP_EXPIRY_TIME)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 192, in set
+    self._cache.set(key, value, self.get_backend_timeout(timeout))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 109, in set
+    client.set(key, value, ex=timeout)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-28 17:11:21,961 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 389, in connect_check_health
+    sock = self.retry.call_with_retry(
+        lambda: self._connect(), lambda error: self.disconnect(error)
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\retry.py", line 105, in call_with_retry
+    return do()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 390, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 803, in _connect
+    raise err
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 787, in _connect
+    sock.connect(socket_address)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 77, in forgot_password_view
+    cache.set(f'otp_reset_{email}', {'otp': otp, 'expiry': expiry}, timeout=OTP_EXPIRY_TIME)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 192, in set
+    self._cache.set(key, value, self.get_backend_timeout(timeout))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\cache\backends\redis.py", line 109, in set
+    client.set(key, value, ex=timeout)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\commands\core.py", line 2305, in set
+    return self.execute_command("SET", *pieces, **options)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\client.py", line 621, in execute_command
+    return self._execute_command(*args, **options)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\client.py", line 627, in _execute_command
+    conn = self.connection or pool.get_connection()
+                              ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\utils.py", line 195, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 1533, in get_connection
+    connection.connect()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 380, in connect
+    self.connect_check_health(check_health=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\redis\connection.py", line 397, in connect_check_health
+    raise ConnectionError(self._error_message(e))
+redis.exceptions.ConnectionError: Error 10061 connecting to 127.0.0.1:6379. No connection could be made because the target machine actively refused it.
+ERROR 2025-08-28 17:11:21,971 basehttp "POST /forgot-password/ HTTP/1.1" 500 143552
+ERROR 2025-08-28 17:11:21,971 basehttp "POST /forgot-password/ HTTP/1.1" 500 143552
+ERROR 2025-08-28 17:13:33,539 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:13:33,539 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:13:33,547 basehttp "GET / HTTP/1.1" 500 92040
+ERROR 2025-08-28 17:13:33,547 basehttp "GET / HTTP/1.1" 500 92040
+ERROR 2025-08-28 17:13:52,918 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:13:52,918 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 25, in root_redirect_view
+    return redirect('login')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'login' not found. 'login' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:13:52,921 basehttp "GET / HTTP/1.1" 500 92040
+ERROR 2025-08-28 17:13:52,921 basehttp "GET / HTTP/1.1" 500 92040
+ERROR 2025-08-28 17:14:07,403 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 119, in forgot_password_view
+    return redirect('verify_otp', purpose='reset')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'verify_otp' not found. 'verify_otp' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:14:07,403 log Internal Server Error: /forgot-password/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup\users\views.py", line 119, in forgot_password_view
+    return redirect('verify_otp', purpose='reset')
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 51, in redirect
+    resolve_url(to, *args, **kwargs),
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 184, in resolve_url
+    return reverse(to, args=args, kwargs=kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'verify_otp' not found. 'verify_otp' is not a valid view function or pattern name.
+ERROR 2025-08-28 17:14:07,409 basehttp "POST /forgot-password/ HTTP/1.1" 500 94575
+ERROR 2025-08-28 17:14:07,409 basehttp "POST /forgot-password/ HTTP/1.1" 500 94575

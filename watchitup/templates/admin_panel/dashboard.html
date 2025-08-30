@@ -1,0 +1,211 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #4e73df;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Users</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if total_users %}{{ total_users }}{% else %}0{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #1cc88a;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Categories</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if total_categories %}{{ total_categories }}{% else %}0{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-list fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #36b9cc;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Products</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if total_products %}{{ total_products }}{% else %}0{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-box fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #f6c23e;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Blocked Users</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% if blocked_users %}{{ blocked_users }}{% else %}0{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-slash fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-primary btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <div>Manage Users</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'add_category' %}" class="btn btn-outline-success btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                                <div>Add Category</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'add_product' %}" class="btn btn-outline-info btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-box fa-2x mb-2"></i>
+                                <div>Add Product</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <i class="fas fa-server fa-3x text-primary mb-3"></i>
+                    <h5>Admin Panel</h5>
+                    <p class="text-muted">Version 1.0</p>
+                    <hr>
+                    <div class="small">
+                        <div class="mb-2">
+                            <i class="fas fa-calendar text-primary"></i>
+                            Last Login: {{ user.last_login|date:"M d, Y H:i" }}
+                        </div>
+                        <div>
+                            <i class="fas fa-user text-primary"></i>
+                            Logged in as: {{ user.username }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity (Optional) -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Management Overview</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-right pb-3">
+                            <h4 class="text-primary">Users</h4>
+                            <p class="text-muted">Manage user accounts, block/unblock users, and monitor user activity.</p>
+                            <a href="{% url 'user_list' %}" class="btn btn-sm btn-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-right pb-3">
+                            <h4 class="text-success">Categories</h4>
+                            <p class="text-muted">Create and manage product categories for better organization.</p>
+                            <a href="{% url 'category_list' %}" class="btn btn-sm btn-success">View All</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-right pb-3">
+                            <h4 class="text-info">Products</h4>
+                            <p class="text-muted">Add, edit, and manage products with multiple images and details.</p>
+                            <a href="{% url 'product_list' %}" class="btn btn-sm btn-info">View All</a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="pb-3">
+                            <h4 class="text-warning">Reports</h4>
+                            <p class="text-muted">Generate reports and analytics for better business insights.</p>
+                            <button class="btn btn-sm btn-warning" disabled>Coming Soon</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-block {
+        display: block;
+        width: 100%;
+        min-height: 80px;
+    }
+    .border-right {
+        border-right: 1px solid #dee2e6;
+    }
+    .text-xs {
+        font-size: 0.75rem;
+    }
+    .font-weight-bold {
+        font-weight: 700;
+    }
+    .text-gray-800 {
+        color: #5a5c69;
+    }
+</style>
+{% endblock %}
