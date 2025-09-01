@@ -1,0 +1,143 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Add Category - Admin Panel{% endblock %}
+
+{% block page_title %}Add New Category{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Category Information</h6>
+                <a href="{% url 'category_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Categories
+                </a>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-4">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-tag text-primary me-2"></i>Category Name
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.name.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Enter a unique name for this category. This will be used to organize your products.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="fas fa-info-circle"></i> Category Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success">✅ Good Category Names:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>Electronics</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Home & Garden</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Sports & Outdoors</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Books & Media</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-danger">❌ Avoid:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-times text-danger me-2"></i>Very long category names</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Special characters (!@#$%)</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Duplicate names</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Generic terms like "Misc"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #d1d3e2;
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        padding: 10px 20px;
+    }
+    .card {
+        border-radius: 12px;
+    }
+    .card-header {
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    // Auto-focus on the name field
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameField = document.getElementById('{{ form.name.id_for_label }}');
+        if (nameField) {
+            nameField.focus();
+        }
+    });
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const nameField = document.getElementById('{{ form.name.id_for_label }}');
+        if (nameField.value.trim().length < 2) {
+            e.preventDefault();
+            nameField.classList.add('is-invalid');
+            alert('Category name must be at least 2 characters long.');
+            nameField.focus();
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

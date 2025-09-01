@@ -1,0 +1,239 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}User Management - Watchitup Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-users"></i> User Management
+        </div>
+        <div class="card-body">
+            <!-- Search Bar -->
+            <form method="get" class="search-bar">
+                <div class="form-group">
+                    <label for="search">Search Users</label>
+                    <input type="text" id="search" name="q" class="form-control" 
+                           placeholder="Search by username or email..." value="{{ search }}">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search %}
+                <a href="{% url 'user_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Reset
+                </a>
+                {% endif %}
+            </form>
+
+            <!-- Users Table -->
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Email Verified</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_email_verified %}
+                                    <span class="badge badge-success">✓ Verified</span>
+                                {% else %}
+                                    <span class="badge badge-warning">✗ Not Verified</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- FIXED: Use is_active instead of is_blocked -->
+                                {% if user.is_active %}
+                                    <span class="badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Blocked</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <!-- SECURITY: Using POST with CSRF protection -->
+                                <form method="post" action="{% url 'block_unblock_user' user.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    {% if user.is_active %}
+                                        <input type="hidden" name="action" value="block">
+                                        <button type="submit" class="btn btn-danger btn-sm" 
+                                                onclick="return confirmAction('Block {{ user.username }}?')">
+                                            <i class="fas fa-ban"></i> Block
+                                        </button>
+                                    {% else %}
+                                        <input type="hidden" name="action" value="unblock">
+                                        <button type="submit" class="btn btn-success btn-sm" 
+                                                onclick="return confirmAction('Unblock {{ user.username }}?')">
+                                            <i class="fas fa-unlock"></i> Unblock
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem; color: var(--secondary-color);">
+                                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                                {% if search %}
+                                    No users found matching "{{ search }}"
+                                {% else %}
+                                    No users found
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <div class="pagination">
+                {% if users.has_previous %}
+                    <a href="?page=1{% if search %}&q={{ search }}{% endif %}">&laquo; First</a>
+                    <a href="?page={{ users.previous_page_number }}{% if search %}&q={{ search }}{% endif %}">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ users.number }} of {{ users.paginator.num_pages }}
+                </span>
+
+                {% if users.has_next %}
+                    <a href="?page={{ users.next_page_number }}{% if search %}&q={{ search }}{% endif %}">Next</a>
+                    <a href="?page={{ users.paginator.num_pages }}{% if search %}&q={{ search }}{% endif %}">Last &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmAction(message) {
+    return confirm(message);
+}
+</script>
+{% endblock %}
+
+
+
+
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+
+{% block title %}User Management - Watchitup Admin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-users"></i> User Management
+        </div>
+        <div class="card-body">
+            <!-- Search Bar -->
+            <form method="get" class="search-bar">
+                <div class="form-group">
+                    <label for="search">Search Users</label>
+                    <input type="text" id="search" name="q" class="form-control" 
+                           placeholder="Search by username or email..." value="{{ search }}">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search %}
+                <a href="{% url 'user_list' %}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Reset
+                </a>
+                {% endif %}
+            </form>
+
+            <!-- Users Table -->
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_blocked %}
+                                    <span class="badge badge-danger">Blocked</span>
+                                {% else %}
+                                    <span class="badge badge-success">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'block_unblock_user' user.id %}" 
+                                   class="btn {% if user.is_blocked %}btn-success{% else %}btn-danger{% endif %}"
+                                   onclick="return confirmAction('{% if user.is_blocked %}Unblock{% else %}Block{% endif %} {{ user.username }}?')">
+                                    {% if user.is_blocked %}
+                                        <i class="fas fa-unlock"></i> Unblock
+                                    {% else %}
+                                        <i class="fas fa-ban"></i> Block
+                                    {% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 3rem; color: var(--secondary-color);">
+                                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                                {% if search %}
+                                    No users found matching "{{ search }}"
+                                {% else %}
+                                    No users found
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if users.has_other_pages %}
+            <div class="pagination">
+                {% if users.has_previous %}
+                    <a href="?page=1{% if search %}&q={{ search }}{% endif %}">&laquo; First</a>
+                    <a href="?page={{ users.previous_page_number }}{% if search %}&q={{ search }}{% endif %}">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ users.number }} of {{ users.paginator.num_pages }}
+                </span>
+
+                {% if users.has_next %}
+                    <a href="?page={{ users.next_page_number }}{% if search %}&q={{ search }}{% endif %}">Next</a>
+                    <a href="?page={{ users.paginator.num_pages }}{% if search %}&q={{ search }}{% endif %}">Last &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} {% endcomment %}

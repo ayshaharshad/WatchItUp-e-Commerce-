@@ -1,0 +1,283 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block content %}
+<aside id="colorlib-hero">
+    <div class="flexslider">
+        <ul class="slides">
+            <li style="background-image: url({% static 'products/images/banner/banner1.png' %});">
+                <div class="overlay"></div>
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-6 offset-sm-3 text-center slider-text">
+                            <div class="slider-text-inner">
+                                {% comment %} <div class="desc">
+                                    <h1 class="head-1">Men's</h1>
+                                    <h2 class="head-2">watches</h2>
+                                    <h2 class="head-3">Collection</h2>
+                                    <p class="category"><span>New trending watches</span></p>
+                                    <p><a href="{% url 'products:men_products' %}" class="btn btn-primary">Shop Collection</a></p>
+                                </div> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li style="background-image: url({% static 'products/images/banner/banner2.png' %});">
+                <div class="overlay"></div>
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-6 offset-sm-3 text-center slider-text">
+                            <div class="slider-text-inner">
+                                {% comment %} <div class="desc">
+                                    <h1 class="head-1">Huge</h1>
+                                    <h2 class="head-2">Sale</h2>
+                                    <h2 class="head-3"><strong class="font-weight-bold">50%</strong> Off</h2>
+                                    <p class="category"><span>Big sale</span></p>
+                                    <p><a href="{% url 'products:product_list' %}" class="btn btn-primary">Shop Collection</a></p>
+                                </div> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <li style="background-image: url({% static 'products/images/banner/banner3.png' %});">
+                <div class="overlay"></div>
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-sm-6 offset-sm-3 text-center slider-text">
+                            <div class="slider-text-inner">
+                                {% comment %} <div class="desc">
+                                    <h1 class="head-1">New</h1>
+                                    <h2 class="head-2">Arrival</h2>
+                                    <h2 class="head-3">up to <strong class="font-weight-bold">30%</strong> off</h2>
+                                    <p class="category"><span>New stylish Watches for Women</span></p>
+                                    <p><a href="{% url 'products:women_products' %}" class="btn btn-primary">Shop Collection</a></p>
+                                </div> {% endcomment %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</aside>
+<div class="colorlib-intro">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 text-center">
+                <h2 class="intro">"WatchItUp is a companion for life's journey. Designed for those who chase moments, not just minutes. Every second, styled unforgettable."</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="colorlib-product">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6 text-center">
+                <div class="featured">
+                    <a href="{% url 'products:men_products' %}" class="featured-img" style="background-image: url({% static 'products/images/watches/Men/c1.jpg' %});"></a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:men_products' %}">Shop Men's Collection</a></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 text-center">
+                <div class="featured">
+                    <a href="{% url 'products:women_products' %}" class="featured-img" style="background-image: url({% static 'products/images/watches/Women/c1.webp'%});"></a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:women_products' %}">Shop Women's Collection</a></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="colorlib-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-8 offset-sm-2 text-center colorlib-heading">
+                <h2>Best Sellers</h2>
+            </div>
+        </div>
+        <div class="row row-pb-md">
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/c1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Citizen Women's Blue Analog Eco Drive</a></h2>
+                        <span class="price">₹14,630</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/ti1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Timex Black Dial Stainless steel Analog Watch</a></h2>
+                        <span class="price">₹739</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/ti1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Timex Silver Dial stainless Steel Analog Watch</a></h2>
+                        <span class="price">₹969</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/f3.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Fastrack thor quartz multifunction Red dial</a></h2>
+                        <span class="price">₹5,195</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/ti3.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Timex Multi function Teal Dial Analog Watch</a></h2>
+                        <span class="price">₹3,519</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/f1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">fastrack vyb Quartz analog Mother of pearl</a></h2>
+                        <span class="price">₹2,050</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/cs1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">casio vintage rose dial digital watch</a></h2>
+                        <span class="price">₹4,495</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/cs1.webp' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">casio enticer ladies analog watch for women</a></h2>
+                        <span class="price">₹2,995</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/t1.jpg' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Titan Men's Multifunction Karishma</a></h2>
+                        <span class="price">₹3,725</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Men/c2.jpg' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Citizen Men | Eco Drive Basic</a></h2>
+                        <span class="price">₹24,900</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/s1.jpg' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Sonata Quartz Analog Mother Of Pearl</a></h2>
+                        <span class="price">₹2,995</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 mb-4 text-center">
+                <div class="product-entry border">
+                    <a href="{% url 'products:product_list' %}" class="prod-img">
+                        <img src="{% static 'products/images/watches/Women/f3.jpg' %}" class="img-fluid" alt="Free html5 bootstrap 4 template">
+                    </a>
+                    <div class="desc">
+                        <h2><a href="{% url 'products:product_list' %}">Fastrack Stunners Quartz Multifunction Rose Gold</a></h2>
+                        <span class="price">₹2,895</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-100"></div>
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p><a href="{% url 'products:product_list' %}" class="btn btn-primary btn-lg">Shop All Products</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="colorlib-partner">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-8 offset-sm-2 text-center colorlib-heading colorlib-heading-sm">
+                <h2>Trusted Partners</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/timex2.jpeg' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/casio.jpeg' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/fastrack.png' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+            
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/titan.png' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/citizen.png' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/seiko.png' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+
+            <div class="col partner-col text-center">
+                <img src="{% static 'products/images/logo/sonata.png' %}" class="img-fluid" alt="Free html4 bootstrap 4 template">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
