@@ -135,22 +135,6 @@ LOGGING = {
     },
 }
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'formatters': {
-#         'verbose': {'format': '{levelname} {asctime} {module} {message}', 'style': '{'},
-#     },
-#     'handlers': {
-#         'file': {'level': 'ERROR', 'class': 'logging.FileHandler', 'filename': BASE_DIR / 'logs/debug.log', 'formatter': 'verbose'},
-#         'console': {'level': 'DEBUG', 'class': 'logging.StreamHandler', 'formatter': 'verbose'},
-#     },
-#     'loggers': {
-#         'django': {'handlers': ['file', 'console'], 'level': 'ERROR', 'propagate': True},
-#         '': {'handlers': ['file', 'console'], 'level': 'ERROR', 'propagate': True},
-#     },
-# }
-
 # ------------------ AUTHENTICATION ------------------
 AUTH_USER_MODEL = 'users.CustomUser'
 AUTHENTICATION_BACKENDS = [
@@ -167,6 +151,8 @@ ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
 ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 86400
 ACCOUNT_LOGOUT_ON_GET = True
 
+
+
 LOGIN_REDIRECT_URL = '/products/'
 LOGOUT_REDIRECT_URL = '/users/login/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/users/login/'
@@ -182,7 +168,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
+        'AUTH_PARAMS': {
+            'access_type': 'offline',  # Changed from 'online'
+            'prompt': 'consent',       # This forces the consent screen
+        },
         'APP': {
             'client_id': env('GOOGLE_CLIENT_ID'),
             'secret': env('GOOGLE_CLIENT_SECRET'),
@@ -191,9 +180,9 @@ SOCIALACCOUNT_PROVIDERS = {
         'OAUTH_PKCE_ENABLED': True,
     }
 }
-SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Keep this True
 SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_LOGIN_ON_GET = False  # Changed from True - this was causing direct redirect
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
 

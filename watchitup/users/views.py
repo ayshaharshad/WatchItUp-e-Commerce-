@@ -86,6 +86,10 @@ def root_redirect_view(request):
 @never_cache
 @transaction.atomic
 def signup_view(request):
+    
+    # Clear old messages at the start
+    list(messages.get_messages(request))
+
     if request.user.is_authenticated:
         return redirect('products:home')
         
@@ -131,6 +135,10 @@ def signup_view(request):
 # ------------------ LOGIN ------------------
 @never_cache
 def login_view(request):
+
+    # Clear old messages at the start
+    list(messages.get_messages(request))
+
     if request.user.is_authenticated:
         return redirect('products:home')
         
@@ -166,13 +174,26 @@ def login_view(request):
     
     return render(request, 'users/login.html', {'form': form})
 
-# ------------------ LOGOUT ------------------
+
+# # ------------------ LOGOUT ------------------
+
 def logout_view(request):
     username = request.user.username if request.user.is_authenticated else None
     logout(request)
+    # Clear all queued messages
+    list(messages.get_messages(request))  
+
     if username:
         messages.success(request, f"Goodbye, {username}! You've been logged out successfully.")
     return redirect('users:login')
+
+
+# def logout_view(request):
+#     username = request.user.username if request.user.is_authenticated else None
+#     logout(request)
+#     if username:
+#         messages.success(request, f"Goodbye, {username}! You've been logged out successfully.")
+#     return redirect('users:login')
 
 # ------------------ OTP VERIFY ------------------
 @never_cache
@@ -377,13 +398,6 @@ def reset_password_view(request):
 @login_required
 def profile_view(request):
     return render(request, 'users/profile.html', {'user': request.user})
-
-
-
-
-
-
-
 
 
 

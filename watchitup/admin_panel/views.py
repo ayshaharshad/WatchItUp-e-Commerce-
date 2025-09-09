@@ -179,19 +179,42 @@ def add_product(request):
 @superuser_required
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    form = ProductForm(request.POST or None, request.FILES or None, instance=product)
-    if request.method == "POST" and form.is_valid():
-        product = form.save()
-        if "images" in request.FILES and request.FILES.getlist("images"):
-            product.images.all().delete()
-            for img in request.FILES.getlist("images"):
-                ProductImage.objects.create(product=product, image=img)
-        messages.success(request, "Product updated successfully.")
-        return redirect("product_list")
-    else:
-        print(f"Form errors: {form.errors}")  # For debugging
-    return render(request, "admin_panel/edit_product.html", {"form": form, "product": product})
-
+    
+    if request.method == "POST":
+        try:
+            # Update product fields directly
+            product.name = request.POST.get('name')
+            product.category_id = request.POST.get('category')
+            product.price = request.POST.get('price')
+            product.original_price = request.POST.get('original_price') or None
+            product.stock_quantity = int(request.POST.get('stock_quantity', 0))
+            product.description = request.POST.get('description', '')
+            
+            product.save()
+            
+            # Handle images if uploaded
+            uploaded_images = request.FILES.getlist('images')
+            if uploaded_images:
+                # Delete old images
+                product.images.all().delete()
+                # Add new images
+                for img in uploaded_images:
+                    ProductImage.objects.create(product=product, image=img)
+            
+            messages.success(request, "Product updated successfully!")
+            return redirect("product_list")
+            
+        except Exception as e:
+            messages.error(request, f"Error: {str(e)}")
+            print(f"Edit product error: {e}")
+    
+    # Get form for categories (we still need this for the dropdown)
+    form = ProductForm(instance=product)
+    
+    return render(request, "admin_panel/edit_product.html", {
+        "form": form,
+        "product": product
+    })
 
 @superuser_required
 def delete_product(request, pk):

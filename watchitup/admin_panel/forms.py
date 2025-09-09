@@ -17,7 +17,15 @@ class CategoryForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "category", "price", "description"]
+        fields = ["name", "category", "price", "original_price", "stock_quantity", "description"]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'original_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'stock_quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }
 
 # ------------------------- # Custom Widget for multiple file upload # -------------------------
 class MultiFileInput(forms.ClearableFileInput):
@@ -39,3 +47,5 @@ class ProductImageForm(forms.ModelForm):
         if images and len(images) < 1:  # Allow at least 1 image if uploaded
             raise forms.ValidationError("At least 1 image is required if uploading.")
         return images
+
+

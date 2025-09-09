@@ -27,6 +27,12 @@ urlpatterns = [
     
     # Resend OTP - Non-AJAX fallback
     path('resend-otp-fallback/<str:purpose>/', views.resend_otp_fallback, name='resend_otp_fallback'),
+
+    
+    
+
+    
+
 ]
 
 

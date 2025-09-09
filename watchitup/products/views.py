@@ -1,13 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
-from django.db.models import Q
-from .models import Product, Category
+from django.db.models import Q, Avg, F
+from django.contrib import messages
+from django.http import Http404
+from django.utils import timezone
+from .models import Product, Category, ProductReview, Coupon
 from decimal import Decimal
 
 
 def home(request):
     """Home page view"""
     return render(request, 'products/home.html')
+
 
 def product_list(request):
     """Product listing with search, filter, sort and pagination"""
@@ -88,6 +92,7 @@ def product_list(request):
     
     return render(request, 'products/product_list.html', context)
 
+
 def men_products(request):
     """Men's products listing"""
     products = Product.objects.filter(is_active=True, category__name='Men').select_related('category', 'brand').prefetch_related('images')
@@ -157,6 +162,7 @@ def men_products(request):
     }
     
     return render(request, 'products/category_products.html', context)
+
 
 def women_products(request):
     """Women's products listing"""
@@ -228,21 +234,136 @@ def women_products(request):
     
     return render(request, 'products/category_products.html', context)
 
+
 def product_detail(request, pk):
-    """Product detail page"""
-    product = get_object_or_404(Product, pk=pk, is_active=True)
+    """Enhanced Product detail page with error handling and redirects"""
+    try:
+        # Check if product exists and is active
+        product = get_object_or_404(Product, pk=pk)
+        
+        # If product is not active, redirect to product list with error message
+        if not product.is_active:
+            messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+            return redirect('products:product_list')
+        
+        # Check if category is active
+        if not product.category.is_active:
+            messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+            return redirect('products:product_list')
+        
+        # Check if brand is active (if product has a brand)
+        if product.brand and not product.brand.is_active:
+            messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+            return redirect('products:product_list')
+            
+    except Http404:
+        messages.error(request, "Product not found.")
+        return redirect('products:product_list')
+    
+    # Get product images
     images = product.images.all()
     
-    # Get related products from same category
-    related_products = Product.objects.filter(
-        category=product.category, 
+    # Get product reviews with user information
+    reviews = ProductReview.objects.filter(
+        product=product, 
         is_active=True
+    ).select_related('user').order_by('-created_at')
+    
+    # Get related products from same category (exclude current product and inactive products)
+    related_products = Product.objects.filter(
+        category=product.category,
+        is_active=True,
+        category__is_active=True
     ).exclude(pk=product.pk).select_related('category', 'brand').prefetch_related('images')[:4]
+    
+    # Check for active coupons (you can customize this logic)
+    available_coupons = Coupon.objects.filter(
+        is_active=True,
+        valid_from__lte=timezone.now(),
+        valid_to__gte=timezone.now()
+    ).filter(
+        Q(usage_limit__isnull=True) | Q(usage_limit__gt=F('used_count'))
+    )[:3]  # Show top 3 available coupons
+    
+    # Rating distribution for reviews
+    rating_distribution = {}
+    total_reviews = reviews.count()
+    for i in range(1, 6):
+        count = reviews.filter(rating=i).count()
+        percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
+        rating_distribution[i] = {
+            'count': count,
+            'percentage': round(percentage, 1)
+        }
     
     context = {
         'product': product,
         'images': images,
         'related_products': related_products,
+        'reviews': reviews,
+        'available_coupons': available_coupons,
+        'rating_distribution': rating_distribution,
+        'breadcrumb_category': product.category.name,
     }
     
     return render(request, 'products/product_detail.html', context)
+
+
+# NEW: Add to cart with error handling
+def add_to_cart(request, pk):
+    """Add product to cart with proper error handling"""
+    if request.method == 'POST':
+        try:
+            product = get_object_or_404(Product, pk=pk)
+            
+            # Check if product is available
+            if not product.is_active:
+                messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+                return redirect('products:product_list')
+            
+            # Check stock
+            if not product.is_in_stock:
+                messages.error(request, f"Sorry, '{product.name}' is out of stock.")
+                return redirect('products:product_detail', pk=pk)
+            
+            # Add your cart logic here
+            # For now, just show success message
+            messages.success(request, f"'{product.name}' added to cart successfully!")
+            return redirect('products:product_detail', pk=pk)
+            
+        except Http404:
+            messages.error(request, "Product not found.")
+            return redirect('products:product_list')
+    
+    return redirect('products:product_list')
+
+
+# NEW: Apply coupon functionality
+def apply_coupon(request):
+    """Apply coupon with validation"""
+    if request.method == 'POST':
+        coupon_code = request.POST.get('coupon_code', '').strip().upper()
+        
+        if not coupon_code:
+            messages.error(request, "Please enter a coupon code.")
+            return redirect(request.META.get('HTTP_REFERER', 'products:home'))
+        
+        try:
+            coupon = Coupon.objects.get(code=coupon_code)
+            
+            if not coupon.is_valid:
+                messages.error(request, "This coupon is not valid or has expired.")
+            else:
+                # Store coupon in session (you can customize this)
+                request.session['applied_coupon'] = coupon_code
+                
+                if coupon.discount_type == 'percentage':
+                    messages.success(request, f"Coupon applied! You get {coupon.discount_value}% discount.")
+                else:
+                    messages.success(request, f"Coupon applied! You get ₹{coupon.discount_value} discount.")
+                    
+        except Coupon.DoesNotExist:
+            messages.error(request, "Invalid coupon code.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'products:home'))
+
