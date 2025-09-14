@@ -1,0 +1,148 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Add Product Variant{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        Add Product Variant
+                        {% if product %}
+                        for "{{ product.name }}"
+                        {% endif %}
+                    </h4>
+                    <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Variants
+                    </a>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Product Selection -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.product.id_for_label }}" class="form-label">Product *</label>
+                                {{ form.product }}
+                                {% if form.product.errors %}
+                                    <div class="text-danger">{{ form.product.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Color Selection -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.color.id_for_label }}" class="form-label">Color *</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="text-danger">{{ form.color.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Color Hex -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.color_hex.id_for_label }}" class="form-label">Color Code</label>
+                                {{ form.color_hex }}
+                                <small class="form-text text-muted">Will be auto-filled based on color selection</small>
+                                {% if form.color_hex.errors %}
+                                    <div class="text-danger">{{ form.color_hex.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">Price (₹) *</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="text-danger">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Original Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.original_price.id_for_label }}" class="form-label">Original Price (₹)</label>
+                                {{ form.original_price }}
+                                <small class="form-text text-muted">Leave empty if no discount</small>
+                                {% if form.original_price.errors %}
+                                    <div class="text-danger">{{ form.original_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Stock Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.stock_quantity.id_for_label }}" class="form-label">Stock Quantity *</label>
+                                {{ form.stock_quantity }}
+                                {% if form.stock_quantity.errors %}
+                                    <div class="text-danger">{{ form.stock_quantity.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Images -->
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Variant Images</label>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*">
+                            <small class="form-text text-muted">
+                                Select multiple images for this variant. First image will be set as primary.
+                            </small>
+                        </div>
+                        
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Variant
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colorSelect = document.getElementById('{{ form.color.id_for_label }}');
+    const colorHexInput = document.getElementById('{{ form.color_hex.id_for_label }}');
+    
+    // Color hex mapping
+    const colorHexMap = {
+        'black': '#000000',
+        'gold': '#FFD700',
+        'silver': '#C0C0C0',
+        'rose_gold': '#E8B4A0',
+        'blue': '#0066CC',
+        'white': '#FFFFFF',
+        'brown': '#8B4513'
+    };
+    
+    // Update hex color when color selection changes
+    colorSelect.addEventListener('change', function() {
+        const selectedColor = this.value;
+        if (selectedColor && colorHexMap[selectedColor]) {
+            colorHexInput.value = colorHexMap[selectedColor];
+        }
+    });
+    
+    // Trigger initial update if color is already selected
+    if (colorSelect.value && colorHexMap[colorSelect.value] && !colorHexInput.value) {
+        colorHexInput.value = colorHexMap[colorSelect.value];
+    }
+});
+</script>
+{% endblock %}

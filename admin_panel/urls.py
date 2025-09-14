@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = "admin_panel" 
+
 urlpatterns = [
     path("login/", views.admin_login, name="admin_login"),
     path("logout/", views.admin_logout, name="admin_logout"),
@@ -21,4 +23,14 @@ urlpatterns = [
     path("products/add/", views.add_product, name="add_product"),
     path("products/edit/<int:pk>/", views.edit_product, name="edit_product"),
     path("products/delete/<int:pk>/", views.delete_product, name="delete_product"),
+
+     # Product Variant Management
+    path("products/<int:product_id>/variants/", views.product_variant_detail, name="product_variant_detail"),
+    path('variants/', views.variant_list, name='variant_list'),
+    path('variants/add/', views.add_product_variant, name='add_product_variant'),
+    path('variants/add/<int:product_id>/', views.add_product_variant, name='add_product_variant'),
+    path('variants/<int:pk>/edit/', views.edit_product_variant, name='edit_product_variant'),
+    path('variants/<int:pk>/delete/', views.delete_product_variant, name='delete_product_variant'),
+    path('variants/bulk-create/', views.bulk_create_variants, name='bulk_create_variants'),
+    path('variants/stock-update/', views.variant_stock_update, name='variant_stock_update'),
 ]

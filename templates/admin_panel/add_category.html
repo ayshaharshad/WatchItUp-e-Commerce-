@@ -10,7 +10,7 @@
         <div class="card shadow">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Category Information</h6>
-                <a href="{% url 'category_list' %}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'admin_panel:category_list' %}" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Categories
                 </a>
             </div>
@@ -49,7 +49,7 @@
                     {% endif %}
 
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                        <a href="{% url 'admin_panel:category_list' %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">

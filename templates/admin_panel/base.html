@@ -64,31 +64,31 @@
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'admin_panel:dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2"></i>
                                 Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user_list' %}">
+                            <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_panel:user_list' %}">
                                 <i class="fas fa-users me-2"></i>
                                 Users
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'category_list' %}">
+                            <a class="nav-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_panel:category_list' %}">
                                 <i class="fas fa-list me-2"></i>
                                 Categories
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'product_list' %}">
+                            <a class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin_panel:product_list' %}">
                                 <i class="fas fa-box me-2"></i>
                                 Products
                             </a>
                         </li>
                         <li class="nav-item mt-3">
-                            <a class="nav-link text-warning" href="{% url 'admin_logout' %}">
+                            <a class="nav-link text-warning" href="{% url 'admin_panel:admin_logout' %}">
                                 <i class="fas fa-sign-out-alt me-2"></i>
                                 Logout
                             </a>

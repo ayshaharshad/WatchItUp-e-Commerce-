@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if 'signup' in request.path %}Sign Up{% else %}Sign In{% endif %} with Google - Watchitup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .google-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #4285f4, #34a853, #fbbc05, #ea4335);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .google-icon i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .btn-google {
+            background: linear-gradient(45deg, #4285f4, #34a853);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
+            color: white;
+        }
+        
+        .btn-cancel {
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+            border-radius: 50px;
+            padding: 12px 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+        }
+        
+        .info-box {
+            background: linear-gradient(45deg, #e3f2fd, #f3e5f5);
+            border: none;
+            border-radius: 15px;
+            padding: 1.5rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .brand-text {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid d-flex align-items-center justify-content-center min-vh-100">
+        <div class="row justify-content-center w-100">
+            <div class="col-md-6 col-lg-5">
+                <div class="card">
+                    <div class="card-header text-center p-4">
+                        <div class="google-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <h2 class="brand-text mb-2">
+                            {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                Join Watchitup
+                            {% else %}
+                                Welcome Back
+                            {% endif %}
+                        </h2>
+                        <h4 class="text-dark mb-0">Continue with Google</h4>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <div class="info-box mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                    Quick & Secure Registration
+                                {% else %}
+                                    Secure Authentication
+                                {% endif %}
+                            </h6>
+                            <ul class="feature-list mb-0">
+                                {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                    <li>Create account instantly</li>
+                                    <li>No email verification needed</li>
+                                    <li>Secure Google authentication</li>
+                                    <li>Start shopping immediately</li>
+                                {% else %}
+                                    <li>No password required</li>
+                                    <li>Instant secure login</li>
+                                    <li>Access all your data</li>
+                                    <li>Continue where you left off</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="text-center mb-4">
+                            <p class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                    You'll be redirected to Google to create your account
+                                {% else %}
+                                    You'll be redirected to Google to complete sign-in
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <form method="post" action="{% url 'google_login' %}">
+                            {% csrf_token %}
+                            
+                            {% if redirect_field_value %}
+                                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                            {% endif %}
+                            
+                            {% if 'signup' in request.path %}
+                                <input type="hidden" name="process" value="signup" />
+                            {% endif %}
+                            
+                            <div class="d-grid gap-3">
+                                <button type="submit" class="btn btn-google btn-lg">
+                                    <i class="fab fa-google me-2"></i>
+                                    {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                        Sign Up with Google
+                                    {% else %}
+                                        Sign In with Google
+                                    {% endif %}
+                                </button>
+                                
+                                <a href="{% if 'signup' in request.path %}{% url 'users:signup' %}{% else %}{% url 'users:login' %}{% endif %}" 
+                                   class="btn btn-cancel">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                                        Back to Sign Up
+                                    {% else %}
+                                        Back to Login
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <small class="text-muted">
+                                By continuing, you agree to our 
+                                <a href="#" class="text-decoration-none">Terms of Service</a> and 
+                                <a href="#" class="text-decoration-none">Privacy Policy</a>
+                            </small>
+                        </div>
+                        
+                        {% if 'signup' in request.path or request.GET.process == 'signup' %}
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    Already have an account? 
+                                    <a href="{% url 'users:login' %}" class="text-decoration-none fw-bold">Sign In</a>
+                                </small>
+                            </div>
+                        {% else %}
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    Don't have an account? 
+                                    <a href="{% url 'users:signup' %}" class="text-decoration-none fw-bold">Sign Up</a>
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <small class="text-white">
+                        <i class="fas fa-lock me-1"></i>
+                        Your data is protected with enterprise-grade security
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

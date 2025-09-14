@@ -23,8 +23,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(('users.urls', 'users'), namespace='users')), 
     path('products/', include(('products.urls', 'products'), namespace='products')), 
+    path("admin_panel/", include("admin_panel.urls", namespace="admin_panel")),
+
+  
     path('accounts/', include('allauth.urls')),   # Google SSO works here
-    path('admin_panel/', include('admin_panel.urls')),   
 ]
 
 if settings.DEBUG:

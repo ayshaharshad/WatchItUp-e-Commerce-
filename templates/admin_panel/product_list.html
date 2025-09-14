@@ -7,6 +7,410 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div></div>
+    <div>
+        <a href="{% url 'admin_panel:add_product' %}" class="btn btn-primary me-2">
+            <i class="fas fa-plus"></i> Add New Product
+        </a>
+        <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-success">
+            <i class="fas fa-palette"></i> Manage Variants
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">All Products</h6>
+        <div class="d-flex">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" value="{{ search }}" placeholder="Search products..." class="form-control me-2" style="width: 250px;">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search %}
+                <a href="{% url 'admin_panel:product_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if products %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Image</th>
+                        <th>Product Info</th>
+                        <th>Category</th>
+                        <th>Price Range</th>
+                        <th>Variants</th>
+                        <th>Total Stock</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            {% if product.default_variant.images.first %}
+                                <img src="{{ product.default_variant.images.first.image.url }}" alt="{{ product.name }}" 
+                                     class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% elif product.images.first %}
+                                <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" 
+                                     class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" 
+                                     style="width: 50px; height: 50px; border-radius: 4px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>
+                                <strong class="text-dark">{{ product.name }}</strong>
+                                {% if product.brand %}
+                                <small class="text-muted d-block">{{ product.brand.name }}</small>
+                                {% endif %}
+                                {% if product.description %}
+                                <p class="text-muted small mb-0">{{ product.description|truncatechars:50 }}</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ product.category.name }}</span>
+                        </td>
+                        <td>
+                            <strong class="text-success">{{ product.price_range }}</strong>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary me-2">{{ product.variants.count }} variant{{ product.variants.count|pluralize }}</span>
+                                {% if product.variants.exists %}
+                                <div class="variant-colors">
+                                    {% for variant in product.variants.all|slice:":4" %}
+                                    <div class="color-dot" 
+                                         style="width: 15px; height: 15px; border-radius: 50%; background-color: {{ variant.color_hex }}; border: 1px solid #ddd; display: inline-block; margin-right: 2px;"
+                                         title="{{ variant.get_color_display }}"></div>
+                                    {% endfor %}
+                                    {% if product.variants.count > 4 %}
+                                    <small class="text-muted">+{{ product.variants.count|add:"-4" }} more</small>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.total_stock <= 0 %}bg-danger{% elif product.total_stock <= 10 %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ product.total_stock }} units
+                            </span>
+                        </td>
+                        <td>{{ product.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle" 
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" 
+                                           data-bs-target="#productModal{{ product.id }}">
+                                            <i class="fas fa-eye text-info"></i> View Details
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'admin_panel:edit_product' product.pk %}">
+                                            <i class="fas fa-edit text-primary"></i> Edit Product
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'admin_panel:product_variant_detail' product.pk %}">
+                                            <i class="fas fa-palette text-success"></i> Manage Variants
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'admin_panel:add_product_variant' product.pk %}">
+                                            <i class="fas fa-plus text-warning"></i> Add Variant
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#" 
+                                           onclick="confirmAction('{% url 'admin_panel:delete_product' product.pk %}', 'Are you sure you want to delete this product? This action cannot be undone.')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if products.has_other_pages %}
+        <nav aria-label="Product pagination">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&q={{ search }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.previous_page_number }}{% if search %}&q={{ search }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in products.paginator.page_range %}
+                    {% if products.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&q={{ search }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.next_page_number }}{% if search %}&q={{ search }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ products.paginator.num_pages }}{% if search %}&q={{ search }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">
+                {% if search %}
+                    No products found matching "{{ search }}"
+                {% else %}
+                    No products found
+                {% endif %}
+            </h5>
+            <p class="text-muted mb-3">Start by adding your first product</p>
+            <a href="{% url 'admin_panel:add_product' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Product
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Product Detail Modals -->
+{% for product in products %}
+<div class="modal fade" id="productModal{{ product.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ product.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if product.default_variant.images.all or product.images.all %}
+                        <div id="carousel{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in product.default_variant.images.all|default:product.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ product.name }}" 
+                                         style="height: 250px; object-fit: cover;">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if product.default_variant.images.count > 1 or product.images.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ product.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ product.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6><strong>Category:</strong> {{ product.category.name }}</h6>
+                        {% if product.brand %}
+                        <h6><strong>Brand:</strong> {{ product.brand.name }}</h6>
+                        {% endif %}
+                        <h6><strong>Base Price:</strong> <span class="text-success">₹{{ product.base_price }}</span></h6>
+                        <h6><strong>Price Range:</strong> <span class="text-success">{{ product.price_range }}</span></h6>
+                        <h6><strong>Variants:</strong> {{ product.variants.count }}</h6>
+                        <h6><strong>Total Stock:</strong> {{ product.total_stock }} units</h6>
+                        <h6><strong>Created:</strong> {{ product.created_at|date:"M d, Y H:i" }}</h6>
+                        
+                        {% if product.variants.exists %}
+                        <h6><strong>Available Colors:</strong></h6>
+                        <div class="d-flex flex-wrap">
+                            {% for variant in product.variants.all %}
+                            <div class="me-2 mb-2 d-flex align-items-center">
+                                <div class="color-dot me-1" 
+                                     style="width: 16px; height: 16px; border-radius: 50%; background-color: {{ variant.color_hex }}; border: 1px solid #ddd;"></div>
+                                <small>{{ variant.get_color_display }} ({{ variant.stock_quantity }})</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if product.description %}
+                        <h6><strong>Description:</strong></h6>
+                        <p class="text-muted">{{ product.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'admin_panel:product_variant_detail' product.pk %}" class="btn btn-success">
+                    <i class="fas fa-palette"></i> Manage Variants
+                </a>
+                <a href="{% url 'admin_panel:edit_product' product.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Product
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Product Stats -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ products.paginator.count }}</h4>
+                        <p class="mb-0">Total Products</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_variants|default:0 }}</h4>
+                        <p class="mb-0">Total Variants</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-palette fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_stock|default:0 }}</h4>
+                        <p class="mb-0">Total Stock</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-boxes fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ low_stock_variants|default:0 }}</h4>
+                        <p class="mb-0">Low Stock Variants</p>
+                    </div>
+                    <div>
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .img-thumbnail {
+        border-radius: 8px;
+    }
+    .dropdown-toggle::after {
+        margin-left: 0.5em;
+    }
+    .carousel-inner img {
+        border-radius: 8px;
+    }
+    .modal-content {
+        border-radius: 12px;
+    }
+    .variant-colors {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .color-dot {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+</style>
+
+<script>
+function confirmAction(url, message) {
+    if (confirm(message)) {
+        window.location.href = url;
+    }
+}
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+
+{% block title %}Product Management - Admin Panel{% endblock %}
+
+{% block page_title %}Product Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
     <a href="{% url 'add_product' %}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Add New Product
     </a>
@@ -298,4 +702,4 @@
         border-radius: 12px;
     }
 </style>
-{% endblock %}
+{% endblock %} {% endcomment %}

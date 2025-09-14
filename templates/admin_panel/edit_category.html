@@ -12,7 +12,7 @@
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="fas fa-edit"></i> Edit Category: {{ form.instance.name }}
                 </h6>
-                <a href="{% url 'category_list' %}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'admin_panel:category_list' %}" class="btn btn-sm btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Categories
                 </a>
             </div>
@@ -51,7 +51,7 @@
                     {% endif %}
 
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                        <a href="{% url 'admin_panel:category_list' %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -127,15 +127,15 @@
             </div>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="{% url 'add_product' %}" class="btn btn-outline-success btn-sm">
+                    <a href="{% url 'admin_panel:add_product' %}" class="btn btn-outline-success btn-sm">
                         <i class="fas fa-plus"></i> Add Product to Category
                     </a>
                     {% if form.instance.products.count > 0 %}
-                    <a href="{% url 'product_list' %}?category={{ form.instance.id }}" class="btn btn-outline-info btn-sm">
+                    <a href="{% url 'admin_panel:product_list' %}?category={{ form.instance.id }}" class="btn btn-outline-info btn-sm">
                         <i class="fas fa-eye"></i> View All Products
                     </a>
                     {% endif %}
-                    <button onclick="confirmAction('{% url 'delete_category' form.instance.pk %}', 'Are you sure you want to delete this category? This action cannot be undone and will affect {{ form.instance.products.count }} product{{ form.instance.products.count|pluralize }}.')" 
+                    <button onclick="confirmAction('{% url 'admin_panel:delete_category' form.instance.pk %}', 'Are you sure you want to delete this category? This action cannot be undone and will affect {{ form.instance.products.count }} product{{ form.instance.products.count|pluralize }}.')" 
                             class="btn btn-outline-danger btn-sm">
                         <i class="fas fa-trash"></i> Delete Category
                     </button>

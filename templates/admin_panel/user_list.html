@@ -20,7 +20,7 @@
                     <i class="fas fa-search"></i> Search
                 </button>
                 {% if search %}
-                <a href="{% url 'user_list' %}" class="btn btn-outline">
+                <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline">
                     <i class="fas fa-times"></i> Reset
                 </a>
                 {% endif %}
@@ -64,7 +64,7 @@
                             <td>{{ user.date_joined|date:"M d, Y" }}</td>
                             <td>
                                 <!-- SECURITY: Using POST with CSRF protection -->
-                                <form method="post" action="{% url 'block_unblock_user' user.id %}" style="display: inline;">
+                                <form method="post" action="{% url 'admin_panel:block_unblock_user' user.id %}" style="display: inline;">
                                     {% csrf_token %}
                                     {% if user.is_active %}
                                         <input type="hidden" name="action" value="block">

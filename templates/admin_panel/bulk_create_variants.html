@@ -1,0 +1,124 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Bulk Create Variants{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Bulk Create Product Variants</h4>
+                    <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Variants
+                    </a>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Bulk Create:</strong> This will create multiple variants for the selected product with the same price and stock quantity. You can edit individual variants later.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Product Selection -->
+                        <div class="mb-3">
+                            <label for="{{ form.product.id_for_label }}" class="form-label">Select Product *</label>
+                            {{ form.product }}
+                            {% if form.product.errors %}
+                                <div class="text-danger">{{ form.product.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Color Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Select Colors *</label>
+                            <div class="row">
+                                {% for choice in form.colors %}
+                                <div class="col-md-3 col-sm-4 col-6 mb-2">
+                                    <div class="form-check">
+                                        {{ choice.tag }}
+                                        <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                            {{ choice.choice_label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.colors.errors %}
+                                <div class="text-danger">{{ form.colors.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Base Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.base_price.id_for_label }}" class="form-label">Base Price (₹) *</label>
+                                {{ form.base_price }}
+                                <small class="form-text text-muted">This price will be applied to all variants</small>
+                                {% if form.base_price.errors %}
+                                    <div class="text-danger">{{ form.base_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Stock Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.stock_quantity.id_for_label }}" class="form-label">Stock Quantity *</label>
+                                {{ form.stock_quantity }}
+                                <small class="form-text text-muted">This stock will be applied to all variants</small>
+                                {% if form.stock_quantity.errors %}
+                                    <div class="text-danger">{{ form.stock_quantity.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-layer-group"></i> Create Variants
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all checkboxes functionality
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'btn btn-sm btn-outline-secondary mb-2';
+    selectAllBtn.textContent = 'Select All Colors';
+    
+    const clearAllBtn = document.createElement('button');
+    clearAllBtn.type = 'button';
+    clearAllBtn.className = 'btn btn-sm btn-outline-secondary mb-2 ms-2';
+    clearAllBtn.textContent = 'Clear All';
+    
+    const colorSection = document.querySelector('.form-label:contains("Select Colors")').parentNode;
+    colorSection.querySelector('.row').before(selectAllBtn);
+    colorSection.querySelector('.row').before(clearAllBtn);
+    
+    selectAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('input[name="colors"]').forEach(cb => cb.checked = true);
+    });
+    
+    clearAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('input[name="colors"]').forEach(cb => cb.checked = false);
+    });
+});
+</script>
+{% endblock %}

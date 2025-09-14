@@ -1,0 +1,180 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Edit Product Variant{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        Edit Variant: {{ variant.product.name }} - {{ variant.get_color_display }}
+                    </h4>
+                    <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Variants
+                    </a>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Current Images Display -->
+                    {% if variant.images.all %}
+                    <div class="mb-4">
+                        <h6>Current Images:</h6>
+                        <div class="row">
+                            {% for image in variant.images.all %}
+                            <div class="col-md-2 col-sm-3 col-4 mb-2">
+                                <div class="position-relative">
+                                    <img src="{{ image.image.url }}" 
+                                         class="img-fluid img-thumbnail" 
+                                         alt="Variant Image"
+                                         style="height: 100px; object-fit: cover;">
+                                    {% if image.is_primary %}
+                                    <span class="badge bg-success position-absolute top-0 start-0">Primary</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product</label>
+                                <input type="text" class="form-control" value="{{ variant.product.name }}" readonly>
+                                <small class="text-muted">Product cannot be changed for existing variant</small>
+                            </div>
+                            
+                            <!-- Color Selection -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.color.id_for_label }}" class="form-label">Color *</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="text-danger">{{ form.color.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Color Hex -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.color_hex.id_for_label }}" class="form-label">Color Code</label>
+                                {{ form.color_hex }}
+                                {% if form.color_hex.errors %}
+                                    <div class="text-danger">{{ form.color_hex.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Active Status -->
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                        Active Status
+                                    </label>
+                                </div>
+                                {% if form.is_active.errors %}
+                                    <div class="text-danger">{{ form.is_active.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">Price (₹) *</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="text-danger">{{ form.price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Original Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.original_price.id_for_label }}" class="form-label">Original Price (₹)</label>
+                                {{ form.original_price }}
+                                <small class="form-text text-muted">Leave empty if no discount</small>
+                                {% if form.original_price.errors %}
+                                    <div class="text-danger">{{ form.original_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Stock Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.stock_quantity.id_for_label }}" class="form-label">Stock Quantity *</label>
+                                {{ form.stock_quantity }}
+                                {% if form.stock_quantity.errors %}
+                                    <div class="text-danger">{{ form.stock_quantity.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- SKU Display -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">SKU</label>
+                                <input type="text" class="form-control" value="{{ variant.sku }}" readonly>
+                                <small class="text-muted">Auto-generated</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Replace Images -->
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Replace All Images</label>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*">
+                            <small class="form-text text-muted">
+                                Select new images to replace all current images. First image will be primary. Leave empty to keep current images.
+                            </small>
+                        </div>
+                        
+                        <!-- Form Errors -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Variant
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colorSelect = document.getElementById('{{ form.color.id_for_label }}');
+    const colorHexInput = document.getElementById('{{ form.color_hex.id_for_label }}');
+    
+    // Color hex mapping
+    const colorHexMap = {
+        'black': '#000000',
+        'gold': '#FFD700',
+        'silver': '#C0C0C0',
+        'rose_gold': '#E8B4A0',
+        'blue': '#0066CC',
+        'white': '#FFFFFF',
+        'brown': '#8B4513'
+    };
+    
+    // Update hex color when color selection changes
+    colorSelect.addEventListener('change', function() {
+        const selectedColor = this.value;
+        if (selectedColor && colorHexMap[selectedColor]) {
+            colorHexInput.value = colorHexMap[selectedColor];
+        }
+    });
+});
+</script>
+{% endblock %}
