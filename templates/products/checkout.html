@@ -1,0 +1,201 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">Checkout</h2>
+    
+    <form method="post" action="{% url 'products:place_order' %}" id="checkout-form">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Left Column: Address & Items -->
+            <div class="col-lg-8">
+                <!-- Delivery Address -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">1. Delivery Address</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if addresses %}
+                            {% for address in addresses %}
+                            <div class="form-check mb-3 p-3 border rounded {% if address.is_default %}border-primary{% endif %}">
+                                <input class="form-check-input" 
+                                       type="radio" 
+                                       name="address_id" 
+                                       id="address{{ address.id }}" 
+                                       value="{{ address.id }}"
+                                       {% if address.is_default %}checked{% endif %}
+                                       required>
+                                <label class="form-check-label w-100" for="address{{ address.id }}">
+                                    <strong>{{ address.full_name }}</strong>
+                                    {% if address.is_default %}
+                                        <span class="badge bg-primary ms-2">Default</span>
+                                    {% endif %}
+                                    <p class="mb-1 mt-2">{{ address.phone }}</p>
+                                    <p class="mb-0 text-muted">
+                                        {{ address.address_line1 }}
+                                        {% if address.address_line2 %}, {{ address.address_line2 }}{% endif %},
+                                        {{ address.city }}, {{ address.state }} - {{ address.postal_code }}
+                                    </p>
+                                </label>
+                            </div>
+                            {% endfor %}
+                            
+                            <a href="{% url 'users:add_address' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus"></i> Add New Address
+                            </a>
+                        {% else %}
+                            <p class="text-muted">No addresses found.</p>
+                            <a href="{% url 'users:add_address' %}" class="btn btn-primary">
+                                Add Delivery Address
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Order Items -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">2. Review Items ({{ cart.total_items }} items)</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in cart_items %}
+                        <div class="row align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="col-md-2">
+                                {% if item.variant.primary_variant_image %}
+                                    <img src="{{ item.variant.primary_variant_image.image.url }}" 
+                                         class="img-fluid rounded" 
+                                         alt="{{ item.product.name }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                <p class="mb-0 text-muted small">
+                                    Color: {{ item.variant.get_color_display }} | Qty: {{ item.quantity }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <strong>₹{{ item.item_total }}</strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Payment Method -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">3. Payment Method</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="payment_method" 
+                                   id="cod" 
+                                   value="cod" 
+                                   checked>
+                            <label class="form-check-label" for="cod">
+                                <i class="fas fa-money-bill-wave text-success"></i>
+                                Cash on Delivery (COD)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="radio" 
+                                   name="payment_method" 
+                                   id="online" 
+                                   value="online" 
+                                   disabled>
+                            <label class="form-check-label text-muted" for="online">
+                                <i class="fas fa-credit-card"></i>
+                                Online Payment (Coming Soon)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Notes -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">4. Order Notes (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea name="notes" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Any special instructions for delivery..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Order Summary -->
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong>₹{{ subtotal }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax (18% GST):</span>
+                            <strong>₹{{ tax|floatformat:2 }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <strong>
+                                {% if subtotal > 500 %}
+                                    <span class="text-success">FREE</span>
+                                {% else %}
+                                    ₹{{ shipping_charge }}
+                                {% endif %}
+                            </strong>
+                        </div>
+                        {% if discount > 0 %}
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <span>Discount:</span>
+                            <strong>- ₹{{ discount }}</strong>
+                        </div>
+                        {% endif %}
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total Amount:</strong>
+                            <strong class="text-primary fs-5">₹{{ total|floatformat:2 }}</strong>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100 mb-2">
+                            <i class="fas fa-check-circle"></i> Place Order
+                        </button>
+                        
+                        <a href="{% url 'products:cart_view' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-arrow-left"></i> Back to Cart
+                        </a>
+                        
+                        <div class="alert alert-info mt-3 small">
+                            <i class="fas fa-shield-alt"></i> 
+                            Your transaction is secure and encrypted
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('checkout-form').addEventListener('submit', function(e) {
+    const addressSelected = document.querySelector('input[name="address_id"]:checked');
+    if (!addressSelected) {
+        e.preventDefault();
+        alert('Please select a delivery address');
+        return false;
+    }
+});
+</script>
+{% endblock %}

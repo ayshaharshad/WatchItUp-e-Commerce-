@@ -33,4 +33,14 @@ urlpatterns = [
     path('variants/<int:pk>/delete/', views.delete_product_variant, name='delete_product_variant'),
     path('variants/bulk-create/', views.bulk_create_variants, name='bulk_create_variants'),
     path('variants/stock-update/', views.variant_stock_update, name='variant_stock_update'),
+
+    # Order Management
+    path('orders/', views.order_list, name='order_list'),
+    path('orders/<str:order_id>/', views.order_detail, name='order_detail'),
+    path('orders/<str:order_id>/update-status/', views.update_order_status, name='update_order_status'),
+    path('orders/<str:order_id>/cancel/', views.cancel_order, name='cancel_order'),
+    path('orders/filters/clear/', views.clear_order_filters, name='clear_order_filters'),
+    
+    # Inventory Management
+    path('inventory/report/', views.order_inventory_report, name='order_inventory_report'),
 ]

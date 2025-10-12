@@ -1,0 +1,85 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmed{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <!-- Success Animation -->
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>
+            </div>
+            
+            <!-- Success Message -->
+            <h2 class="mb-3">Order Placed Successfully!</h2>
+            <p class="text-muted mb-4">
+                Thank you for your order. We've received your order and will process it shortly.
+            </p>
+            
+            <!-- Order Details Card -->
+            <div class="card mx-auto mb-4" style="max-width: 600px;">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Order Details</h5>
+                    <div class="row mb-2">
+                        <div class="col-6 text-start text-muted">Order ID:</div>
+                        <div class="col-6 text-end">
+                            <strong>{{ order.order_id }}</strong>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6 text-start text-muted">Order Date:</div>
+                        <div class="col-6 text-end">{{ order.created_at|date:"d M, Y" }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6 text-start text-muted">Total Amount:</div>
+                        <div class="col-6 text-end">
+                            <strong class="text-primary">₹{{ order.total }}</strong>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6 text-start text-muted">Payment Method:</div>
+                        <div class="col-6 text-end">{{ order.get_payment_method_display }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 text-start text-muted">Status:</div>
+                        <div class="col-6 text-end">
+                            <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Delivery Address -->
+            <div class="card mx-auto mb-4" style="max-width: 600px;">
+                <div class="card-body text-start">
+                    <h6 class="card-title">Delivery Address</h6>
+                    <p class="mb-0">
+                        <strong>{{ order.shipping_full_name }}</strong><br>
+                        {{ order.shipping_phone }}<br>
+                        {{ order.shipping_line1 }}{% if order.shipping_line2 %}, {{ order.shipping_line2 }}{% endif %}<br>
+                        {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{% url 'products:order_detail' order.order_id %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-file-alt"></i> View Order Details
+                </a>
+                <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-shopping-bag"></i> Continue Shopping
+                </a>
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="alert alert-info mt-4" role="alert">
+                <i class="fas fa-info-circle"></i>
+                A confirmation email has been sent to your registered email address.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

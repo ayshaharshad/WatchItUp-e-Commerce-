@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import user_passes_test, login_required
@@ -7,11 +8,13 @@ from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
 
+
+
 # Models
-from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage
+from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem
 from .forms import (
     AdminLoginForm, CategoryForm, ProductForm, ProductVariantForm, 
-    ProductVariantEditForm, BulkVariantForm
+    ProductVariantEditForm, BulkVariantForm, OrderStatusForm, OrderFilterForm
 )
 
 User = get_user_model()
@@ -167,24 +170,97 @@ def product_list(request):
     products = paginator.get_page(page)
     return render(request, "admin_panel/product_list.html", {"products": products, "search": search})
 
+
 @superuser_required
 def add_product(request):
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            product = form.save()
-            if "images" in request.FILES:
-                for img in request.FILES.getlist("images"):
-                    ProductImage.objects.create(product=product, image=img)
-            messages.success(request, "Product added successfully. You can now add variants.")
-            return redirect("admin_panel:add_product_variant", product_id=product.id)
+            try:
+                with transaction.atomic():
+                    # Save the product
+                    product = form.save()
+                    
+                    # Handle multiple images (now potentially cropped)
+                    uploaded_images = request.FILES.getlist("images")
+                    if uploaded_images:
+                        for img in uploaded_images:
+                            # Optional: Validate image size/type if needed after cropping
+                            if img.size > 5 * 1024 * 1024:  # Example: Limit to 5MB
+                                raise ValueError("Image too large after cropping.")
+                            ProductImage.objects.create(product=product, image=img)
+                    
+                    messages.success(
+                        request, 
+                        f"Product '{product.name}' added successfully! You can now add variants with specific colors, sizes, and prices."
+                    )
+                    return redirect("admin_panel:add_product_variant", product_id=product.id)
+            
+            except Exception as e:
+                messages.error(request, f"Error saving product: {str(e)}")
+                print(f"Product creation error: {e}")  # For debugging
         else:
-            messages.error(request, "Please correct the errors below.")
+            # (Existing error handling remains)
+            error_messages = []
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        error_messages.append(error)
+                    else:
+                        error_messages.append(f"{field.title()}: {error}")
+            
+            if error_messages:
+                messages.error(request, "Please correct the following errors: " + "; ".join(error_messages))
+            else:
+                messages.error(request, "Please correct the errors below.")
     else:
         form = ProductForm()
+    
     return render(request, "admin_panel/add_product.html", {"form": form})
 
-
+# @superuser_required
+# def add_product(request):
+#     if request.method == "POST":
+#         form = ProductForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             try:
+#                 with transaction.atomic():
+#                     # Save the product
+#                     product = form.save()
+                    
+#                     # Handle multiple images
+#                     uploaded_images = request.FILES.getlist("images")
+#                     if uploaded_images:
+#                         for img in uploaded_images:
+#                             ProductImage.objects.create(product=product, image=img)
+                    
+#                     messages.success(
+#                         request, 
+#                         f"Product '{product.name}' added successfully! You can now add variants with specific colors, sizes, and prices."
+#                     )
+#                     return redirect("admin_panel:add_product_variant", product_id=product.id)
+            
+#             except Exception as e:
+#                 messages.error(request, f"Error saving product: {str(e)}")
+#                 print(f"Product creation error: {e}")  # For debugging
+#         else:
+#             # Display form errors
+#             error_messages = []
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     if field == '__all__':
+#                         error_messages.append(error)
+#                     else:
+#                         error_messages.append(f"{field.title()}: {error}")
+            
+#             if error_messages:
+#                 messages.error(request, "Please correct the following errors: " + "; ".join(error_messages))
+#             else:
+#                 messages.error(request, "Please correct the errors below.")
+#     else:
+#         form = ProductForm()
+    
+#     return render(request, "admin_panel/add_product.html", {"form": form})
 @superuser_required
 def edit_product(request, pk):
     """Fixed edit_product view to handle product base info only"""
@@ -196,7 +272,8 @@ def edit_product(request, pk):
             product.name = request.POST.get('name')
             product.category_id = request.POST.get('category')
             product.brand_id = request.POST.get('brand') or None
-            product.base_price = request.POST.get('base_price')  # This is base price, not selling price
+            product.base_price = request.POST.get('base_price')
+            product.stock = request.POST.get('stock', 0)  # NEW: Handle stock field
             product.description = request.POST.get('description', '')
 
             product.save()
@@ -220,7 +297,6 @@ def edit_product(request, pk):
         "form": form,
         "product": product
     })
-
 
 @superuser_required
 def delete_product(request, pk):
@@ -422,235 +498,260 @@ def product_variant_detail(request, product_id):
     return render(request, "admin_panel/product_variant_detail.html", context)
 
 
+# -------------------- ORDER MANAGEMENT --------------------
 
-
-
-
-
-
-
-
-# from django.shortcuts import render, redirect, get_object_or_404
-# from django.contrib.auth import login, logout, get_user_model
-# from django.contrib.auth.decorators import user_passes_test, login_required
-# from django.core.paginator import Paginator
-# from django.db.models import Q
-# from django.contrib import messages
-# from django.views.decorators.http import require_http_methods
-
-# # Models
-# from products.models import Category, Product, ProductImage
-# from .forms import AdminLoginForm, CategoryForm, ProductForm
-
-# User = get_user_model()
-
-# # ---------------- DECORATORS ----------------
-# superuser_required = user_passes_test(
-#     lambda u: u.is_superuser, 
-#     login_url="admin_login"
-# )
-
-# # ---------------- LOGIN ----------------
-# def admin_login(request):
-#     if request.method == "POST":
-#         form = AdminLoginForm(request, data=request.POST)
-#         if form.is_valid():
-#             user = form.get_user()
-#             if user.is_superuser:
-#                 login(request, user)
-#                 return redirect("dashboard")
-#             else:
-#                 messages.error(request, "Only superusers can log in here.")
-#     else:
-#         form = AdminLoginForm()
-#     return render(request, "admin_panel/login.html", {"form": form})
-
-
-# @login_required(login_url="admin_login")
-# def admin_logout(request):
-#     logout(request)
-#     return redirect("admin_login")
-
-
-# # ---------------- DASHBOARD ----------------
-# @superuser_required
-# def dashboard(request):
-#     return render(request, "admin_panel/dashboard.html")
-
-
-
-# # ---------------- USER MANAGEMENT ----------------
-# @superuser_required
-# def user_list(request):
-#     search = request.GET.get("q", "")
-#     users = User.objects.filter(is_superuser=False)
-#     if search:
-#         users = users.filter(Q(username__icontains=search) | Q(email__icontains=search))
-#     users = users.order_by("-id")
-#     paginator = Paginator(users, 10)
-#     page = request.GET.get("page")
-#     users = paginator.get_page(page)
-#     return render(request, "admin_panel/user_list.html", {"users": users, "search": search})
-
-
-# @superuser_required
-# @require_http_methods(["GET", "POST"])  # SECURITY: Only allow GET and POST
-# def block_unblock_user(request, user_id):
-#     # SECURITY: Prevent blocking superusers
-#     user = get_object_or_404(User, id=user_id)
+@superuser_required
+def order_list(request):
+    """List all orders with search, filter, sort and pagination"""
+    # Get filter parameters
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '')
+    payment_filter = request.GET.get('payment_method', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    sort_by = request.GET.get('sort', '-created_at')
     
-#     if user.is_superuser:
-#         messages.error(request, "Cannot block/unblock superuser accounts.")
-#         return redirect("user_list")
+    # Base queryset
+    orders = Order.objects.select_related('user').prefetch_related('items').all()
     
-#     if request.method == "POST":
-#         action = request.POST.get('action')
+    # Apply search
+    if search:
+        orders = orders.filter(
+            Q(order_id__icontains=search) |
+            Q(user__username__icontains=search) |
+            Q(user__email__icontains=search) |
+            Q(shipping_full_name__icontains=search) |
+            Q(shipping_phone__icontains=search)
+        )
+    
+    # Apply filters
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+    
+    if payment_filter:
+        orders = orders.filter(payment_method=payment_filter)
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            orders = orders.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            orders = orders.filter(created_at__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Apply sorting
+    valid_sort_fields = [
+        'created_at', '-created_at',
+        'total', '-total',
+        'status', '-status',
+        'order_id', '-order_id'
+    ]
+    if sort_by in valid_sort_fields:
+        orders = orders.order_by(sort_by)
+    else:
+        orders = orders.order_by('-created_at')
+    
+    # Statistics
+    total_orders = orders.count()
+    total_revenue = orders.aggregate(total=Sum('total'))['total'] or 0
+    
+    # Pagination
+    paginator = Paginator(orders, 20)
+    page = request.GET.get('page')
+    orders_page = paginator.get_page(page)
+    
+    # Filter form
+    filter_form = OrderFilterForm(request.GET)
+    
+    context = {
+        'orders': orders_page,
+        'filter_form': filter_form,
+        'search': search,
+        'status_filter': status_filter,
+        'payment_filter': payment_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'sort_by': sort_by,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+    }
+    
+    return render(request, 'admin_panel/order_list.html', context)
+
+
+@superuser_required
+def order_detail(request, order_id):
+    """View detailed information about a specific order"""
+    order = get_object_or_404(
+        Order.objects.select_related('user').prefetch_related('items__product', 'items__variant'),
+        order_id=order_id
+    )
+    
+    # Get order items
+    order_items = order.items.all()
+    
+    context = {
+        'order': order,
+        'order_items': order_items,
+    }
+    
+    return render(request, 'admin_panel/order_detail.html', context)
+
+
+@superuser_required
+def update_order_status(request, order_id):
+    """Update order status with proper timezone import"""
+    order = get_object_or_404(Order, order_id=order_id)
+    
+    if request.method == 'POST':
+        form = OrderStatusForm(request.POST, current_status=order.status)
+        if form.is_valid():
+            new_status = form.cleaned_data['status']
+            notes = form.cleaned_data.get('notes', '')
+            
+            # Update order status
+            old_status = order.status
+            order.status = new_status
+            
+            # If status is delivered, set delivered_at timestamp
+            if new_status == 'delivered' and not order.delivered_at:
+                order.delivered_at = timezone.now()  # timezone is imported at top
+            
+            # If order is cancelled, restore stock
+            if new_status == 'cancelled' and old_status != 'cancelled':
+                for item in order.items.all():
+                    if item.variant:
+                        item.variant.stock_quantity += item.quantity
+                        item.variant.save()
+            
+            # If order was cancelled and now confirmed, reduce stock again
+            if old_status == 'cancelled' and new_status in ['confirmed', 'pending']:
+                for item in order.items.all():
+                    if item.variant:
+                        item.variant.stock_quantity -= item.quantity
+                        item.variant.save()
+            
+            # Add notes if provided
+            if notes:
+                timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                new_note = f"[{timestamp}] Status changed from {old_status} to {new_status}: {notes}"
+                if order.notes:
+                    order.notes = f"{order.notes}\n{new_note}"
+                else:
+                    order.notes = new_note
+            
+            order.save()
+            
+            messages.success(request, f"Order {order.order_id} status updated to {order.get_status_display()}")
+            return redirect('admin_panel:order_detail', order_id=order.order_id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = OrderStatusForm(current_status=order.status)
+    
+    context = {
+        'order': order,
+        'form': form,
+    }
+    
+    return render(request, 'admin_panel/update_order_status.html', context)
+
+
+@superuser_required
+def cancel_order(request, order_id):
+    """Cancel an order and restore stock"""
+    order = get_object_or_404(Order, order_id=order_id)
+    
+    if not order.can_cancel:
+        messages.error(request, "This order cannot be cancelled.")
+        return redirect('admin_panel:order_detail', order_id=order.order_id)
+    
+    if request.method == 'POST':
+        reason = request.POST.get('reason', 'Cancelled by admin')
         
-#         if action == 'block':
-#             if user.is_active:
-#                 user.is_active = False
-#                 user.save()
-#                 messages.success(request, f"User '{user.username}' has been blocked successfully.")
-#             else:
-#                 messages.info(request, f"User '{user.username}' is already blocked.")
-                
-#         elif action == 'unblock':
-#             if not user.is_active:
-#                 user.is_active = True
-#                 user.save()
-#                 messages.success(request, f"User '{user.username}' has been unblocked successfully.")
-#             else:
-#                 messages.info(request, f"User '{user.username}' is already active.")
-#         else:
-#             messages.error(request, "Invalid action specified.")
-#     else:
-#         # Handle GET request (original functionality)
-#         user.is_active = not user.is_active
-#         user.save()
-#         status = "unblocked" if user.is_active else "blocked"
-#         messages.success(request, f"User '{user.username}' has been {status} successfully.")
+        # Update order status
+        order.status = 'cancelled'
+        order.notes = f"{order.notes}\n[{timezone.now().strftime('%Y-%m-%d %H:%M')}] Cancelled: {reason}" if order.notes else f"Cancelled: {reason}"
+        order.save()
+        
+        # Restore stock
+        for item in order.items.all():
+            if item.variant:
+                item.variant.stock_quantity += item.quantity
+                item.variant.save()
+        
+        # Create cancellation record
+        from products.models import OrderCancellation
+        OrderCancellation.objects.create(
+            order=order,
+            reason=reason,
+            cancelled_by=request.user
+        )
+        
+        messages.success(request, f"Order {order.order_id} has been cancelled and stock restored.")
+        return redirect('admin_panel:order_detail', order_id=order.order_id)
     
-#     return redirect("user_list")
-
-
-# # ---------------- CATEGORY MANAGEMENT ----------------
-# @superuser_required
-# def category_list(request):
-#     search = request.GET.get("q", "")
-#     categories = Category.objects.filter(is_active=True)
-#     if search:
-#         categories = categories.filter(name__icontains=search)
-#     categories = categories.order_by("-id")
-#     paginator = Paginator(categories, 10)
-#     page = request.GET.get("page")
-#     categories = paginator.get_page(page)
-#     return render(request, "admin_panel/category_list.html", {"categories": categories, "search": search})
-
-
-# @superuser_required
-# def add_category(request):
-#     if request.method == "POST":
-#         form = CategoryForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect("category_list")
-#     else:
-#         form = CategoryForm()
-#     return render(request, "admin_panel/add_category.html", {"form": form})
-
-
-# @superuser_required
-# def edit_category(request, pk):
-#     category = get_object_or_404(Category, pk=pk)
-#     form = CategoryForm(request.POST or None, instance=category)
-#     if request.method == "POST" and form.is_valid():
-#         form.save()
-#         return redirect("category_list")
-#     return render(request, "admin_panel/edit_category.html", {"form": form})
-
-
-# @superuser_required
-# def delete_category(request, pk):
-#     category = get_object_or_404(Category, pk=pk)
-#     category.is_active = False
-#     category.save()
-#     return redirect("category_list")
-
-
-# # ---------------- PRODUCT MANAGEMENT ----------------
-# @superuser_required
-# def product_list(request):
-#     search = request.GET.get("q", "")
-#     products = Product.objects.filter(is_active=True)
-#     if search:
-#         products = products.filter(Q(name__icontains=search) | Q(description__icontains=search))
-#     products = products.order_by("-id")
-#     paginator = Paginator(products, 10)
-#     page = request.GET.get("page")
-#     products = paginator.get_page(page)
-#     return render(request, "admin_panel/product_list.html", {"products": products, "search": search})
-
-
-# @superuser_required
-# def add_product(request):
-#     if request.method == "POST":
-#         form = ProductForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             product = form.save()
-#             if "images" in request.FILES:
-#                 for img in request.FILES.getlist("images"):
-#                     ProductImage.objects.create(product=product, image=img)
-#             messages.success(request, "Product added successfully.")
-#             return redirect("product_list")
-#         else:
-#             print(f"Form errors: {form.errors}")  # For debugging
-#     else:
-#         form = ProductForm()
-#     return render(request, "admin_panel/add_product.html", {"form": form})
-
-# @superuser_required
-# def edit_product(request, pk):
-#     product = get_object_or_404(Product, pk=pk)
+    context = {
+        'order': order,
+    }
     
-#     if request.method == "POST":
-#         try:
-#             # Update product fields directly
-#             product.name = request.POST.get('name')
-#             product.category_id = request.POST.get('category')
-#             product.price = request.POST.get('price')
-#             product.original_price = request.POST.get('original_price') or None
-#             product.stock_quantity = int(request.POST.get('stock_quantity', 0))
-#             product.description = request.POST.get('description', '')
-            
-#             product.save()
-            
-#             # Handle images if uploaded
-#             uploaded_images = request.FILES.getlist('images')
-#             if uploaded_images:
-#                 # Delete old images
-#                 product.images.all().delete()
-#                 # Add new images
-#                 for img in uploaded_images:
-#                     ProductImage.objects.create(product=product, image=img)
-            
-#             messages.success(request, "Product updated successfully!")
-#             return redirect("product_list")
-            
-#         except Exception as e:
-#             messages.error(request, f"Error: {str(e)}")
-#             print(f"Edit product error: {e}")
-    
-#     # Get form for categories (we still need this for the dropdown)
-#     form = ProductForm(instance=product)
-    
-#     return render(request, "admin_panel/edit_product.html", {
-#         "form": form,
-#         "product": product
-#     })
+    return render(request, 'admin_panel/cancel_order.html', context)
 
-# @superuser_required
-# def delete_product(request, pk):
-#     product = get_object_or_404(Product, pk=pk)
-#     product.is_active = False
-#     product.save()
-#     return redirect("product_list")
+
+@superuser_required
+def order_inventory_report(request):
+    """View inventory/stock management report"""
+    # Get all variants with stock information
+    variants = ProductVariant.objects.filter(
+        is_active=True
+    ).select_related('product').order_by('stock_quantity')
+    
+    # Low stock variants (stock <= 10)
+    low_stock = variants.filter(stock_quantity__lte=10)
+    
+    # Out of stock variants
+    out_of_stock = variants.filter(stock_quantity=0)
+    
+    # Get recent orders to show stock movement
+    recent_orders = Order.objects.filter(
+        created_at__gte=timezone.now() - timezone.timedelta(days=30)
+    ).select_related('user').order_by('-created_at')[:10]
+    
+    # Calculate stock statistics
+    total_variants = variants.count()
+    low_stock_count = low_stock.count()
+    out_of_stock_count = out_of_stock.count()
+    total_stock_value = sum(v.price * v.stock_quantity for v in variants)
+    
+    context = {
+        'low_stock': low_stock,
+        'out_of_stock': out_of_stock,
+        'recent_orders': recent_orders,
+        'total_variants': total_variants,
+        'low_stock_count': low_stock_count,
+        'out_of_stock_count': out_of_stock_count,
+        'total_stock_value': total_stock_value,
+    }
+    
+    return render(request, 'admin_panel/order_inventory_report.html', context)
+
+
+@superuser_required
+def clear_order_filters(request):
+    """Clear all order filters and redirect to order list"""
+    return redirect('admin_panel:order_list')
+
+
+
+
+
+
+
+
+

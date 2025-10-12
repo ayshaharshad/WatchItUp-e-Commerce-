@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Profile - Watchitup{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        /* Container */
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid white;
+            object-fit: cover;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .avatar-placeholder {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            border: 4px solid white;
+        }
+
+        .sidebar-nav {
+            padding: 0;
+            list-style: none;
+        }
+
+        .sidebar-nav-item {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: #4b5563;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar-nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-nav-link:hover {
+            background: #f9fafb;
+            color: var(--primary);
+            padding-left: 2rem;
+        }
+
+        .sidebar-nav-link.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar-nav-link i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            border-bottom: 3px solid #f0f0f0;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            color: #1f2937;
+            font-weight: 700;
+            font-size: 1.75rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Messages */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+        .alert-warning { background: #fef3c7; color: #92400e; }
+        .alert-info { background: #dbeafe; color: #1e40af; }
+
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #d1d5db;
+            color: #6b7280;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+
+        /* Cards */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-bottom: 2px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Forms */
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Badge */
+        .badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .badge.bg-success { background: var(--success) !important; }
+        .badge.bg-danger { background: var(--danger) !important; }
+        .badge.bg-warning { background: var(--warning) !important; }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            color: #9ca3af;
+            font-size: 1.25rem;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb-item a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                margin-bottom: 2rem;
+            }
+
+            .content-area {
+                padding: 1.5rem;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Dropdown */
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 10px;
+            padding: 0.5rem;
+        }
+
+        .dropdown-item {
+            border-radius: 6px;
+            padding: 0.625rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'products:home' %}">
+                <i class="fas fa-shopping-bag me-2"></i>Watchitup
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'products:home' %}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {% if user.profile_picture %}
+                                <img src="{{ user.profile_picture.url }}" alt="" class="rounded-circle" style="width: 25px; height: 25px; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-user-circle me-1"></i>
+                            {% endif %}
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:addresses' %}"><i class="fas fa-map-marker-alt me-2"></i>Addresses</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container main-container">
+        {% block breadcrumb %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'users:profile' %}">Profile</a></li>
+                {% block breadcrumb_items %}{% endblock %}
+            </ol>
+        </nav>
+        {% endblock %}
+
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-3 col-md-4">
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <i class="fas fa-user fa-2x"></i>
+                            </div>
+                        {% endif %}
+                        <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                        <small style="opacity: 0.9;">{{ user.email }}</small>
+                    </div>
+                    
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                            <a href="{% url 'users:profile' %}" class="sidebar-nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                                <i class="fas fa-user"></i>Profile Overview
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a href="{% url 'users:edit_profile' %}" class="sidebar-nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}">
+                                <i class="fas fa-edit"></i>Edit Profile
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a href="{% url 'users:addresses' %}" class="sidebar-nav-link {% if 'address' in request.resolver_match.url_name %}active{% endif %}">
+                                <i class="fas fa-map-marker-alt"></i>Addresses
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a href="{% url 'users:change_password' %}" class="sidebar-nav-link {% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">
+                                <i class="fas fa-key"></i>Change Password
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a href="{% url 'users:change_email' %}" class="sidebar-nav-link {% if 'email' in request.resolver_match.url_name %}active{% endif %}">
+                                <i class="fas fa-envelope"></i>Change Email
+                            </a>
+                        </li>
+                        <li class="sidebar-nav-item">
+                            <a href="#" class="sidebar-nav-link">
+                                <i class="fas fa-shopping-bag"></i>Order History
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9 col-md-8">
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">
+                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="content-area">
+                    {% block page_header %}
+                    <div class="page-header">
+                        <h2 class="page-title">
+                            <i class="{% block page_icon %}fas fa-user{% endblock %}"></i>
+                            {% block page_title %}Profile{% endblock %}
+                        </h2>
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                    {% endblock %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

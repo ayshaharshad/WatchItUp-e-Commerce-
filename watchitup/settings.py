@@ -17,7 +17,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))  # Load from .env
 # ------------------ SECURITY ------------------
 SECRET_KEY = env('SECRET_KEY', default='insecure-secret-key')
 DEBUG = env.bool("DEBUG", default=True)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 # ------------------ APPLICATIONS ------------------
 INSTALLED_APPS = [
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'users',
     'admin_panel',
     'products',
+    
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -228,10 +229,24 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'products.context_processors.cart_wishlist_counts',
             ],
         },
     },
 ]
+
+
+# ------------------ EMAIL CHANGE OTP SETTINGS (ADD THIS) ------------------
+EMAIL_CHANGE_OTP_EXPIRY_TIME = 300  # 5 minutes in seconds
+
+# ------------------ FILE UPLOAD SETTINGS (ADD THIS) ------------------
+# Maximum file size for profile pictures (2MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5MB
+
+# Allowed image formats for profile pictures
+ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
+MAX_PROFILE_IMAGE_SIZE = 2 * 1024 * 1024  # 2MB in bytes
 
 # ------------------ CUSTOM ADMIN PANEL REDIRECTS ------------------
 ADMIN_LOGIN_URL = '/admin_panel/login/'
@@ -240,6 +255,8 @@ ADMIN_LOGOUT_REDIRECT_URL = '/admin_panel/login/'
 
 # ------------------ DEFAULTS ------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+APPEND_SLASHES = True
 
 import ssl, certifi
 ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())

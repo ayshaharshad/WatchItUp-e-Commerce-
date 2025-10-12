@@ -1,8 +1,16 @@
+
 {% extends 'products/base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
 {% block content %}
-<!-- Enhanced Breadcrumbs -->
+<!-- Breadcrumbs -->
 <div class="breadcrumbs">
     <div class="container">
         <div class="row">
@@ -22,7 +30,7 @@
     </div>
 </div>
 
-<!-- Messages Display -->
+<!-- Messages -->
 {% if messages %}
 <div class="container">
     {% for message in messages %}
@@ -37,18 +45,28 @@
 <div class="colorlib-product">
     <div class="container">
         <div class="row row-pb-lg product-detail-wrap">
-            <!-- UNIFIED IMAGE CAROUSEL -->
+            <!-- Image Carousel -->
             <div class="col-sm-8">
-                <div class="unified-image-carousel">
+                <div class="product-image-carousel">
                     {% if all_images %}
                     <!-- Main Image Display -->
-                    <div class="main-carousel-container">
-                        <div class="carousel-main-image">
-                            <img src="{{ all_images.0.url }}" 
+                    <div class="main-image-container">
+                        <div class="image-wrapper">
+                            <img src="{{ all_images.0.url|default:'/static/products/images/no-image.jpg' }}" 
                                  alt="{{ product.name }}" 
-                                 class="img-fluid main-image" 
-                                 id="main-carousel-image">
-                                 
+                                 class="main-image" 
+                                 id="main-image">
+                            
+                            <!-- Enhanced Zoom Lens -->
+                            <div class="zoom-lens" id="zoom-lens"></div>
+                            
+                            <!-- Enhanced Zoomed Image Container -->
+                            <div class="zoom-result" id="zoom-result">
+                                <img src="{{ all_images.0.url|default:'/static/products/images/no-image.jpg' }}" 
+                                     alt="{{ product.name }}" 
+                                     id="zoom-image">
+                            </div>
+                            
                             <!-- Image Type Indicator -->
                             <div class="image-indicator" id="image-indicator">
                                 {% if all_images.0.type == 'general' %}
@@ -59,39 +77,35 @@
                             </div>
                             
                             <!-- Navigation Arrows -->
-                            <button class="carousel-nav prev" id="carousel-prev" onclick="navigateCarousel('prev')">
+                            <button class="nav-arrow prev" id="prev-btn">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <button class="carousel-nav next" id="carousel-next" onclick="navigateCarousel('next')">
+                            <button class="nav-arrow next" id="next-btn">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                             
                             <!-- Image Counter -->
                             <div class="image-counter">
-                                <span id="current-image-num">1</span> / <span id="total-images">{{ all_images|length }}</span>
+                                <span id="current-num">1</span> / <span id="total-num">{{ all_images|length }}</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Thumbnail Strip -->
-                    <div class="thumbnail-strip mt-3">
-                        <div class="thumbnail-container">
+                    <div class="thumbnail-strip">
+                        <div class="thumbnails" id="thumbnails">
                             {% for image in all_images %}
-                            <div class="thumbnail-slide {% if forloop.first %}active{% endif %}" 
+                            <div class="thumbnail {% if forloop.first %}active{% endif %}" 
                                  data-index="{{ forloop.counter0 }}"
                                  data-type="{{ image.type }}"
-                                 data-variant-color="{{ image.variant_color|default:'' }}"
-                                 onclick="goToSlide({{ forloop.counter0 }})">
-                                <img src="{{ image.url }}" 
-                                     alt="{{ product.name }} - {% if image.type == 'general' %}General{% else %}{{ image.variant_name }}{% endif %}" 
-                                     class="thumbnail-img">
-                                
-                                <!-- Thumbnail Label -->
-                                <div class="thumbnail-label">
+                                 data-variant-color="{{ image.variant_color|default:'' }}">
+                                <img src="{{ image.url|default:'/static/products/images/no-image.jpg' }}" 
+                                     alt="{{ product.name }}">
+                                <div class="thumb-label">
                                     {% if image.type == 'general' %}
-                                        <span class="label-general">General</span>
+                                        <span class="general-label">General</span>
                                     {% else %}
-                                        <span class="label-variant" style="background-color: {{ image.variant.color_hex }};">
+                                        <span class="variant-label" style="background-color: {{ image.color_hex }};">
                                             {{ image.variant_name }}
                                         </span>
                                     {% endif %}
@@ -99,14 +113,6 @@
                             </div>
                             {% endfor %}
                         </div>
-                        
-                        <!-- Thumbnail Navigation -->
-                        <button class="thumb-nav prev" onclick="scrollThumbnails('prev')">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button class="thumb-nav next" onclick="scrollThumbnails('next')">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
                     </div>
                     {% else %}
                     <!-- No Images Fallback -->
@@ -119,17 +125,16 @@
                 </div>
             </div>
 
-            <!-- DYNAMIC PRODUCT INFORMATION -->
+            <!-- Product Information -->
             <div class="col-sm-4">
                 <div class="product-detail-desc">
                     <h3>{{ product.name }}</h3>
-
                     {% if product.brand %}
                         <p class="brand-name">Brand: <strong>{{ product.brand.name }}</strong></p>
                     {% endif %}
                     <p class="category-name">Category: <strong>{{ product.category.name }}</strong></p>
 
-                    <!-- Ratings Section -->
+                    <!-- Ratings -->
                     {% if product.average_rating > 0 %}
                     <div class="product-rating mb-3">
                         <div class="rating-stars">
@@ -151,27 +156,18 @@
                     </div>
                     {% endif %}
 
-                    <!-- DYNAMIC INFORMATION SECTION -->
-                    <div class="dynamic-info-section" id="dynamic-info">
-                        <!-- Default: General Product Information -->
+                    <!-- Dynamic Information -->
+                    <div class="info-section" id="info-section">
+                        <!-- General Info -->
                         <div class="info-content general-info active" id="general-info">
-                            <div class="info-header">
-                                <h5 class="info-title">
-                                    <i class="fas fa-info-circle"></i>
-                                    Product Overview
-                                </h5>
+                            <h5><i class="fas fa-info-circle"></i> Product Overview</h5>
+                            <div class="price-section">
+                                <span class="price-text">{{ product.price_range }}</span>
+                                {% if product.has_variants %}
+                                <small class="price-note">Price varies by color</small>
+                                {% endif %}
                             </div>
-                            
-                            <div class="price-section mb-3">
-                                <div class="price-range">
-                                    <span class="price-text">{{ product.price_range }}</span>
-                                    {% if product.has_variants %}
-                                    <small class="price-note">Price varies by color</small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="general-stock-info">
+                            <div class="stock-info">
                                 {% if product.is_in_stock %}
                                 <span class="stock-available">
                                     <i class="fas fa-check-circle"></i>
@@ -186,99 +182,73 @@
                             </div>
                         </div>
                         
-                        <!-- Dynamic: Variant-Specific Information -->
+                        <!-- Variant Info -->
                         {% for variant in variants %}
-                        <div class="info-content variant-info" id="variant-info-{{ variant.color }}" style="display: none;">
-                            <div class="info-header">
-                                <h5 class="info-title">
-                                    <i class="fas fa-palette"></i>
-                                    {{ variant.get_color_display }} Variant
-                                </h5>
-                                <div class="color-indicator" style="background-color: {{ variant.color_hex }};"></div>
-                            </div>
-                            
-                            <div class="price-section mb-3">
+                        <div class="info-content variant-info" id="variant-info-{{ variant.color }}">
+                            <h5>
+                                <i class="fas fa-palette"></i> 
+                                {{ variant.get_color_display }} Variant
+                                <div class="color-dot" style="background-color: {{ variant.color_hex }};"></div>
+                            </h5>
+                            <div class="price-section">
                                 {% if variant.original_price and variant.discount_percentage > 0 %}
-                                <div class="price-with-discount">
-                                    <span class="current-price">₹{{ variant.price }}</span>
-                                    <span class="original-price">₹{{ variant.original_price }}</span>
-                                    <span class="discount-badge">{{ variant.discount_percentage }}% OFF</span>
-                                </div>
+                                <span class="current-price">₹{{ variant.price }}</span>
+                                <span class="original-price">₹{{ variant.original_price }}</span>
+                                <span class="discount-badge">{{ variant.discount_percentage }}% OFF</span>
                                 {% else %}
-                                <div class="price">
-                                    <span class="current-price">₹{{ variant.price }}</span>
-                                </div>
+                                <span class="current-price">₹{{ variant.price }}</span>
                                 {% endif %}
                             </div>
-                            
-                            <div class="variant-details mb-3">
-                                <div class="detail-item">
-                                    <strong>SKU:</strong> {{ variant.sku }}
-                                </div>
-                                <div class="detail-item">
-                                    <strong>Stock:</strong>
+                            <div class="variant-details">
+                                <p><strong>SKU:</strong> {{ variant.sku }}</p>
+                                <p><strong>Stock:</strong>
                                     {% if variant.is_in_stock %}
                                         {% if variant.stock_quantity <= 5 %}
-                                            <span class="stock-low">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                                Only {{ variant.stock_quantity }} left
-                                            </span>
+                                            <span class="stock-low">Only {{ variant.stock_quantity }} left</span>
                                         {% else %}
-                                            <span class="stock-available">
-                                                <i class="fas fa-check-circle"></i>
-                                                {{ variant.stock_quantity }} available
-                                            </span>
+                                            <span class="stock-available">{{ variant.stock_quantity }} available</span>
                                         {% endif %}
                                     {% else %}
-                                        <span class="stock-out">
-                                            <i class="fas fa-times-circle"></i>
-                                            Out of Stock
-                                        </span>
+                                        <span class="stock-out">Out of Stock</span>
                                     {% endif %}
-                                </div>
+                                </p>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
 
-                    <!-- Available Colors Quick Selection -->
+                    <!-- Color Selection -->
                     {% if variants.count > 0 %}
-                    <div class="quick-color-selection mb-4">
-                        <h6>Quick Color Selection:</h6>
-                        <div class="color-quick-options">
+                    <div class="color-selection mb-4">
+                        <h6>Select Color:</h6>
+                        <div class="color-options">
                             {% for variant in variants %}
-                            <div class="color-quick-option" 
+                            <div class="color-option" 
                                  data-variant-color="{{ variant.color }}"
-                                 onclick="selectVariantQuickly('{{ variant.color }}')"
                                  title="{{ variant.get_color_display }} - ₹{{ variant.price }}">
-                                <div class="color-swatch" 
-                                     style="background-color: {{ variant.color_hex|default:'#cccccc' }};">
-                                    {% if not variant.is_in_stock %}
-                                    <div class="swatch-overlay">✕</div>
-                                    {% endif %}
-                                </div>
-                                <span class="color-label">{{ variant.get_color_display }}</span>
+                                <div class="color-swatch" style="background-color: {{ variant.color_hex }};"></div>
+                                <span>{{ variant.get_color_display }}</span>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                     {% endif %}
 
-                    <!-- Available Coupons -->
+                    <!-- Coupons -->
                     {% if available_coupons %}
-                    <div class="available-coupons mb-3">
+                    <div class="coupons mb-3">
                         <h6>Available Offers:</h6>
                         {% for coupon in available_coupons %}
-                        <div class="coupon-item">
-                            <code class="coupon-code">{{ coupon.code }}</code>
-                            <span class="coupon-desc">
+                        <div class="coupon">
+                            <code>{{ coupon.code }}</code>
+                            <span>
                                 {% if coupon.discount_type == 'percentage' %}
                                 Get {{ coupon.discount_value }}% off
                                 {% else %}
                                 Get ₹{{ coupon.discount_value }} off
                                 {% endif %}
                                 {% if coupon.minimum_amount > 0 %}
-                                (Min order: ₹{{ coupon.minimum_amount }})
+                                (Min: ₹{{ coupon.minimum_amount }})
                                 {% endif %}
                             </span>
                         </div>
@@ -286,69 +256,65 @@
                     </div>
                     {% endif %}
 
-                    <!-- Product Description -->
+                    <!-- Description -->
                     {% if product.description %}
-                    <div class="product-description mb-4">
+                    <div class="description mb-4">
                         <h6>Description</h6>
                         <p>{{ product.description|linebreaks }}</p>
                     </div>
                     {% endif %}
 
-                    <!-- DYNAMIC ADD TO CART SECTION -->
-                    <div class="cart-section" id="cart-section">
-                        <form method="post" action="{% url 'products:add_to_cart' product.pk %}" id="add-to-cart-form">
+                    
+                    <!-- Actions -->
+                    <div class="product-actions mt-4">
+                        <!-- Add to Cart Form -->
+                        <form method="post" action="{% url 'products:add_to_cart' product.pk %}" id="cart-form">
                             {% csrf_token %}
-                            <input type="hidden" name="variant_color" id="selected-variant-input" value="">
+                            <input type="hidden" name="variant_color" id="selected-variant" value="">
+                            <input type="hidden" name="quantity" value="1">
                             
-                            <!-- Default: General Product Actions -->
-                            <div class="action-content general-actions active" id="general-actions">
-                                {% if product.has_variants %}
-                                <div class="selection-prompt">
-                                    <p class="mb-2">
-                                        <i class="fas fa-palette"></i>
-                                        This product is available in {{ variants.count }} color{% if variants.count > 1 %}s{% endif %}
-                                    </p>
-                                    <button type="button" class="btn btn-outline-primary" disabled>
-                                        <i class="icon-shopping-cart"></i> 
-                                        View a color variant to purchase
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn-primary btn-lg btn-add-cart">
+                                    <i class="icon-shopping-cart"></i> Add to Cart
+                                </button>
+                                
+                                <!-- Wishlist Button -->
+                                {% if user.is_authenticated %}
+                                    <button type="button" 
+                                            class="btn btn-outline-secondary btn-lg btn-wishlist" 
+                                            id="wishlist-btn"
+                                            data-product-id="{{ product.pk }}"
+                                            data-in-wishlist="false">
+                                        <i class="icon-heart" id="wishlist-icon"></i>
+                                        <span id="wishlist-text">Wishlist</span>
                                     </button>
-                                </div>
                                 {% else %}
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="icon-shopping-cart"></i> Add to Cart - {{ product.price_range }}
-                                </button>
+                                    <a href="{% url 'users:login' %}?next={{ request.path }}" 
+                                    class="btn btn-outline-secondary btn-lg">
+                                        <i class="icon-heart"></i> Login to Save
+                                    </a>
                                 {% endif %}
                             </div>
                             
-                            <!-- Dynamic: Variant-Specific Actions -->
-                            {% for variant in variants %}
-                            <div class="action-content variant-actions" id="variant-actions-{{ variant.color }}" style="display: none;">
-                                {% if variant.is_in_stock %}
-                                <button type="submit" 
-                                        class="btn btn-primary btn-lg variant-add-btn" 
-                                        data-variant="{{ variant.color }}">
-                                    <i class="icon-shopping-cart"></i> 
-                                    Add {{ variant.get_color_display }} to Cart - ₹{{ variant.price }}
-                                </button>
-                                {% else %}
-                                <button type="button" class="btn btn-secondary btn-lg" disabled>
-                                    <i class="icon-shopping-cart"></i> 
-                                    {{ variant.get_color_display }} - Out of Stock
-                                </button>
-                                {% endif %}
+                            <div class="cart-note">
+                                <small id="cart-note-text">
+                                    {% if product.has_variants %}
+                                        Select a color variant to add to cart
+                                    {% else %}
+                                        Ready to add to cart
+                                    {% endif %}
+                                </small>
                             </div>
-                            {% endfor %}
                         </form>
-                        
-                        <button type="button" class="btn btn-outline-secondary btn-lg mt-2">
-                            <i class="icon-heart"></i> Add to Wishlist
-                        </button>
                     </div>
 
-                    <!-- Product Meta Information -->
+                    <!-- Meta Information -->
                     <div class="product-meta mt-4">
                         <h6>Product Information</h6>
                         <div class="meta-grid">
+                            <div class="meta-item">
+                                <strong>SKU:</strong> <span id="meta-sku">WU-{{ product.id|stringformat:"04d" }}</span>
+                            </div>
                             <div class="meta-item">
                                 <strong>Category:</strong> {{ product.category.name }}
                             </div>
@@ -362,9 +328,6 @@
                                 {% if product.has_variants %}{{ variants.count }} options{% else %}Standard{% endif %}
                             </div>
                             <div class="meta-item">
-                                <strong>Images:</strong> {{ all_images|length }} total
-                            </div>
-                            <div class="meta-item">
                                 <strong>Added:</strong> {{ product.created_at|date:"M d, Y" }}
                             </div>
                         </div>
@@ -375,267 +338,301 @@
     </div>
 </div>
 
-<!-- Enhanced CSS Styles -->
 <style>
-/* Unified Carousel Styles */
-.unified-image-carousel {
+/* Main Image Container */
+.product-image-carousel {
     position: relative;
 }
 
-.main-carousel-container {
-    position: relative;
+.main-image-container {
     background: #f8f9fa;
     border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    position: relative;
 }
 
-.carousel-main-image {
+.image-wrapper {
     position: relative;
-    height: 500px;
+    min-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .main-image {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    max-height: 600px;
     object-fit: contain;
-    transition: opacity 0.4s ease;
+    cursor: crosshair;
+    display: block;
 }
 
+/* CSS Only Zoom Effect */
+.main-image {
+    transition: transform 0.3s ease;
+    transform-origin: center center;
+}
+
+/* Hover Zoom Effect */
+.main-image:hover {
+    transform: scale(1.5);
+    cursor: zoom-in;
+}
+
+/* Alternative: Click to Zoom */
+.main-image.zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+}
+
+/* Zoom Container for Better Control */
+.image-wrapper {
+    overflow: hidden;
+    position: relative;
+}
+
+/* Optional: Smooth pan on hover */
+.image-wrapper:hover .main-image {
+    animation: zoomPan 10s infinite linear;
+}
+
+@keyframes zoomPan {
+    0% { transform: scale(1.5) translate(0, 0); }
+    25% { transform: scale(1.5) translate(-10px, -10px); }
+    50% { transform: scale(1.5) translate(10px, -10px); }
+    75% { transform: scale(1.5) translate(10px, 10px); }
+    100% { transform: scale(1.5) translate(0, 0); }
+}
+
+/* Lens Style Zoom (Pure CSS) */
+.zoom-lens {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 2px solid #007bff;
+    border-radius: 50%;
+    background: rgba(0, 123, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.image-wrapper:hover .zoom-lens {
+    opacity: 1;
+}
+
+/* Follow mouse with CSS (limited but works) */
+.image-wrapper:hover .main-image {
+    transform: scale(1.8);
+}
+
+/* Alternative Zoom Styles */
+.zoom-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.image-wrapper:hover .zoom-overlay {
+    opacity: 1;
+}
+
+/* Zoom Result - Pure CSS version */
+.zoom-result {
+    position: absolute;
+    top: 0;
+    right: -350px;
+    width: 320px;
+    height: 400px;
+    border: 2px solid #dee2e6;
+    background: white;
+    opacity: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+}
+
+.image-wrapper:hover .zoom-result {
+    opacity: 1;
+}
+
+.zoom-result img {
+    width: 200%;
+    height: 200%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+/* Image Indicator */
 .image-indicator {
     position: absolute;
     top: 15px;
     left: 15px;
     background: rgba(0, 0, 0, 0.8);
     color: white;
-    padding: 8px 16px;
+    padding: 8px 15px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 500;
-    z-index: 2;
-    transition: all 0.3s ease;
+    z-index: 5;
 }
 
-.carousel-nav {
+/* Navigation Arrows */
+.nav-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.9);
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 45px;
+    height: 45px;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 3;
-    font-size: 18px;
-    color: #333;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 5;
 }
 
-.carousel-nav:hover {
+.nav-arrow:hover {
     background: #88c8bc;
     color: white;
     transform: translateY(-50%) scale(1.1);
 }
 
-.carousel-nav.prev {
+.nav-arrow.prev {
     left: 15px;
 }
 
-.carousel-nav.next {
+.nav-arrow.next {
     right: 15px;
 }
 
+/* Image Counter */
 .image-counter {
     position: absolute;
     bottom: 15px;
     right: 15px;
     background: rgba(0, 0, 0, 0.7);
     color: white;
-    padding: 5px 12px;
+    padding: 5px 10px;
     border-radius: 15px;
     font-size: 12px;
-    z-index: 2;
+    z-index: 5;
 }
 
-/* Thumbnail Strip */
+/* Thumbnails */
 .thumbnail-strip {
-    position: relative;
-    padding: 0 30px;
+    padding: 10px 0;
 }
 
-.thumbnail-container {
+.thumbnails {
     display: flex;
     gap: 10px;
     overflow-x: auto;
-    scroll-behavior: smooth;
-    padding: 10px 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    padding-bottom: 10px;
 }
 
-.thumbnail-container::-webkit-scrollbar {
-    display: none;
-}
-
-.thumbnail-slide {
+.thumbnail {
     flex: 0 0 80px;
     height: 80px;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
-    transition: all 0.3s ease;
     position: relative;
+    transition: all 0.3s ease;
 }
 
-.thumbnail-slide:hover {
+.thumbnail:hover {
     border-color: #88c8bc;
     transform: translateY(-2px);
 }
 
-.thumbnail-slide.active {
+.thumbnail.active {
     border-color: #88c8bc;
-    box-shadow: 0 4px 12px rgba(136, 200, 188, 0.4);
+    box-shadow: 0 0 0 2px rgba(136, 200, 188, 0.3);
 }
 
-.thumbnail-img {
+.thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.thumbnail-label {
+.thumb-label {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
+    padding: 2px 4px;
+    font-size: 9px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.general-label {
     background: rgba(0, 0, 0, 0.8);
     color: white;
-    font-size: 9px;
-    padding: 2px 4px;
-    text-align: center;
 }
 
-.label-general {
-    background: #28a745;
-    padding: 1px 4px;
-    border-radius: 2px;
-}
-
-.label-variant {
+.variant-label {
     color: white;
-    padding: 1px 4px;
-    border-radius: 2px;
-    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.thumb-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 3;
-}
-
-.thumb-nav:hover {
-    background: #88c8bc;
-    color: white;
-}
-
-.thumb-nav.prev {
-    left: 0;
-}
-
-.thumb-nav.next {
-    right: 0;
-}
-
-/* Dynamic Information Section */
-.dynamic-info-section {
+/* Info Section */
+.info-section {
     background: #f8f9fa;
     border-radius: 12px;
-    border: 2px solid #e9ecef;
     margin-bottom: 20px;
-    overflow: hidden;
-    min-height: 200px;
-    position: relative;
+    border-left: 4px solid #88c8bc;
 }
 
 .info-content {
     padding: 20px;
     display: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
 }
 
 .info-content.active {
     display: block;
-    opacity: 1;
 }
 
-.info-header {
+.info-content h5 {
     display: flex;
     align-items: center;
+    gap: 8px;
     margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.info-title {
-    margin: 0;
     color: #333;
-    font-size: 1.1em;
 }
 
-.info-title i {
-    margin-right: 8px;
-    color: #88c8bc;
-}
-
-.color-indicator {
+.color-dot {
     width: 20px;
     height: 20px;
     border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     margin-left: auto;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Price Styling */
+/* Price */
 .price-section {
     margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.price-range .price-text {
-    font-size: 1.6em;
-    font-weight: bold;
-    color: #333;
-}
-
-.price-note {
-    display: block;
-    color: #6c757d;
-    font-size: 0.9em;
-    margin-top: 5px;
-}
-
-.current-price {
+.current-price, .price-text {
     font-size: 1.8em;
     font-weight: bold;
     color: #28a745;
@@ -654,151 +651,75 @@
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 0.8em;
+    font-weight: 600;
     margin-left: 10px;
 }
 
-/* Variant Details */
-.variant-details {
-    display: grid;
-    gap: 8px;
-}
-
-.detail-item {
-    font-size: 14px;
-    padding: 5px 0;
+.price-note {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85em;
+    color: #6c757d;
 }
 
 /* Stock Status */
-.stock-available {
-    color: #28a745;
-    font-weight: 500;
-}
+.stock-available { color: #28a745; font-weight: 500; }
+.stock-low { color: #ffc107; font-weight: 500; }
+.stock-out { color: #dc3545; font-weight: 500; }
 
-.stock-low {
-    color: #ffc107;
-    font-weight: 500;
-}
-
-.stock-out {
-    color: #dc3545;
-    font-weight: 500;
-}
-
-/* Quick Color Selection */
-.quick-color-selection {
-    background: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.color-quick-options {
+/* Color Selection */
+.color-options {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
 }
 
-.color-quick-option {
+.color-option {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 8px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 60px;
+    font-size: 13px;
 }
 
-.color-quick-option:hover {
+.color-option:hover, .color-option.selected {
     border-color: #88c8bc;
     background: #f0f9f8;
 }
 
 .color-swatch {
-    width: 24px;
-    height: 24px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    margin-bottom: 4px;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: relative;
+    border: 1px solid #ccc;
 }
 
-.swatch-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(220, 53, 69, 0.8);
-    color: white;
+/* Action Buttons */
+.action-buttons {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: 10px;
-}
-
-.color-label {
-    font-size: 10px;
-    text-align: center;
-    font-weight: 500;
-}
-
-/* Cart Section */
-.cart-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    border: 2px solid #88c8bc;
-    margin-bottom: 20px;
-}
-
-.action-content {
-    display: none;
-}
-
-.action-content.active {
-    display: block;
-}
-
-.selection-prompt {
-    text-align: center;
-    padding: 10px;
-}
-
-.selection-prompt p {
-    color: #666;
+    gap: 12px;
     margin-bottom: 15px;
 }
 
-.btn-lg {
-    padding: 12px 30px;
-    font-size: 16px;
+.action-buttons .btn {
+    flex: 1;
+    padding: 12px 20px;
     font-weight: 600;
     border-radius: 8px;
-    width: 100%;
-    margin-bottom: 10px;
-    transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+.cart-note {
+    text-align: center;
+    padding: 8px 12px;
+    background: #e3f2fd;
+    border-radius: 6px;
 }
 
-.variant-add-btn {
-    background: linear-gradient(135deg, #88c8bc, #6ba8a0);
-    border: none;
-}
-
-.variant-add-btn:hover {
-    background: linear-gradient(135deg, #6ba8a0, #5a9087);
-}
-
-/* Product Meta */
+/* Meta Grid */
 .meta-grid {
     display: grid;
     gap: 8px;
@@ -814,314 +735,698 @@
     border-bottom: none;
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
-    .carousel-main-image {
-        height: 350px;
+    .zoom-result {
+        display: none !important;
     }
     
-    .carousel-nav {
-        width: 40px;
-        height: 40px;
-        font-size: 14px;
+    .zoom-lens {
+        display: none !important;
     }
     
-    .thumbnail-strip {
-        padding: 0 20px;
+    .main-image {
+        cursor: default !important;
     }
     
-    .color-quick-options {
-        justify-content: center;
+    .nav-arrow {
+        width: 35px;
+        height: 35px;
     }
     
-    .info-content {
-        padding: 15px;
+    .action-buttons {
+        flex-direction: column;
     }
     
-    .cart-section {
-        padding: 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    .carousel-main-image {
-        height: 280px;
-    }
-    
-    .thumbnail-slide {
+    .thumbnail {
         flex: 0 0 60px;
         height: 60px;
     }
-    
-    .color-quick-options {
-        gap: 6px;
-    }
-    
-    .color-quick-option {
-        min-width: 50px;
-        padding: 6px;
+}
+
+@media (min-width: 1200px) {
+    .zoom-result {
+        right: -380px;
+        width: 350px;
+        height: 450px;
     }
 }
+
 </style>
 
-<!-- Enhanced JavaScript -->
 <script>
-// Global variables
-let currentSlideIndex = 0;
-let totalSlides = {{ all_images|length }};
-let currentVariantColor = null;
-let isTransitioning = false;
-
-// Image data from Django
-const imageData = [
+$(document).ready(function() {
+    let currentIndex = 0;
+    let images = [];
+    
+    // Initialize images array
     {% for image in all_images %}
-    {
-        url: '{{ image.url }}',
-        type: '{{ image.type }}',
-        variantColor: {% if image.variant_color %}'{{ image.variant_color }}'{% else %}null{% endif %},
-        variantName: {% if image.variant_name %}'{{ image.variant_name }}'{% else %}null{% endif %},
-        index: {{ forloop.counter0 }}
-    }{% if not forloop.last %},{% endif %}
+    images.push({
+        url: "{{ image.url|default:'/static/products/images/no-image.jpg'|escapejs }}",
+        type: "{{ image.type|escapejs }}",
+        variantColor: "{{ image.variant_color|default:''|escapejs }}",
+        variantName: "{{ image.variant_name|default:''|escapejs }}"
+    });
     {% endfor %}
-];
-
-// Navigate carousel
-function navigateCarousel(direction) {
-    if (isTransitioning || totalSlides === 0) return;
     
-    isTransitioning = true;
-    
-    if (direction === 'next') {
-        currentSlideIndex = (currentSlideIndex + 1) % totalSlides;
-    } else {
-        currentSlideIndex = (currentSlideIndex - 1 + totalSlides) % totalSlides;
-    }
-    
-    updateCarousel();
-    
-    setTimeout(() => {
-        isTransitioning = false;
-    }, 400);
-}
-
-// Go to specific slide
-function goToSlide(index) {
-    if (isTransitioning || index === currentSlideIndex) return;
-    
-    isTransitioning = true;
-    currentSlideIndex = index;
-    updateCarousel();
-    
-    setTimeout(() => {
-        isTransitioning = false;
-    }, 400);
-}
-
-// Update carousel display
-function updateCarousel() {
-    const currentImage = imageData[currentSlideIndex];
-    
-    // Update main image
-    const mainImage = document.getElementById('main-carousel-image');
-    if (mainImage) {
-        mainImage.style.opacity = '0';
-        setTimeout(() => {
-            mainImage.src = currentImage.url;
-            mainImage.style.opacity = '1';
-        }, 200);
-    }
-    
-    // Update image indicator
-    const indicator = document.getElementById('image-indicator');
-    if (indicator) {
-        if (currentImage.type === 'general') {
-            indicator.textContent = 'Product Overview';
-            indicator.style.background = 'rgba(40, 167, 69, 0.9)';
-        } else {
-            indicator.textContent = currentImage.variantName + ' View';
-            indicator.style.background = 'rgba(136, 200, 188, 0.9)';
-        }
-    }
-    
-    // Update image counter
-    const currentNum = document.getElementById('current-image-num');
-    if (currentNum) {
-        currentNum.textContent = currentSlideIndex + 1;
-    }
-    
-    // Update thumbnail active state
-    document.querySelectorAll('.thumbnail-slide').forEach((thumb, index) => {
-        if (index === currentSlideIndex) {
-            thumb.classList.add('active');
-        } else {
-            thumb.classList.remove('active');
-        }
-    });
-    
-    // Update information section
-    updateDynamicInfo(currentImage);
-    
-    // Update cart section
-    updateCartSection(currentImage);
-    
-    // Scroll thumbnail into view
-    scrollThumbnailIntoView(currentSlideIndex);
-}
-
-// Update dynamic information based on current image
-function updateDynamicInfo(currentImage) {
-    // Hide all info sections
-    document.querySelectorAll('.info-content').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    if (currentImage.type === 'general') {
-        // Show general info
-        const generalInfo = document.getElementById('general-info');
-        if (generalInfo) {
-            generalInfo.classList.add('active');
-        }
-        currentVariantColor = null;
-    } else {
-        // Show variant-specific info
-        const variantInfo = document.getElementById('variant-info-' + currentImage.variantColor);
-        if (variantInfo) {
-            variantInfo.classList.add('active');
-        }
-        currentVariantColor = currentImage.variantColor;
-    }
-}
-
-// Update cart section based on current image
-function updateCartSection(currentImage) {
-    // Hide all action sections
-    document.querySelectorAll('.action-content').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    if (currentImage.type === 'general') {
-        // Show general actions
-        const generalActions = document.getElementById('general-actions');
-        if (generalActions) {
-            generalActions.classList.add('active');
-        }
+    // Simple Click-to-Zoom (Optional)
+    function initZoom() {
+        const mainImage = $('#main-image');
         
-        // Clear selected variant
-        const selectedInput = document.getElementById('selected-variant-input');
-        if (selectedInput) {
-            selectedInput.value = '';
-        }
-    } else {
-        // Show variant-specific actions
-        const variantActions = document.getElementById('variant-actions-' + currentImage.variantColor);
-        if (variantActions) {
-            variantActions.classList.add('active');
-        }
-        
-        // Set selected variant
-        const selectedInput = document.getElementById('selected-variant-input');
-        if (selectedInput) {
-            selectedInput.value = currentImage.variantColor;
-        }
-        
-        // Update variant add button click handler
-        const variantBtn = variantActions.querySelector('.variant-add-btn');
-        if (variantBtn) {
-            variantBtn.onclick = function(e) {
-                e.preventDefault();
-                const form = document.getElementById('add-to-cart-form');
-                if (form) {
-                    form.submit();
-                }
-            };
-        }
-    }
-}
-
-// Quick variant selection
-function selectVariantQuickly(variantColor) {
-    // Find first image of this variant
-    const variantImageIndex = imageData.findIndex(img => 
-        img.type === 'variant' && img.variantColor === variantColor
-    );
-    
-    if (variantImageIndex !== -1) {
-        goToSlide(variantImageIndex);
-    }
-}
-
-// Scroll thumbnails
-function scrollThumbnails(direction) {
-    const container = document.querySelector('.thumbnail-container');
-    if (!container) return;
-    
-    const scrollAmount = 200;
-    
-    if (direction === 'prev') {
-        container.scrollLeft -= scrollAmount;
-    } else {
-        container.scrollLeft += scrollAmount;
-    }
-}
-
-// Scroll specific thumbnail into view
-function scrollThumbnailIntoView(index) {
-    const container = document.querySelector('.thumbnail-container');
-    const thumbnail = document.querySelector(`[data-index="${index}"]`);
-    
-    if (container && thumbnail) {
-        const containerRect = container.getBoundingClientRect();
-        const thumbnailRect = thumbnail.getBoundingClientRect();
-        
-        if (thumbnailRect.left < containerRect.left || thumbnailRect.right > containerRect.right) {
-            thumbnail.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-                inline: 'center'
-            });
-        }
-    }
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    if (totalSlides > 0) {
-        updateCarousel();
-    }
-    
-    // Handle keyboard navigation
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowLeft') {
-            navigateCarousel('prev');
-        } else if (e.key === 'ArrowRight') {
-            navigateCarousel('next');
-        }
-    });
-    
-    // Handle form submission
-    const form = document.getElementById('add-to-cart-form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            const selectedVariant = document.getElementById('selected-variant-input').value;
-            console.log('Submitting with variant:', selectedVariant);
+        // Click to toggle zoom
+        mainImage.on('click', function(e) {
+            if (window.innerWidth <= 768) return;
+            
+            $(this).toggleClass('zoomed');
+            
+            // Optional: Center zoom on click position
+            if ($(this).hasClass('zoomed')) {
+                const rect = this.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                $(this).css('transform-origin', `${x}% ${y}%`);
+            } else {
+                $(this).css('transform-origin', 'center center');
+            }
         });
     }
     
-    // Auto-play functionality (optional)
-    // Uncomment below for auto-advance every 5 seconds
-    /*
-    setInterval(() => {
-        if (!isTransitioning) {
-            navigateCarousel('next');
+    // Update main display
+    function updateDisplay() {
+        if (images.length === 0) return;
+        
+        const current = images[currentIndex];
+        const mainImage = $('#main-image');
+        const zoomImage = $('#zoom-image');
+        const indicator = $('#image-indicator');
+        const currentNum = $('#current-num');
+        
+        // Update images
+        mainImage.attr('src', current.url);
+        zoomImage.attr('src', current.url);
+        
+        // Update indicator
+        if (current.type === 'general') {
+            indicator.text('Product Overview');
+        } else {
+            indicator.text(current.variantName + ' View');
         }
-    }, 5000);
-    */
+        
+        // Update counter
+        currentNum.text(currentIndex + 1);
+        
+        // Update thumbnails
+        $('.thumbnail').removeClass('active');
+        $(`.thumbnail[data-index="${currentIndex}"]`).addClass('active');
+        
+        // Scroll thumbnail into view
+        scrollThumbnailIntoView(currentIndex);
+        
+        // Update info section
+        updateInfo(current);
+        
+        // Reinitialize zoom after image change
+        setTimeout(initZoom, 100);
+    }
+    
+    // Scroll thumbnail into view
+    function scrollThumbnailIntoView(index) {
+        const thumbnails = $('.thumbnails');
+        const thumbnail = $(`.thumbnail[data-index="${index}"]`);
+        
+        if (thumbnail.length) {
+            const scrollLeft = thumbnail.offset().left - thumbnails.offset().left + thumbnails.scrollLeft() - (thumbnails.width() / 2) + (thumbnail.width() / 2);
+            thumbnails.animate({ scrollLeft: scrollLeft }, 300);
+        }
+    }
+    
+    // Update info section
+    function updateInfo(current) {
+        $('.info-content').removeClass('active');
+        
+        const cartNote = $('#cart-note-text');
+        const selectedVariant = $('#selected-variant');
+        const metaSku = $('#meta-sku');
+        
+        if (current.type === 'general') {
+            $('#general-info').addClass('active');
+            cartNote.text('{% if product.has_variants %}Select a color variant to add to cart{% else %}Ready to add to cart{% endif %}');
+            selectedVariant.val('');
+            metaSku.text('WU-{{ product.id|stringformat:"04d" }}');
+        } else {
+            const variantInfo = $(`#variant-info-${current.variantColor}`);
+            if (variantInfo.length) {
+                variantInfo.addClass('active');
+                cartNote.text(`${current.variantName} variant selected. Ready to add to cart.`);
+                selectedVariant.val(current.variantColor);
+                
+                // Update SKU from variant
+                const skuText = variantInfo.find('p:contains("SKU:")').text();
+                const sku = skuText.split(': ')[1];
+                if (sku) metaSku.text(sku);
+            }
+        }
+        
+        // Update color selection
+        $('.color-option').removeClass('selected');
+        if (current.variantColor) {
+            $(`.color-option[data-variant-color="${current.variantColor}"]`).addClass('selected');
+        }
+    }
+    
+    // Navigation functions
+    function navigatePrev() {
+        currentIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+        updateDisplay();
+    }
+    
+    function navigateNext() {
+        currentIndex = (currentIndex + 1) % images.length;
+        updateDisplay();
+    }
+    
+    // Event Handlers
+    
+    // Navigation arrows
+    $('#prev-btn').click(navigatePrev);
+    $('#next-btn').click(navigateNext);
+    
+    // Thumbnail clicks
+    $('.thumbnail').click(function() {
+        const newIndex = parseInt($(this).data('index'));
+        if (newIndex !== currentIndex) {
+            currentIndex = newIndex;
+            updateDisplay();
+        }
+    });
+    
+    // Color option clicks
+    $('.color-option').click(function() {
+        const variantColor = $(this).data('variant-color');
+        
+        // Find first image for this variant
+        const variantIndex = images.findIndex(img => 
+            img.variantColor === variantColor && img.type === 'variant'
+        );
+        
+        if (variantIndex !== -1) {
+            currentIndex = variantIndex;
+            updateDisplay();
+        } else {
+            // If no variant image found, just update info
+            $('.info-content').removeClass('active');
+            const variantInfo = $(`#variant-info-${variantColor}`);
+            if (variantInfo.length) {
+                variantInfo.addClass('active');
+                $('#cart-note-text').text(`Selected variant. Ready to add to cart.`);
+                $('#selected-variant').val(variantColor);
+            }
+        }
+        
+        $('.color-option').removeClass('selected');
+        $(this).addClass('selected');
+    });
+    
+    // Keyboard navigation
+    $(document).keydown(function(e) {
+        if (e.key === 'ArrowLeft') {
+            navigatePrev();
+        } else if (e.key === 'ArrowRight') {
+            navigateNext();
+        }
+    });
+    
+    // Touch support for mobile swipe
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    $('.main-image').on('touchstart', function(e) {
+        touchStartX = e.originalEvent.touches[0].clientX;
+        touchStartY = e.originalEvent.touches[0].clientY;
+    });
+    
+    $('.main-image').on('touchend', function(e) {
+        const touchEndX = e.originalEvent.changedTouches[0].clientX;
+        const touchEndY = e.originalEvent.changedTouches[0].clientY;
+        
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
+        
+        // Swipe detection (minimum 50px swipe)
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
+                navigatePrev();
+            } else {
+                navigateNext();
+            }
+        }
+    });
+    
+    // Initialize everything
+    updateDisplay();
+    initZoom();
+    
+    // Reinitialize zoom when image loads
+    $('#main-image').on('load', function() {
+        setTimeout(initZoom, 50);
+    });
+    
+    // Window resize handler
+    $(window).resize(function() {
+        // Reinitialize zoom on resize
+        setTimeout(initZoom, 100);
+    });
+    
+    // Preload adjacent images for smoother navigation
+    function preloadImages() {
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+        const nextIndex = (currentIndex + 1) % images.length;
+        
+        [prevIndex, nextIndex].forEach(index => {
+            if (images[index]) {
+                const img = new Image();
+                img.src = images[index].url;
+            }
+        });
+    }
+    
+    // Preload images after initial load
+    setTimeout(preloadImages, 1000);
+    
+    // Add smooth hover effects
+    $('.thumbnail').hover(
+        function() {
+            $(this).css('transform', 'translateY(-2px) scale(1.05)');
+        },
+        function() {
+            if (!$(this).hasClass('active')) {
+                $(this).css('transform', 'translateY(0) scale(1)');
+            }
+        }
+    );
+    
+    $('.color-option').hover(
+        function() {
+            $(this).css('transform', 'scale(1.05)');
+        },
+        function() {
+            if (!$(this).hasClass('selected')) {
+                $(this).css('transform', 'scale(1)');
+            }
+        }
+    );
+    
+    // Enhanced zoom result positioning for larger screens
+    function adjustZoomPosition() {
+        const zoomResult = $('#zoom-result');
+        const container = $('.main-image-container');
+        const containerRect = container[0].getBoundingClientRect();
+        const windowWidth = $(window).width();
+        
+        // If there's not enough space on the right, position on the left
+        if (containerRect.right + 350 > windowWidth) {
+            zoomResult.css({
+                right: 'auto',
+                left: '-350px'
+            });
+        } else {
+            zoomResult.css({
+                left: 'auto',
+                right: '-350px'
+            });
+        }
+    }
+    
+    // Adjust zoom position on window resize
+    $(window).resize(adjustZoomPosition);
+    adjustZoomPosition();
 });
 
-// Make functions globally available
-window.navigateCarousel = navigateCarousel;
-window.goToSlide = goToSlide;
-window.selectVariantQuickly = selectVariantQuickly;
-window.scrollThumbnails = scrollThumbnails;
+// ============= WISHLIST FUNCTIONALITY =============
+
+
+{% if user.is_authenticated %}
+(function() {
+    const wishlistBtn = $('#wishlist-btn');
+    if (!wishlistBtn.length) return; // Exit if button doesn't exist
+    
+    const wishlistIcon = $('#wishlist-icon');
+    const wishlistText = $('#wishlist-text');
+    const productId = wishlistBtn.data('product-id');
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    // Check wishlist status on page load
+    function checkWishlistStatus() {
+        const variantColor = $('#selected-variant').val();
+        
+        $.ajax({
+            url: `/products/wishlist/check/${productId}/`,
+            method: 'GET',
+            data: { variant_color: variantColor },
+            success: function(response) {
+                updateWishlistButton(response.in_wishlist);
+                if (response.wishlist_count !== undefined) {
+                    $('#wishlist-count').text(response.wishlist_count);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Failed to check wishlist status:', error);
+            }
+        });
+    }
+    
+    // Update button appearance
+    function updateWishlistButton(inWishlist) {
+        wishlistBtn.data('in-wishlist', inWishlist);
+        
+        if (inWishlist) {
+            wishlistBtn.addClass('in-wishlist');
+            wishlistBtn.css({
+                'background-color': '#dc3545',
+                'border-color': '#dc3545',
+                'color': 'white'
+            });
+            wishlistText.text('In Wishlist');
+            wishlistIcon.css('color', 'white');
+        } else {
+            wishlistBtn.removeClass('in-wishlist');
+            wishlistBtn.css({
+                'background-color': '',
+                'border-color': '',
+                'color': ''
+            });
+            wishlistText.text('Wishlist');
+            wishlistIcon.css('color', '');
+        }
+    }
+    
+    // Handle wishlist button click
+    wishlistBtn.on('click', function(e) {
+        e.preventDefault();
+        
+        const variantColor = $('#selected-variant').val();
+        const inWishlist = wishlistBtn.data('in-wishlist');
+        
+        // FIX: Only check if product has MULTIPLE variants
+        const variantCount = {{ variants.count }};
+        if (variantCount > 1 && !variantColor) {
+            showMessage('Please select a color variant first', 'warning');
+            return;
+        }
+        
+        if (inWishlist) {
+            showMessage('This item is already in your wishlist', 'info');
+            return;
+        }
+        
+        // Add to wishlist
+        $.ajax({
+            url: `/products/wishlist/add/${productId}/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            data: {
+                variant_color: variantColor
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateWishlistButton(true);
+                    $('#wishlist-count').text(response.wishlist_count);
+                    showMessage(response.message, 'success');
+                } else {
+                    showMessage(response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('Error adding to wishlist:', error);
+                console.log('Response:', xhr.responseText);
+                showMessage('Failed to add to wishlist. Please try again.', 'error');
+            }
+        });
+    });
+    
+    // Check status on page load
+    setTimeout(checkWishlistStatus, 500); // Small delay to ensure page is loaded
+    
+    // Re-check when variant changes
+    $('.color-option').on('click', function() {
+        setTimeout(checkWishlistStatus, 100);
+    });
+    
+})();
+{% endif %}
+
+{% comment %} {% if user.is_authenticated %}
+(function() {
+    const wishlistBtn = $('#wishlist-btn');
+    const wishlistIcon = $('#wishlist-icon');
+    const wishlistText = $('#wishlist-text');
+    const productId = wishlistBtn.data('product-id');
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    // Check wishlist status on page load
+    function checkWishlistStatus() {
+        const variantColor = $('#selected-variant').val();
+        
+        $.ajax({
+            url: `/wishlist/check/${productId}/`,
+            method: 'GET',
+            data: { variant_color: variantColor },
+            success: function(response) {
+                updateWishlistButton(response.in_wishlist);
+                if (response.wishlist_count !== undefined) {
+                    $('#wishlist-count').text(response.wishlist_count);
+                }
+            },
+            error: function() {
+                console.log('Failed to check wishlist status');
+            }
+        });
+    }
+    
+    // Update button appearance
+    function updateWishlistButton(inWishlist) {
+        wishlistBtn.data('in-wishlist', inWishlist);
+        
+        if (inWishlist) {
+            wishlistBtn.addClass('in-wishlist');
+            wishlistBtn.css({
+                'background-color': '#dc3545',
+                'border-color': '#dc3545',
+                'color': 'white'
+            });
+            wishlistText.text('In Wishlist');
+            wishlistIcon.css('color', 'white');
+        } else {
+            wishlistBtn.removeClass('in-wishlist');
+            wishlistBtn.css({
+                'background-color': '',
+                'border-color': '',
+                'color': ''
+            });
+            wishlistText.text('Wishlist');
+            wishlistIcon.css('color', '');
+        }
+    }
+    
+    // Handle wishlist button click
+    wishlistBtn.on('click', function(e) {
+        e.preventDefault();
+        
+        const variantColor = $('#selected-variant').val();
+        const inWishlist = wishlistBtn.data('in-wishlist');
+        
+        // Check if variant is required but not selected
+        {% if product.has_variants %}
+        if (!variantColor) {
+            showMessage('Please select a color variant first', 'warning');
+            return;
+        }
+        {% endif %}
+        
+        if (inWishlist) {
+            showMessage('This item is already in your wishlist', 'info');
+            return;
+        }
+        
+        // Add to wishlist
+        $.ajax({
+            url: `/wishlist/add/${productId}/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            data: {
+                variant_color: variantColor
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateWishlistButton(true);
+                    $('#wishlist-count').text(response.wishlist_count);
+                    showMessage(response.message, 'success');
+                } else {
+                    showMessage(response.message, 'error');
+                }
+            },
+            error: function() {
+                showMessage('Failed to add to wishlist. Please try again.', 'error');
+            }
+        });
+    });
+    
+    // Check status on page load
+    checkWishlistStatus();
+    
+    // Re-check when variant changes
+    $('.color-option').on('click', function() {
+        setTimeout(checkWishlistStatus, 100);
+    });
+    
+})();
+{% endif %} {% endcomment %}
+
+// ============= ADD TO CART FUNCTIONALITY =============
+$('#cart-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const form = $(this);
+    const submitBtn = form.find('.btn-add-cart');
+    const originalText = submitBtn.html();
+    const variantColor = $('#selected-variant').val();
+    
+    // Count number of variants
+    const variantCount = {{ variants.count }};
+    
+    // Only validate if there are multiple variants
+    if (variantCount > 1 && !variantColor) {
+        showMessage('Please select a color variant first', 'warning');
+        return false;
+    }
+    
+    // Disable button and show loading
+    submitBtn.prop('disabled', true).html('<i class="icon-refresh"></i> Adding...');
+    
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            if (response.success) {
+                // Update cart count
+                $('#cart-count').text(response.cart_count);
+                
+                // Show success message
+                showMessage(response.message, 'success');
+                
+                // Optional: Ask if user wants to view cart
+                setTimeout(function() {
+                    if (confirm('Item added to cart! View cart now?')) {
+                        window.location.href = '{% url "products:cart_view" %}';
+                    }
+                }, 500);
+            } else {
+                showMessage(response.message, 'error');
+            }
+            
+            // Reset button
+            submitBtn.prop('disabled', false).html(originalText);
+        },
+        error: function(xhr) {
+            let errorMsg = 'Failed to add to cart. Please try again.';
+            
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            showMessage(errorMsg, 'error');
+            submitBtn.prop('disabled', false).html(originalText);
+        }
+    });
+    
+    return false;
+});
+
+// ============= MESSAGE DISPLAY FUNCTION =============
+function showMessage(message, type) {
+    // Map type to Bootstrap alert class
+    const alertTypes = {
+        'success': 'alert-success',
+        'error': 'alert-danger',
+        'warning': 'alert-warning',
+        'info': 'alert-info'
+    };
+    
+    const alertClass = alertTypes[type] || 'alert-info';
+    
+    // Create alert HTML
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <strong>${type.charAt(0).toUpperCase() + type.slice(1)}!</strong> ${message}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    `;
+    
+    // Remove any existing alerts
+    $('.alert[style*="position: fixed"]').remove();
+    
+    // Add new alert
+    $('body').append(alertHtml);
+    
+    // Auto-dismiss after 4 seconds
+    setTimeout(function() {
+        $('.alert[style*="position: fixed"]').fadeOut('slow', function() {
+            $(this).remove();
+        });
+    }, 4000);
+}
+
+// ============= HANDLE GENERAL PRODUCTS (No Variants) =============
+{% if not product.has_variants %}
+// For products without variants, set a default value
+$(document).ready(function() {
+    // Mark as ready to add (no variant selection needed)
+    $('#cart-note-text').text('Ready to add to cart');
+});
+{% endif %}
+
+console.log('Cart and Wishlist functionality loaded successfully!');
 </script>
-{% endblock %}
+{% endblock %}    

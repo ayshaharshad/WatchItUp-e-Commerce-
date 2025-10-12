@@ -38,63 +38,101 @@
     <div class="colorlib-loader"></div>
     <div id="page">
         <nav class="colorlib-nav" role="navigation">
-            <div class="top-menu">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-7 col-md-9">
-                            <div id="colorlib-logo"><a href="{% url 'products:home' %}">WatchItUp</a></div>
+    <div class="top-menu">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-7 col-md-9">
+                    <div id="colorlib-logo"><a href="{% url 'products:home' %}">WatchItUp</a></div>
+                </div>
+                <div class="col-sm-5 col-md-3">
+                    <form action="{% url 'products:product_list' %}" method="get" class="search-wrap">
+                        <div class="form-group">
+                            <input type="search" name="q" class="form-control search" placeholder="Search watches..." value="{% if request.GET.q %}{{ request.GET.q }}{% endif %}">
+                            <button class="btn btn-primary submit-search text-center" type="submit"><i class="icon-search"></i></button>
+                            {% if request.GET.q %}
+                                <a href="{% url 'products:product_list' %}" class="btn btn-secondary clear-search" title="Clear search"><i class="icon-close"></i></a>
+                            {% endif %}
                         </div>
-                        <div class="col-sm-5 col-md-3">
-                            <form action="{% url 'products:product_list' %}" method="get" class="search-wrap">
-                                <div class="form-group">
-                                    <input type="search" name="q" class="form-control search" placeholder="Search watches..." value="{% if request.GET.q %}{{ request.GET.q }}{% endif %}">
-                                    <button class="btn btn-primary submit-search text-center" type="submit"><i class="icon-search"></i></button>
-                                    {% if request.GET.q %}
-                                        <a href="{% url 'products:product_list' %}" class="btn btn-secondary clear-search" title="Clear search"><i class="icon-close"></i></a>
-                                    {% endif %}
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12 text-left menu-1">
-                            <ul>
-                                <li><a href="{% url 'products:home' %}">Home</a></li>
-                                <li><a href="{% url 'products:product_list' %}">Products</a></li>
-                                <li class="has-dropdown">
-                                    <a href="{% url 'products:men_products' %}">Men</a>
-                                    <ul class="dropdown">
-                                        <li><a href="{% url 'products:men_products' %}">All Men's Watches</a></li>
-                                        <li><a href="#">Analog Watches</a></li>
-                                        <li><a href="#">Digital Watches</a></li>
-                                        <li><a href="#">Smart Watches</a></li>
-                                    </ul>
-                                </li>
-                                <li class="has-dropdown">
-                                    <a href="{% url 'products:women_products' %}">Women</a>
-                                    <ul class="dropdown">
-                                        <li><a href="{% url 'products:women_products' %}">All Women's Watches</a></li>
-                                        <li><a href="#">Analog Watches</a></li>
-                                        <li><a href="#">Digital Watches</a></li>
-                                        <li><a href="#">Fashion Watches</a></li>
-                                    </ul>
-                                </li>
-                                <li><a href="#">About</a></li>
-                                <li><a href="#">Contact</a></li>
-                                <li class="cart"><a href="#"><i class="icon-shopping-cart"></i> Cart [0]</a></li>
-                                {% if user.is_authenticated %}
-                                    <li><a href="{% url 'users:profile' %}">Profile</a></li>
-                                    <li><a href="{% url 'users:logout' %}">Logout</a></li>
-                                {% else %}
-                                    <li><a href="{% url 'users:login' %}">Login</a></li>
-                                    <li><a href="{% url 'users:signup' %}">Sign Up</a></li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                    </div>
+                    </form>
                 </div>
             </div>
-        </nav>
+            <div class="row">
+                <div class="col-sm-12 text-left menu-1">
+                    <ul>
+                        <li><a href="{% url 'products:home' %}">Home</a></li>
+                        <li><a href="{% url 'products:product_list' %}">Products</a></li>
+                        <li class="has-dropdown">
+                            <a href="{% url 'products:men_products' %}">Men</a>
+                            <ul class="dropdown">
+                                <li><a href="{% url 'products:men_products' %}">All Men's Watches</a></li>
+                                <li><a href="#">Analog Watches</a></li>
+                                <li><a href="#">Digital Watches</a></li>
+                                <li><a href="#">Smart Watches</a></li>
+                            </ul>
+                        </li>
+                        <li class="has-dropdown">
+                            <a href="{% url 'products:women_products' %}">Women</a>
+                            <ul class="dropdown">
+                                <li><a href="{% url 'products:women_products' %}">All Women's Watches</a></li>
+                                <li><a href="#">Analog Watches</a></li>
+                                <li><a href="#">Digital Watches</a></li>
+                                <li><a href="#">Fashion Watches</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Contact</a></li>
+                        
+                        <!-- Wishlist (Logged-in only) -->
+                        {% if user.is_authenticated %}
+                            <li class="wishlist">
+                                <a href="{% url 'products:wishlist_view' %}">
+                                    <i class="icon-heart"></i> 
+                                    Wishlist 
+                                    <span class="wishlist-count" id="wishlist-count-badge">
+                                        [<span id="wishlist-count">{{ request.user.wishlist.total_items|default:0 }}</span>]
+                                    </span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Cart -->
+                        <li class="cart">
+                            <a href="{% url 'products:cart_view' %}">
+                                <i class="icon-shopping-cart"></i> 
+                                Cart 
+                                <span class="cart-count" id="cart-count-badge">
+                                    {% if user.is_authenticated %}
+                                        [<span id="cart-count">{{ request.user.cart.total_items|default:0 }}</span>]
+                                    {% else %}
+                                        [<span id="cart-count">0</span>]
+                                    {% endif %}
+                                </span>
+                            </a>
+                        </li>
+                        
+                        <!-- User Menu -->
+                        {% if user.is_authenticated %}
+                            <li class="has-dropdown">
+                                <a href="{% url 'users:profile' %}">
+                                    <i class="icon-user"></i> {{ user.username }}
+                                </a>
+                                <ul class="dropdown">
+                                    <li><a href="{% url 'users:profile' %}">My Profile</a></li>
+                                    <li><a href="{% url 'products:order_list' %}">My Orders</a></li>
+                                    <li><a href="{% url 'products:wishlist_view' %}">My Wishlist</a></li>
+                                    <li><a href="{% url 'users:logout' %}">Logout</a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li><a href="{% url 'users:login' %}">Login</a></li>
+                            <li><a href="{% url 'users:signup' %}">Sign Up</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        </div>
+    </nav>
         {% block content %}
         {% endblock %}
         <footer id="colorlib-footer" role="contentinfo">
@@ -202,9 +240,44 @@
     .clear-search:hover {
         background: #c82333;
     }
+
+    /* Wishlist and Cart Count Badges */
+
+    .wishlist-count, .cart-count {
+    font-weight: bold;
+    color: #88c8bc;
+    }
+
+    #wishlist-count, #cart-count {
+    color: #88c8bc;
+    font-weight: bold;
+    }
+
+    .wishlist a:hover .wishlist-count,
+    .cart a:hover .cart-count {
+    color: #fff;
+    }
+
+    /* Icon styling */
+    .menu-1 ul li i {
+    margin-right: 5px;
+    }
     </style>
     
     {% block extra_scripts %}
+    <script>
+    // Function to update cart and wishlist counts
+    function updateCounts() {
+    {% if user.is_authenticated %}
+    // This will be updated via AJAX or page refresh
+    // You can add AJAX calls here if needed
+    {% endif %}
+    }
+
+    // Update counts on page load
+    document.addEventListener('DOMContentLoaded', updateCounts);
+    </script>
     {% endblock %}
+
 </body>
 </html>

@@ -1,6 +1,6 @@
 import random, logging, json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib import messages
 from django.conf import settings
 from django.core.mail import send_mail
@@ -17,8 +17,10 @@ from django.views.decorators.cache import never_cache
 
 
 
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, OTPVerificationForm, ForgotPasswordForm, ResetPasswordForm
-from .models import CustomUser
+
+from .forms import (CustomUserCreationForm, CustomAuthenticationForm, OTPVerificationForm, 
+                   ForgotPasswordForm, ResetPasswordForm, UserProfileForm, EmailChangeForm, ChangePasswordForm, AddressForm)
+from .models import CustomUser, Address, EmailChangeRequest
 
 logger = logging.getLogger(__name__)
 
@@ -188,14 +190,7 @@ def logout_view(request):
     return redirect('users:login')
 
 
-# def logout_view(request):
-#     username = request.user.username if request.user.is_authenticated else None
-#     logout(request)
-#     if username:
-#         messages.success(request, f"Goodbye, {username}! You've been logged out successfully.")
-#     return redirect('users:login')
 
-# ------------------ OTP VERIFY ------------------
 @never_cache
 def verify_otp_view(request, purpose):
     if not request.session.get('otp') or not request.session.get('otp_user'):
@@ -393,11 +388,328 @@ def reset_password_view(request):
     
     return render(request, 'users/reset_password.html', {'form': form})
 
-# ------------------ PROFILE ------------------
-@never_cache
+
+# ------------------ PROFILE VIEWS ------------------
+
 @login_required
 def profile_view(request):
-    return render(request, 'users/profile.html', {'user': request.user})
+    """Display user profile with basic info and addresses"""
+    addresses = Address.objects.filter(user=request.user)
+    context = {
+        'user': request.user,
+        'addresses': addresses
+    }
+    return render(request, 'users/profile/profile.html', context)
+
+@login_required
+@transaction.atomic
+def edit_profile_view(request):
+    """Edit user profile information"""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            # Handle profile picture deletion if needed
+            if 'delete_picture' in request.POST and request.user.profile_picture:
+                request.user.profile_picture.delete()
+                request.user.profile_picture = None
+                
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('users:profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.title()}: {error}")
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    return render(request, 'users/profile/edit_profile.html', {'form': form})
+
+# ------------------ EMAIL CHANGE VIEWS ------------------
+
+@login_required
+def change_email_view(request):
+    """Request email change with OTP verification"""
+    if request.method == 'POST':
+        form = EmailChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            new_email = form.cleaned_data['new_email']
+            
+            # Clear any existing email change requests for this user
+            EmailChangeRequest.objects.filter(user=request.user).delete()
+            
+            # Generate OTP and create request
+            otp = generate_otp()
+            expires_at = timezone.now() + timedelta(minutes=5)
+            
+            email_change_request = EmailChangeRequest.objects.create(
+                user=request.user,
+                new_email=new_email,
+                otp=otp,
+                expires_at=expires_at
+            )
+            
+            # Store in session for verification
+            request.session['email_change_otp'] = otp
+            request.session['email_change_new_email'] = new_email
+            request.session['email_change_timestamp'] = timezone.now().timestamp()
+            request.session.set_expiry(300)  # 5 minutes
+            
+            # Send OTP to new email
+            if send_otp_email(new_email, otp, 'email_change'):
+                messages.success(request, f'OTP sent to {new_email}. Please verify to change your email.')
+                return redirect('users:verify_email_change')
+            else:
+                messages.error(request, 'Failed to send OTP. Please try again.')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+    else:
+        form = EmailChangeForm(user=request.user)
+    
+    return render(request, 'users/profile/change_email.html', {'form': form})
+
+@login_required
+def verify_email_change_view(request):
+    """Verify OTP for email change"""
+    if not all(k in request.session for k in ['email_change_otp', 'email_change_new_email']):
+        messages.error(request, 'No email change request found. Please start over.')
+        return redirect('users:change_email')
+    
+    # Check if OTP is still valid
+    timestamp = request.session.get('email_change_timestamp', 0)
+    if timezone.now().timestamp() - timestamp > 300:  # 5 minutes
+        messages.error(request, 'OTP has expired. Please request a new one.')
+        return redirect('users:change_email')
+    
+    if request.method == 'POST':
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            entered_otp = form.cleaned_data['otp']
+            stored_otp = request.session.get('email_change_otp')
+            new_email = request.session.get('email_change_new_email')
+            
+            if entered_otp == stored_otp:
+                try:
+                    # Update user's email
+                    request.user.email = new_email
+                    request.user.save()
+                    
+                    # Clear session data
+                    keys_to_clear = ['email_change_otp', 'email_change_new_email', 'email_change_timestamp']
+                    for key in keys_to_clear:
+                        request.session.pop(key, None)
+                    
+                    # Clear database request
+                    EmailChangeRequest.objects.filter(user=request.user).delete()
+                    
+                    messages.success(request, f'Email successfully changed to {new_email}')
+                    return redirect('users:profile')
+                    
+                except Exception as e:
+                    logger.error(f"Email change error: {str(e)}")
+                    messages.error(request, 'An error occurred while changing email.')
+            else:
+                messages.error(request, 'Invalid OTP. Please try again.')
+        else:
+            for error in form.errors.get('otp', []):
+                messages.error(request, error)
+    else:
+        form = OTPVerificationForm()
+    
+    # Calculate remaining time
+    timestamp = request.session.get('email_change_timestamp', 0)
+    time_remaining = max(0, int(300 - (timezone.now().timestamp() - timestamp)))
+    
+    context = {
+        'form': form,
+        'new_email': request.session.get('email_change_new_email'),
+        'time_remaining': time_remaining
+    }
+    return render(request, 'users/profile/verify_email_change.html', context)
+
+# ------------------ PASSWORD CHANGE VIEWS ------------------
+
+@login_required
+def change_password_view(request):
+    """Change user password - CORRECT real-world implementation"""
+    if request.method == 'POST':
+        form = ChangePasswordForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password']
+            
+            # Change the password
+            request.user.set_password(new_password)
+            request.user.save()
+            
+            # ✅ CRITICAL: Keep the user logged in after password change
+            # This prevents the user from being logged out after changing password
+            update_session_auth_hash(request, request.user)
+            
+            # Optional: Log out all OTHER sessions (security best practice)
+            # This kicks out anyone else who might be using the account
+            # but keeps the current session active
+            from django.contrib.sessions.models import Session
+            from django.utils import timezone
+            
+            # Get all sessions for this user except current one
+            current_session_key = request.session.session_key
+            user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+            
+            for session in user_sessions:
+                session_data = session.get_decoded()
+                if session_data.get('_auth_user_id') == str(request.user.id):
+                    if session.session_key != current_session_key:
+                        session.delete()  # Delete other sessions
+            
+            messages.success(request, 'Password changed successfully! All other login sessions have been terminated for security.')
+            return redirect('users:profile')  # ✅ Stay logged in, go to profile
+            
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+    else:
+        form = ChangePasswordForm(user=request.user)
+    
+    return render(request, 'users/profile/change_password.html', {'form': form})
+
+# ------------------ ADDRESS MANAGEMENT VIEWS ------------------
+
+
+@login_required
+def addresses_view(request):
+    """Display all user addresses"""
+    addresses = Address.objects.filter(user=request.user)
+    context = {
+        'addresses': addresses
+    }
+    return render(request, 'users/addresses/addresses.html', context)
+
+@login_required
+@require_POST
+def set_default_address_view(request, address_id):
+    """Set an address as default"""
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+    # Remove default from all other addresses
+    Address.objects.filter(user=request.user).update(is_default=False)
+    
+    # Set this address as default
+    address.is_default = True
+    address.save()
+    
+    messages.success(request, f'"{address.full_name}" set as default address.')
+    return redirect('users:addresses')
+
+@login_required
+def add_address_view(request):
+    """Add new address"""
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()
+            messages.success(request, 'Address added successfully!')
+            return redirect('users:profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+    else:
+        form = AddressForm()
+    
+    return render(request, 'users/addresses/add_address.html', {'form': form})
+
+@login_required
+def edit_address_view(request, address_id):
+    """Edit existing address"""
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = AddressForm(request.POST, instance=address)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Address updated successfully!')
+            return redirect('users:profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+    else:
+        form = AddressForm(instance=address)
+    
+    return render(request, 'users/addresses/edit_address.html', {'form': form, 'address': address})
+
+@login_required
+def delete_address_view(request, address_id):
+    """Delete address"""
+    address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+    if request.method == 'POST':
+        address.delete()
+        messages.success(request, 'Address deleted successfully!')
+        return redirect('users:profile')
+    
+    return render(request, 'users/addresses/delete_address.html', {'address': address})
+
+# ------------------ UTILITY FUNCTIONS ------------------
+
+def send_otp_email(email, otp, purpose='verification'):
+    """Enhanced send OTP email function"""
+    try:
+        subject_map = {
+            'signup': 'Welcome to Watchitup - Verify Your Email',
+            'reset': 'Watchitup - Password Reset OTP',
+            'email_change': 'Watchitup - Email Change Verification'
+        }
+        
+        subject = subject_map.get(purpose, 'Watchitup - OTP Verification')
+        
+        if purpose == 'email_change':
+            message = f"""
+            Hello!
+            
+            You have requested to change your email address on Watchitup.
+            
+            Your verification OTP is: {otp}
+            
+            This OTP will expire in 5 minutes.
+            
+            If you didn't request this change, please ignore this email and your current email will remain unchanged.
+            
+            Best regards,
+            Watchitup Team
+            """
+        else:
+            message = f"""
+            Hello!
+            
+            Your OTP for Watchitup is: {otp}
+            
+            This OTP will expire in 5 minutes.
+            
+            If you didn't request this, please ignore this email.
+            
+            Best regards,
+            Watchitup Team
+            """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False
+        )
+        logger.info(f"OTP email sent successfully to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        return False
+
 
 
 
