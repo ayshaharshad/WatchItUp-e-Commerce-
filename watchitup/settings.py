@@ -5,7 +5,11 @@ Django settings for watchitup project.
 import environ
 import os
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from the .env file
+load_dotenv()
 
 # ------------------ BASE DIRECTORY ------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -84,6 +88,14 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')          # Gmail
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')  # Gmail App Password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_TIMEOUT = 30
+
+
+
+# -------------------------------
+# 🔒 Razorpay Configuration
+# -------------------------------
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')
 
 # ------------------ OTP SETTINGS ------------------
 OTP_EXPIRY_TIME = 300  # 5 minutes in seconds

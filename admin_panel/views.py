@@ -11,10 +11,10 @@ from django.db import transaction
 
 
 # Models
-from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem
+from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem, Coupon, CouponUsage
 from .forms import (
     AdminLoginForm, CategoryForm, ProductForm, ProductVariantForm, 
-    ProductVariantEditForm, BulkVariantForm, OrderStatusForm, OrderFilterForm
+    ProductVariantEditForm, BulkVariantForm, OrderStatusForm, OrderFilterForm, CouponForm, CouponFilterForm
 )
 
 User = get_user_model()
@@ -218,73 +218,45 @@ def add_product(request):
     
     return render(request, "admin_panel/add_product.html", {"form": form})
 
-# @superuser_required
-# def add_product(request):
-#     if request.method == "POST":
-#         form = ProductForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             try:
-#                 with transaction.atomic():
-#                     # Save the product
-#                     product = form.save()
-                    
-#                     # Handle multiple images
-#                     uploaded_images = request.FILES.getlist("images")
-#                     if uploaded_images:
-#                         for img in uploaded_images:
-#                             ProductImage.objects.create(product=product, image=img)
-                    
-#                     messages.success(
-#                         request, 
-#                         f"Product '{product.name}' added successfully! You can now add variants with specific colors, sizes, and prices."
-#                     )
-#                     return redirect("admin_panel:add_product_variant", product_id=product.id)
-            
-#             except Exception as e:
-#                 messages.error(request, f"Error saving product: {str(e)}")
-#                 print(f"Product creation error: {e}")  # For debugging
-#         else:
-#             # Display form errors
-#             error_messages = []
-#             for field, errors in form.errors.items():
-#                 for error in errors:
-#                     if field == '__all__':
-#                         error_messages.append(error)
-#                     else:
-#                         error_messages.append(f"{field.title()}: {error}")
-            
-#             if error_messages:
-#                 messages.error(request, "Please correct the following errors: " + "; ".join(error_messages))
-#             else:
-#                 messages.error(request, "Please correct the errors below.")
-#     else:
-#         form = ProductForm()
-    
-#     return render(request, "admin_panel/add_product.html", {"form": form})
+
 @superuser_required
 def edit_product(request, pk):
-    """Fixed edit_product view to handle product base info only"""
+    """Edit product view with optional image upload (0-3 images)"""
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == "POST":
         try:
-            # Update only the base product information
+            # Update base product information
             product.name = request.POST.get('name')
             product.category_id = request.POST.get('category')
             product.brand_id = request.POST.get('brand') or None
             product.base_price = request.POST.get('base_price')
-            product.stock = request.POST.get('stock', 0)  # NEW: Handle stock field
+            product.stock = request.POST.get('stock', 0)
             product.description = request.POST.get('description', '')
 
             product.save()
 
-            # Handle ONLY main product images (not variant images)
+            # Handle main product images (0-3 images allowed)
             uploaded_images = request.FILES.getlist('images')
+            
+            # Validate image count
+            if len(uploaded_images) > 3:
+                messages.error(request, "You can upload a maximum of 3 images per product.")
+                return redirect("admin_panel:edit_product", pk=pk)
+            
+            # Only replace images if new ones are uploaded
             if uploaded_images:
-                # Clear only ProductImage, NOT ProductVariantImage
+                # Clear existing ProductImage entries
                 product.images.all().delete()
-                for img in uploaded_images:
-                    ProductImage.objects.create(product=product, image=img)
+                
+                # Create new ProductImage entries
+                for idx, img in enumerate(uploaded_images):
+                    is_primary = (idx == 0)  # First image is primary
+                    ProductImage.objects.create(
+                        product=product, 
+                        image=img,
+                        is_primary=is_primary
+                    )
 
             messages.success(request, "Product updated successfully!")
             return redirect("admin_panel:product_list")
@@ -748,7 +720,222 @@ def clear_order_filters(request):
     return redirect('admin_panel:order_list')
 
 
+# -------------------- COUPON MANAGEMENT --------------------
 
+@superuser_required
+def coupon_list(request):
+    """List all coupons with search and filters"""
+    search = request.GET.get('search', '').strip()
+    discount_type_filter = request.GET.get('discount_type', '')
+    status_filter = request.GET.get('status', '')
+    
+    # Base queryset
+    coupons = Coupon.objects.all().order_by('-created_at')
+    
+    # Apply search
+    if search:
+        coupons = coupons.filter(code__icontains=search)
+    
+    # Apply discount type filter
+    if discount_type_filter:
+        coupons = coupons.filter(discount_type=discount_type_filter)
+    
+    # Apply status filter
+    now = timezone.now()
+    if status_filter == 'active':
+        coupons = coupons.filter(
+            is_active=True,
+            valid_from__lte=now,
+            valid_to__gte=now
+        )
+    elif status_filter == 'inactive':
+        coupons = coupons.filter(is_active=False)
+    elif status_filter == 'expired':
+        coupons = coupons.filter(valid_to__lt=now)
+    
+    # Add usage statistics for each coupon
+    for coupon in coupons:
+        coupon.total_usage = CouponUsage.objects.filter(coupon=coupon).count()
+        coupon.total_discount_given = CouponUsage.objects.filter(
+            coupon=coupon
+        ).aggregate(total=Sum('discount_amount'))['total'] or 0
+    
+    # Pagination
+    paginator = Paginator(coupons, 15)
+    page = request.GET.get('page')
+    coupons_page = paginator.get_page(page)
+    
+    # Filter form
+    filter_form = CouponFilterForm(request.GET)
+    
+    context = {
+        'coupons': coupons_page,
+        'filter_form': filter_form,
+        'search': search,
+        'discount_type_filter': discount_type_filter,
+        'status_filter': status_filter,
+    }
+    
+    return render(request, 'admin_panel/coupon_list.html', context)
+
+
+@superuser_required
+def create_coupon(request):
+    """Create a new coupon"""
+    if request.method == 'POST':
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            coupon = form.save()
+            messages.success(
+                request,
+                f"Coupon '{coupon.code}' created successfully!"
+            )
+            return redirect('admin_panel:coupon_list')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        # Set default values for new coupon
+        initial_data = {
+            'is_active': True,
+            'usage_per_user': 1,
+            'discount_type': 'percentage',
+            'valid_from': timezone.now(),
+            'valid_to': timezone.now() + timezone.timedelta(days=30),
+        }
+        form = CouponForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'title': 'Create New Coupon',
+        'button_text': 'Create Coupon',
+    }
+    
+    return render(request, 'admin_panel/coupon_form.html', context)
+
+
+@superuser_required
+def edit_coupon(request, pk):
+    """Edit existing coupon"""
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    if request.method == 'POST':
+        form = CouponForm(request.POST, instance=coupon)
+        if form.is_valid():
+            coupon = form.save()
+            messages.success(
+                request,
+                f"Coupon '{coupon.code}' updated successfully!"
+            )
+            return redirect('admin_panel:coupon_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = CouponForm(instance=coupon)
+    
+    context = {
+        'form': form,
+        'coupon': coupon,
+        'title': f'Edit Coupon: {coupon.code}',
+        'button_text': 'Update Coupon',
+    }
+    
+    return render(request, 'admin_panel/coupon_form.html', context)
+
+
+@superuser_required
+def delete_coupon(request, pk):
+    """Soft delete a coupon (deactivate)"""
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    if request.method == 'POST':
+        # Check if coupon has been used
+        usage_count = CouponUsage.objects.filter(coupon=coupon).count()
+        
+        if usage_count > 0:
+            # Soft delete - just deactivate
+            coupon.is_active = False
+            coupon.save()
+            messages.success(
+                request,
+                f"Coupon '{coupon.code}' has been deactivated (it was used {usage_count} time(s))."
+            )
+        else:
+            # Hard delete if never used
+            code = coupon.code
+            coupon.delete()
+            messages.success(
+                request,
+                f"Coupon '{code}' has been permanently deleted."
+            )
+        
+        return redirect('admin_panel:coupon_list')
+    
+    # Get usage statistics
+    usage_count = CouponUsage.objects.filter(coupon=coupon).count()
+    total_discount = CouponUsage.objects.filter(
+        coupon=coupon
+    ).aggregate(total=Sum('discount_amount'))['total'] or 0
+    
+    context = {
+        'coupon': coupon,
+        'usage_count': usage_count,
+        'total_discount': total_discount,
+    }
+    
+    return render(request, 'admin_panel/coupon_delete_confirm.html', context)
+
+
+@superuser_required
+def coupon_detail(request, pk):
+    """View coupon details and usage statistics"""
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    # Get usage history
+    usages = CouponUsage.objects.filter(coupon=coupon).select_related(
+        'user', 'order'
+    ).order_by('-used_at')
+    
+    # Pagination for usage history
+    paginator = Paginator(usages, 20)
+    page = request.GET.get('page')
+    usages_page = paginator.get_page(page)
+    
+    # Calculate statistics
+    total_usage = usages.count()
+    total_discount_given = usages.aggregate(
+        total=Sum('discount_amount')
+    )['total'] or 0
+    unique_users = usages.values('user').distinct().count()
+    
+    context = {
+        'coupon': coupon,
+        'usages': usages_page,
+        'total_usage': total_usage,
+        'total_discount_given': total_discount_given,
+        'unique_users': unique_users,
+    }
+    
+    return render(request, 'admin_panel/coupon_detail.html', context)
+
+
+@superuser_required
+def toggle_coupon_status(request, pk):
+    """Toggle coupon active status"""
+    coupon = get_object_or_404(Coupon, pk=pk)
+    
+    if request.method == 'POST':
+        coupon.is_active = not coupon.is_active
+        coupon.save()
+        
+        status = "activated" if coupon.is_active else "deactivated"
+        messages.success(request, f"Coupon '{coupon.code}' has been {status}.")
+    
+    return redirect('admin_panel:coupon_list')
 
 
 

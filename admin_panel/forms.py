@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem
-
+from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem, Coupon, CouponUsage 
+from django.utils import timezone 
 # ------------------------- 
 # Login Form (Superuser login with email + password)
 # -------------------------
@@ -143,7 +143,7 @@ class ProductVariantImageForm(forms.ModelForm):
 class ProductImageForm(forms.ModelForm):
     image = forms.ImageField(
         widget=MultiFileInput(attrs={"multiple": True}),
-        required=False  # Make image upload optional
+        required=False  # Images are optional
     )
 
     class Meta:
@@ -152,8 +152,11 @@ class ProductImageForm(forms.ModelForm):
 
     def clean_image(self):
         images = self.files.getlist("image")
-        if images and len(images) < 1:  # Allow at least 1 image if uploaded
-            raise forms.ValidationError("At least 1 image is required if uploading.")
+        
+        # Validate: Allow 0 to 3 images
+        if images and len(images) > 3:
+            raise forms.ValidationError("You can upload a maximum of 3 images per product.")
+        
         return images
 
 # -------------------------
@@ -275,4 +278,163 @@ class OrderFilterForm(forms.Form):
             'class': 'form-control',
             'type': 'date'
         })
+    )
+# -------------------------
+# Coupon Form
+# -------------------------
+class CouponForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = [
+            'code', 'discount_type', 'discount_value', 'minimum_amount',
+            'max_discount', 'valid_from', 'valid_to', 'is_active',
+            'usage_limit', 'usage_per_user'
+        ]
+        widgets = {
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., SAVE20',
+                'style': 'text-transform: uppercase;'
+            }),
+            'discount_type': forms.Select(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Enter discount value'
+            }),
+            'minimum_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Minimum order value (0 for no minimum)'
+            }),
+            'max_discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Max discount (leave empty for no cap)'
+            }),
+            'valid_from': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'valid_to': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'usage_limit': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'placeholder': 'Total usage limit (leave empty for unlimited)'
+            }),
+            'usage_per_user': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'value': '1'
+            }),
+        }
+        help_texts = {
+            'code': 'Unique coupon code (will be converted to uppercase)',
+            'discount_type': 'Choose percentage or fixed amount discount',
+            'discount_value': 'For percentage: enter 10 for 10%. For fixed: enter amount',
+            'max_discount': 'Maximum discount for percentage coupons (optional)',
+            'usage_limit': 'Total number of times this coupon can be used (optional)',
+            'usage_per_user': 'Number of times each user can use this coupon',
+        }
+    
+    def clean_code(self):
+        code = self.cleaned_data.get('code', '').strip().upper()
+        if not code:
+            raise forms.ValidationError("Coupon code is required.")
+        
+        # Check for duplicate codes (exclude current instance if editing)
+        existing = Coupon.objects.filter(code=code)
+        if self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        
+        if existing.exists():
+            raise forms.ValidationError("This coupon code already exists.")
+        
+        return code
+    
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get('discount_value')
+        discount_type = self.cleaned_data.get('discount_type')
+        
+        if discount_value is None or discount_value <= 0:
+            raise forms.ValidationError("Discount value must be greater than 0.")
+        
+        # Validate percentage discount
+        if discount_type == 'percentage' and discount_value > 100:
+            raise forms.ValidationError("Percentage discount cannot exceed 100%.")
+        
+        return discount_value
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        valid_from = cleaned_data.get('valid_from')
+        valid_to = cleaned_data.get('valid_to')
+        discount_type = cleaned_data.get('discount_type')
+        max_discount = cleaned_data.get('max_discount')
+        
+        # Validate date range
+        if valid_from and valid_to:
+            if valid_to <= valid_from:
+                raise forms.ValidationError("End date must be after start date.")
+            
+            
+            # REPLACE WITH THIS (allow past dates when editing, only warn for new coupons):
+            if not self.instance.pk:  # Only for new coupons
+                # Make timezone-aware comparison
+                now = timezone.now()
+                # Allow dates that are at least within the last hour (to account for time zone differences)
+                if valid_from < (now - timezone.timedelta(hours=1)):
+                    raise forms.ValidationError("Start date cannot be in the past.")
+        
+        # Validate max_discount for percentage coupons
+        if discount_type == 'fixed' and max_discount:
+            raise forms.ValidationError(
+                "Max discount only applies to percentage-based coupons."
+            )
+        
+        return cleaned_data
+
+
+# -------------------------
+# Coupon Filter Form
+# -------------------------
+class CouponFilterForm(forms.Form):
+    DISCOUNT_TYPE_CHOICES = [
+        ('', 'All Types'),
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('', 'All Status'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('expired', 'Expired'),
+    ]
+    
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search by code...'
+        })
+    )
+    
+    discount_type = forms.ChoiceField(
+        required=False,
+        choices=DISCOUNT_TYPE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
     )

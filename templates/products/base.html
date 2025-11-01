@@ -30,6 +30,11 @@
     <link rel="stylesheet" href="{% static 'products/css/style.css' %}">
     <!-- Custom styles -->
     <link rel="stylesheet" href="{% static 'products/css/custom.css' %}">
+
+    <!-- Custom Alert System -->
+    <link rel="stylesheet" href="{% static 'products/css/custom-alerts.css' %}">
+    
+
     
     {% block extra_head %}
     {% endblock %}
@@ -133,6 +138,17 @@
         </div>
         </div>
     </nav>
+    
+            {% if messages %}
+            <div class="django-messages" style="display: none;">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
         {% block content %}
         {% endblock %}
         <footer id="colorlib-footer" role="contentinfo">
@@ -223,6 +239,9 @@
     <script src="{% static 'products/js/jquery.stellar.min.js' %}"></script>
     <!-- Main -->
     <script src="{% static 'products/js/main.js' %}"></script>
+
+    <!-- Custom Alert System -->
+    <script src="{% static 'products/js/custom-alerts.js' %}"></script>
     
     <style>
     .search-wrap {

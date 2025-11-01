@@ -605,7 +605,7 @@ def set_default_address_view(request, address_id):
 
 @login_required
 def add_address_view(request):
-    """Add new address"""
+    """Add new address with optional redirect to checkout"""
     if request.method == 'POST':
         form = AddressForm(request.POST)
         if form.is_valid():
@@ -613,6 +613,12 @@ def add_address_view(request):
             address.user = request.user
             address.save()
             messages.success(request, 'Address added successfully!')
+            
+            # FIXED: Check if coming from checkout
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url == 'checkout':
+                return redirect('products:checkout_view')
+            
             return redirect('users:profile')
         else:
             for field, errors in form.errors.items():
@@ -621,11 +627,18 @@ def add_address_view(request):
     else:
         form = AddressForm()
     
-    return render(request, 'users/addresses/add_address.html', {'form': form})
+    # FIXED: Get the next parameter to pass to template
+    next_url = request.GET.get('next', '')
+    
+    return render(request, 'users/addresses/add_address.html', {
+        'form': form,
+        'next': next_url
+    })
+
 
 @login_required
 def edit_address_view(request, address_id):
-    """Edit existing address"""
+    """Edit existing address with optional redirect to checkout"""
     address = get_object_or_404(Address, id=address_id, user=request.user)
     
     if request.method == 'POST':
@@ -633,6 +646,12 @@ def edit_address_view(request, address_id):
         if form.is_valid():
             form.save()
             messages.success(request, 'Address updated successfully!')
+            
+            # FIXED: Check if coming from checkout
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url == 'checkout':
+                return redirect('products:checkout_view')
+            
             return redirect('users:profile')
         else:
             for field, errors in form.errors.items():
@@ -641,7 +660,15 @@ def edit_address_view(request, address_id):
     else:
         form = AddressForm(instance=address)
     
-    return render(request, 'users/addresses/edit_address.html', {'form': form, 'address': address})
+    # FIXED: Get the next parameter to pass to template
+    next_url = request.GET.get('next', '')
+    
+    return render(request, 'users/addresses/edit_address.html', {
+        'form': form,
+        'address': address,
+        'next': next_url
+    })
+
 
 @login_required
 def delete_address_view(request, address_id):
@@ -651,9 +678,21 @@ def delete_address_view(request, address_id):
     if request.method == 'POST':
         address.delete()
         messages.success(request, 'Address deleted successfully!')
+        
+        # FIXED: Check if coming from checkout
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url == 'checkout':
+            return redirect('products:checkout_view')
+        
         return redirect('users:profile')
     
-    return render(request, 'users/addresses/delete_address.html', {'address': address})
+    # FIXED: Pass next parameter to template for delete confirmation
+    next_url = request.GET.get('next', '')
+    
+    return render(request, 'users/addresses/delete_address.html', {
+        'address': address,
+        'next': next_url
+    })
 
 # ------------------ UTILITY FUNCTIONS ------------------
 

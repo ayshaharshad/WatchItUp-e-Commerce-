@@ -14,6 +14,10 @@ urlpatterns = [
     # Variant API
     path('api/variant/<int:product_pk>/<str:variant_color>/', views.get_variant_data, name='get_variant_data'),
     
+    # ====== COUPON MANAGEMENT ======
+    path('coupon/apply/', views.apply_coupon, name='apply_coupon'),
+    path('coupon/remove/', views.remove_coupon, name='remove_coupon'),
+    
     # ====== CART MANAGEMENT ======
     path('cart/', views.cart_view, name='cart_view'),
     path('cart/add/<int:pk>/', views.add_to_cart, name='add_to_cart'),
@@ -21,10 +25,15 @@ urlpatterns = [
     path('cart/remove/<int:item_id>/', views.remove_cart_item, name='remove_cart_item'),
     path('cart/clear/', views.clear_cart, name='clear_cart'),
     
-    # ====== CHECKOUT ======
+    # ====== CHECKOUT & PAYMENT ======
     path('checkout/', views.checkout_view, name='checkout_view'),
-    path('checkout/place-order/', views.place_order, name='place_order'),
+    path('checkout/place-order-cod/', views.place_order_cod, name='place_order_cod'),
+    path('checkout/create-razorpay-order/', views.create_razorpay_order, name='create_razorpay_order'),
+    path('checkout/verify-payment/', views.verify_razorpay_payment, name='verify_razorpay_payment'),
+    
+    # ====== ORDER SUCCESS/FAILURE ======
     path('order/success/<str:order_id>/', views.order_success, name='order_success'),
+    path('order/failure/<str:order_id>/', views.order_failure, name='order_failure'),
     
     # ====== ORDER MANAGEMENT ======
     path('orders/', views.order_list, name='order_list'),
@@ -40,6 +49,5 @@ urlpatterns = [
     path('wishlist/remove/<int:item_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('wishlist/clear/', views.clear_wishlist, name='clear_wishlist'),
     path('wishlist/move-to-cart/<int:item_id>/', views.move_to_cart_from_wishlist, name='move_to_cart_from_wishlist'),
-    path('wishlist/check/<int:pk>/', views.check_wishlist_status, name='check_wishlist_status')
+    path('wishlist/check/<int:pk>/', views.check_wishlist_status, name='check_wishlist_status'),
 ]
-    

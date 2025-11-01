@@ -1,4 +1,3 @@
-
 {% extends 'products/base.html' %}
 {% load static %}
 
@@ -30,7 +29,7 @@
     </div>
 </div>
 
-<!-- Messages -->
+{% comment %} <!-- Messages -->
 {% if messages %}
 <div class="container">
     {% for message in messages %}
@@ -40,7 +39,7 @@
     </div>
     {% endfor %}
 </div>
-{% endif %}
+{% endif %} {% endcomment %}
 
 <div class="colorlib-product">
     <div class="container">
@@ -169,10 +168,17 @@
                             </div>
                             <div class="stock-info">
                                 {% if product.is_in_stock %}
-                                <span class="stock-available">
-                                    <i class="fas fa-check-circle"></i>
-                                    Available in {{ variants.count }} color{% if variants.count > 1 %}s{% endif %}
-                                </span>
+                                    {% if product.has_variants %}
+                                    <span class="stock-available">
+                                        <i class="fas fa-check-circle"></i>
+                                        Available in {{ variants.count }} color{% if variants.count > 1 %}s{% endif %}
+                                    </span>
+                                    {% else %}
+                                    <span class="stock-available">
+                                        <i class="fas fa-check-circle"></i>
+                                        In Stock ({{ product.stock }} available)
+                                    </span>
+                                    {% endif %}
                                 {% else %}
                                 <span class="stock-out">
                                     <i class="fas fa-times-circle"></i>
@@ -217,8 +223,8 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Color Selection -->
-                    {% if variants.count > 0 %}
+                    <!-- Color Selection (Only show if product has variants) -->
+                    {% if product.has_variants %}
                     <div class="color-selection mb-4">
                         <h6>Select Color:</h6>
                         <div class="color-options">
@@ -270,13 +276,19 @@
                         <!-- Add to Cart Form -->
                         <form method="post" action="{% url 'products:add_to_cart' product.pk %}" id="cart-form">
                             {% csrf_token %}
-                            <input type="hidden" name="variant_color" id="selected-variant" value="">
+                            <input type="hidden" name="variant_color" id="selected-variant" value="{% if not product.has_variants %}no-variant{% endif %}">
                             <input type="hidden" name="quantity" value="1">
                             
                             <div class="action-buttons">
+                                {% if product.is_in_stock %}
                                 <button type="submit" class="btn btn-primary btn-lg btn-add-cart">
                                     <i class="icon-shopping-cart"></i> Add to Cart
                                 </button>
+                                {% else %}
+                                <button type="button" class="btn btn-secondary btn-lg" disabled>
+                                    <i class="icon-ban"></i> Out of Stock
+                                </button>
+                                {% endif %}
                                 
                                 <!-- Wishlist Button -->
                                 {% if user.is_authenticated %}
@@ -298,10 +310,14 @@
                             
                             <div class="cart-note">
                                 <small id="cart-note-text">
-                                    {% if product.has_variants %}
-                                        Select a color variant to add to cart
+                                    {% if product.is_in_stock %}
+                                        {% if product.has_variants %}
+                                            Select a color variant to add to cart
+                                        {% else %}
+                                            Ready to add to cart ({{ product.stock }} available)
+                                        {% endif %}
                                     {% else %}
-                                        Ready to add to cart
+                                        Product is currently out of stock
                                     {% endif %}
                                 </small>
                             </div>
@@ -328,6 +344,14 @@
                                 {% if product.has_variants %}{{ variants.count }} options{% else %}Standard{% endif %}
                             </div>
                             <div class="meta-item">
+                                <strong>Stock:</strong> 
+                                {% if product.has_variants %}
+                                    Total {{ product.total_stock }} units
+                                {% else %}
+                                    {{ product.stock }} units
+                                {% endif %}
+                            </div>
+                            <div class="meta-item">
                                 <strong>Added:</strong> {{ product.created_at|date:"M d, Y" }}
                             </div>
                         </div>
@@ -339,6 +363,7 @@
 </div>
 
 <style>
+/* [Keep all your existing styles exactly as they are] */
 /* Main Image Container */
 .product-image-carousel {
     position: relative;
@@ -779,6 +804,10 @@ $(document).ready(function() {
     let currentIndex = 0;
     let images = [];
     
+    // Product has variants check
+    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
+    const isInStock = {{ product.is_in_stock|yesno:"true,false" }};
+    
     // Initialize images array
     {% for image in all_images %}
     images.push({
@@ -860,7 +889,7 @@ $(document).ready(function() {
         }
     }
     
-    // Update info section
+    // FIX: Updated info section logic
     function updateInfo(current) {
         $('.info-content').removeClass('active');
         
@@ -868,29 +897,59 @@ $(document).ready(function() {
         const selectedVariant = $('#selected-variant');
         const metaSku = $('#meta-sku');
         
+        // Check if product is out of stock
+        if (!isInStock) {
+            cartNote.text('Product is currently out of stock');
+            return;
+        }
+        
+        // CASE 1: Viewing GENERAL product image
         if (current.type === 'general') {
             $('#general-info').addClass('active');
-            cartNote.text('{% if product.has_variants %}Select a color variant to add to cart{% else %}Ready to add to cart{% endif %}');
-            selectedVariant.val('');
+            
+            if (hasVariants) {
+                // Product HAS variants - show general overview
+                cartNote.text('Select a color variant to add to cart');
+                selectedVariant.val('');
+            } else {
+                // Product WITHOUT variants - ready to add
+                cartNote.text('Ready to add to cart ({{ product.stock }} available)');
+                selectedVariant.val('no-variant');
+            }
+            
             metaSku.text('WU-{{ product.id|stringformat:"04d" }}');
-        } else {
+            
+            // Deselect any selected color option
+            $('.color-option').removeClass('selected');
+        } 
+        // CASE 2: Viewing VARIANT product image
+        else if (current.type === 'variant' && current.variantColor) {
             const variantInfo = $(`#variant-info-${current.variantColor}`);
+            
             if (variantInfo.length) {
                 variantInfo.addClass('active');
-                cartNote.text(`${current.variantName} variant selected. Ready to add to cart.`);
-                selectedVariant.val(current.variantColor);
+                
+                // Check if this specific variant is in stock
+                const stockText = variantInfo.find('p:contains("Stock:")').text();
+                const isVariantInStock = !stockText.includes('Out of Stock');
+                
+                if (isVariantInStock) {
+                    cartNote.text(`${current.variantName} variant selected. Ready to add to cart.`);
+                    selectedVariant.val(current.variantColor);
+                } else {
+                    cartNote.text(`${current.variantName} variant is out of stock. Please select another color.`);
+                    selectedVariant.val('');
+                }
                 
                 // Update SKU from variant
                 const skuText = variantInfo.find('p:contains("SKU:")').text();
                 const sku = skuText.split(': ')[1];
                 if (sku) metaSku.text(sku);
+                
+                // Select the color option
+                $('.color-option').removeClass('selected');
+                $(`.color-option[data-variant-color="${current.variantColor}"]`).addClass('selected');
             }
-        }
-        
-        // Update color selection
-        $('.color-option').removeClass('selected');
-        if (current.variantColor) {
-            $(`.color-option[data-variant-color="${current.variantColor}"]`).addClass('selected');
         }
     }
     
@@ -920,7 +979,7 @@ $(document).ready(function() {
         }
     });
     
-    // Color option clicks
+    // FIX: Updated color option click handler
     $('.color-option').click(function() {
         const variantColor = $(this).data('variant-color');
         
@@ -930,21 +989,39 @@ $(document).ready(function() {
         );
         
         if (variantIndex !== -1) {
+            // Found variant image - navigate to it
             currentIndex = variantIndex;
             updateDisplay();
         } else {
-            // If no variant image found, just update info
+            // No variant image found - just update info without changing image
             $('.info-content').removeClass('active');
             const variantInfo = $(`#variant-info-${variantColor}`);
+            
             if (variantInfo.length) {
                 variantInfo.addClass('active');
-                $('#cart-note-text').text(`Selected variant. Ready to add to cart.`);
-                $('#selected-variant').val(variantColor);
+                
+                // Check stock status
+                const stockText = variantInfo.find('p:contains("Stock:")').text();
+                const isVariantInStock = !stockText.includes('Out of Stock');
+                
+                if (isVariantInStock) {
+                    $('#cart-note-text').text('Selected variant. Ready to add to cart.');
+                    $('#selected-variant').val(variantColor);
+                } else {
+                    $('#cart-note-text').text('This variant is out of stock. Please select another color.');
+                    $('#selected-variant').val('');
+                }
+                
+                // Update SKU
+                const skuText = variantInfo.find('p:contains("SKU:")').text();
+                const sku = skuText.split(': ')[1];
+                if (sku) $('#meta-sku').text(sku);
             }
+            
+            // Select the color option
+            $('.color-option').removeClass('selected');
+            $(this).addClass('selected');
         }
-        
-        $('.color-option').removeClass('selected');
-        $(this).addClass('selected');
     });
     
     // Keyboard navigation
@@ -993,7 +1070,6 @@ $(document).ready(function() {
     
     // Window resize handler
     $(window).resize(function() {
-        // Reinitialize zoom on resize
         setTimeout(initZoom, 100);
     });
     
@@ -1062,17 +1138,18 @@ $(document).ready(function() {
     adjustZoomPosition();
 });
 
-// ============= WISHLIST FUNCTIONALITY =============
 
+// ============= WISHLIST FUNCTIONALITY =============
 
 {% if user.is_authenticated %}
 (function() {
     const wishlistBtn = $('#wishlist-btn');
-    if (!wishlistBtn.length) return; // Exit if button doesn't exist
+    if (!wishlistBtn.length) return;
     
     const wishlistIcon = $('#wishlist-icon');
     const wishlistText = $('#wishlist-text');
     const productId = wishlistBtn.data('product-id');
+    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
     
     // Get CSRF token
     function getCookie(name) {
@@ -1094,7 +1171,12 @@ $(document).ready(function() {
     
     // Check wishlist status on page load
     function checkWishlistStatus() {
-        const variantColor = $('#selected-variant').val();
+        let variantColor = $('#selected-variant').val();
+        
+        // FIX: For products without variants OR single variant, send empty string
+        if (!hasVariants || variantColor === 'no-variant') {
+            variantColor = '';
+        }
         
         $.ajax({
             url: `/products/wishlist/check/${productId}/`,
@@ -1141,14 +1223,21 @@ $(document).ready(function() {
     wishlistBtn.on('click', function(e) {
         e.preventDefault();
         
-        const variantColor = $('#selected-variant').val();
+        let variantColor = $('#selected-variant').val();
         const inWishlist = wishlistBtn.data('in-wishlist');
         
-        // FIX: Only check if product has MULTIPLE variants
+        // FIX: Only require variant selection if product has MULTIPLE variants
         const variantCount = {{ variants.count }};
-        if (variantCount > 1 && !variantColor) {
+        
+        // Only validate if product has variants AND multiple color options
+        if (hasVariants && variantCount > 1 && (!variantColor || variantColor === 'no-variant')) {
             showMessage('Please select a color variant first', 'warning');
             return;
+        }
+        
+        // For products without variants or single variant
+        if (!hasVariants || variantColor === 'no-variant' || variantCount <= 1) {
+            variantColor = '';  // Send empty for backend to handle
         }
         
         if (inWishlist) {
@@ -1178,13 +1267,20 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
                 console.log('Error adding to wishlist:', error);
                 console.log('Response:', xhr.responseText);
-                showMessage('Failed to add to wishlist. Please try again.', 'error');
+                
+                // Try to parse error message from response
+                let errorMsg = 'Failed to add to wishlist. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                
+                showMessage(errorMsg, 'error');
             }
         });
     });
     
     // Check status on page load
-    setTimeout(checkWishlistStatus, 500); // Small delay to ensure page is loaded
+    setTimeout(checkWishlistStatus, 500);
     
     // Re-check when variant changes
     $('.color-option').on('click', function() {
@@ -1194,132 +1290,6 @@ $(document).ready(function() {
 })();
 {% endif %}
 
-{% comment %} {% if user.is_authenticated %}
-(function() {
-    const wishlistBtn = $('#wishlist-btn');
-    const wishlistIcon = $('#wishlist-icon');
-    const wishlistText = $('#wishlist-text');
-    const productId = wishlistBtn.data('product-id');
-    
-    // Get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    
-    const csrftoken = getCookie('csrftoken');
-    
-    // Check wishlist status on page load
-    function checkWishlistStatus() {
-        const variantColor = $('#selected-variant').val();
-        
-        $.ajax({
-            url: `/wishlist/check/${productId}/`,
-            method: 'GET',
-            data: { variant_color: variantColor },
-            success: function(response) {
-                updateWishlistButton(response.in_wishlist);
-                if (response.wishlist_count !== undefined) {
-                    $('#wishlist-count').text(response.wishlist_count);
-                }
-            },
-            error: function() {
-                console.log('Failed to check wishlist status');
-            }
-        });
-    }
-    
-    // Update button appearance
-    function updateWishlistButton(inWishlist) {
-        wishlistBtn.data('in-wishlist', inWishlist);
-        
-        if (inWishlist) {
-            wishlistBtn.addClass('in-wishlist');
-            wishlistBtn.css({
-                'background-color': '#dc3545',
-                'border-color': '#dc3545',
-                'color': 'white'
-            });
-            wishlistText.text('In Wishlist');
-            wishlistIcon.css('color', 'white');
-        } else {
-            wishlistBtn.removeClass('in-wishlist');
-            wishlistBtn.css({
-                'background-color': '',
-                'border-color': '',
-                'color': ''
-            });
-            wishlistText.text('Wishlist');
-            wishlistIcon.css('color', '');
-        }
-    }
-    
-    // Handle wishlist button click
-    wishlistBtn.on('click', function(e) {
-        e.preventDefault();
-        
-        const variantColor = $('#selected-variant').val();
-        const inWishlist = wishlistBtn.data('in-wishlist');
-        
-        // Check if variant is required but not selected
-        {% if product.has_variants %}
-        if (!variantColor) {
-            showMessage('Please select a color variant first', 'warning');
-            return;
-        }
-        {% endif %}
-        
-        if (inWishlist) {
-            showMessage('This item is already in your wishlist', 'info');
-            return;
-        }
-        
-        // Add to wishlist
-        $.ajax({
-            url: `/wishlist/add/${productId}/`,
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            },
-            data: {
-                variant_color: variantColor
-            },
-            success: function(response) {
-                if (response.success) {
-                    updateWishlistButton(true);
-                    $('#wishlist-count').text(response.wishlist_count);
-                    showMessage(response.message, 'success');
-                } else {
-                    showMessage(response.message, 'error');
-                }
-            },
-            error: function() {
-                showMessage('Failed to add to wishlist. Please try again.', 'error');
-            }
-        });
-    });
-    
-    // Check status on page load
-    checkWishlistStatus();
-    
-    // Re-check when variant changes
-    $('.color-option').on('click', function() {
-        setTimeout(checkWishlistStatus, 100);
-    });
-    
-})();
-{% endif %} {% endcomment %}
-
 // ============= ADD TO CART FUNCTIONALITY =============
 $('#cart-form').on('submit', function(e) {
     e.preventDefault();
@@ -1327,15 +1297,29 @@ $('#cart-form').on('submit', function(e) {
     const form = $(this);
     const submitBtn = form.find('.btn-add-cart');
     const originalText = submitBtn.html();
-    const variantColor = $('#selected-variant').val();
+    let variantColor = $('#selected-variant').val();
+    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
+    
+    // Check if product is in stock
+    if (!{{ product.is_in_stock|yesno:"true,false" }}) {
+        showMessage('This product is currently out of stock', 'error');
+        return false;
+    }
     
     // Count number of variants
     const variantCount = {{ variants.count }};
     
-    // Only validate if there are multiple variants
-    if (variantCount > 1 && !variantColor) {
+    // FIX: Only validate variant selection if product has MULTIPLE variants
+    if (hasVariants && variantCount > 1 && (!variantColor || variantColor === 'no-variant')) {
         showMessage('Please select a color variant first', 'warning');
         return false;
+    }
+    
+    // For products without variants or single variant
+    if (!hasVariants) {
+        variantColor = '';  // Send empty for products without variants
+    } else if (variantColor === 'no-variant' || variantCount <= 1) {
+        variantColor = '';
     }
     
     // Disable button and show loading
@@ -1383,50 +1367,20 @@ $('#cart-form').on('submit', function(e) {
 
 // ============= MESSAGE DISPLAY FUNCTION =============
 function showMessage(message, type) {
-    // Map type to Bootstrap alert class
-    const alertTypes = {
-        'success': 'alert-success',
-        'error': 'alert-danger',
-        'warning': 'alert-warning',
-        'info': 'alert-info'
-    };
-    
-    const alertClass = alertTypes[type] || 'alert-info';
-    
-    // Create alert HTML
-    const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
-             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-            <strong>${type.charAt(0).toUpperCase() + type.slice(1)}!</strong> ${message}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    `;
-    
-    // Remove any existing alerts
-    $('.alert[style*="position: fixed"]').remove();
-    
-    // Add new alert
-    $('body').append(alertHtml);
-    
-    // Auto-dismiss after 4 seconds
-    setTimeout(function() {
-        $('.alert[style*="position: fixed"]').fadeOut('slow', function() {
-            $(this).remove();
-        });
-    }, 4000);
+    if (typeof showAlert === 'function') {
+        showAlert(message, type, 5000);
+    } else {
+        alert(message);
+    }
 }
 
-// ============= HANDLE GENERAL PRODUCTS (No Variants) =============
-{% if not product.has_variants %}
-// For products without variants, set a default value
-$(document).ready(function() {
-    // Mark as ready to add (no variant selection needed)
-    $('#cart-note-text').text('Ready to add to cart');
-});
-{% endif %}
 
-console.log('Cart and Wishlist functionality loaded successfully!');
+
 </script>
-{% endblock %}    
+{% endblock %}
+
+
+
+
+
+

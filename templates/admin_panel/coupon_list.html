@@ -1,0 +1,181 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Manage Coupons - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-tags me-2"></i>Manage Coupons
+        </h2>
+        <a href="{% url 'admin_panel:create_coupon' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Create New Coupon
+        </a>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    {{ filter_form.search }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.discount_type }}
+                </div>
+                <div class="col-md-3">
+                    {{ filter_form.status }}
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Coupons Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if coupons %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Min. Order</th>
+                            <th>Validity Period</th>
+                            <th>Usage</th>
+                            <th>Total Discount Given</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coupon in coupons %}
+                        <tr>
+                            <td>
+                                <strong class="text-primary">{{ coupon.code }}</strong>
+                                {% if not coupon.is_active %}
+                                <span class="badge bg-danger ms-2">Inactive</span>
+                                {% elif coupon.valid_to < request.timezone_now %}
+                                <span class="badge bg-secondary ms-2">Expired</span>
+                                {% elif coupon.usage_limit and coupon.used_count >= coupon.usage_limit %}
+                                <span class="badge bg-warning ms-2">Limit Reached</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if coupon.discount_type == 'percentage' %}
+                                    <span class="badge bg-success">{{ coupon.discount_value }}% OFF</span>
+                                    {% if coupon.max_discount %}
+                                    <br><small class="text-muted">Max: ₹{{ coupon.max_discount }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-info">₹{{ coupon.discount_value }} OFF</span>
+                                {% endif %}
+                            </td>
+                            <td>₹{{ coupon.minimum_amount|default:"0" }}</td>
+                            <td>
+                                <small>
+                                    <strong>From:</strong> {{ coupon.valid_from|date:"d M Y H:i" }}<br>
+                                    <strong>To:</strong> {{ coupon.valid_to|date:"d M Y H:i" }}
+                                </small>
+                            </td>
+                            <td>
+                                {{ coupon.total_usage|default:0 }}
+                                {% if coupon.usage_limit %}
+                                / {{ coupon.usage_limit }}
+                                {% else %}
+                                / ∞
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">Per user: {{ coupon.usage_per_user }}</small>
+                            </td>
+                            <td class="text-success">
+                                <strong>₹{{ coupon.total_discount_given|floatformat:2 }}</strong>
+                            </td>
+                            <td>
+                                {% if coupon.is_valid %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'admin_panel:coupon_detail' coupon.pk %}" 
+                                       class="btn btn-sm btn-info" 
+                                       title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'admin_panel:edit_coupon' coupon.pk %}" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" 
+                                          action="{% url 'admin_panel:toggle_coupon_status' coupon.pk %}" 
+                                          style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="btn btn-sm {% if coupon.is_active %}btn-secondary{% else %}btn-success{% endif %}" 
+                                                title="{% if coupon.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                            <i class="fas fa-{% if coupon.is_active %}ban{% else %}check{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'admin_panel:delete_coupon' coupon.pk %}" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if coupons.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if coupons.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ coupons.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ coupons.number }} of {{ coupons.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if coupons.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ coupons.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ coupons.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No coupons found.</p>
+                <a href="{% url 'admin_panel:create_coupon' %}" class="btn btn-primary">Create Your First Coupon</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

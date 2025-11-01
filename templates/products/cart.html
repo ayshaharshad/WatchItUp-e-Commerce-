@@ -27,20 +27,30 @@
                 {% endif %}
                 
                 {% for item in cart_items %}
-                    {% comment %} {% with is_unavailable=item in unavailable_items %} {% endcomment %}
-                    <div class="card mb-3 {% if item in unavailable_items %}border-danger{% endif %}">
+                    {% comment %} Check if item is unavailable {% endcomment %}
+                    {% if item in unavailable_items %}
+                        {% with is_unavailable=True %}
+                    <div class="card mb-3 border-danger cart-item-card" data-item-id="{{ item.id }}">
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <!-- Product Image -->
                                 <div class="col-md-2">
-                                    {% if item.variant.primary_variant_image %}
-                                        <img src="{{ item.variant.primary_variant_image.image.url }}" 
-                                             class="img-fluid rounded" 
-                                             alt="{{ item.product.name }}">
-                                    {% elif item.product.primary_general_image %}
-                                        <img src="{{ item.product.primary_general_image.image.url }}" 
-                                             class="img-fluid rounded" 
-                                             alt="{{ item.product.name }}">
+                                    {% if item.variant %}
+                                        {% if item.variant.primary_variant_image %}
+                                            <img src="{{ item.variant.primary_variant_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% elif item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 
@@ -52,45 +62,152 @@
                                             {{ item.product.name }}
                                         </a>
                                     </h5>
-                                    <p class="text-muted mb-1">Color: {{ item.variant.get_color_display }}</p>
+                                    {% if item.variant %}
+                                        <p class="text-muted mb-1">Color: {{ item.variant.get_color_display }}</p>
+                                    {% else %}
+                                        <p class="text-muted mb-1">Standard Product</p>
+                                    {% endif %}
                                     <p class="mb-0">
-                                        <strong>₹{{ item.variant.price }}</strong>
+                                        <strong>₹{{ item.unit_price }}</strong>
                                     </p>
-                                    
-                                    {% if is_unavailable %}
-                                        <span class="badge bg-danger mt-2">Unavailable</span>
-                                    {% elif not item.variant.is_in_stock %}
-                                        <span class="badge bg-warning text-dark mt-2">Out of Stock</span>
+                                    <span class="badge bg-danger mt-2">Unavailable</span>
+                                </div>
+                                
+                                <!-- Quantity Controls -->
+                                <div class="col-md-3">
+                                    <span class="text-danger">Cannot checkout</span>
+                                </div>
+                                
+                                <!-- Item Total & Remove -->
+                                <div class="col-md-2 text-end">
+                                    <p class="mb-2">
+                                        <strong>₹<span class="item-total">{{ item.item_total }}</span></strong>
+                                    </p>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger remove-cart-item-btn" 
+                                            data-item-id="{{ item.id }}">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        {% endwith %}
+                    {% else %}
+                        {% comment %} Item is available {% endcomment %}
+                    <div class="card mb-3 cart-item-card" data-item-id="{{ item.id }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <!-- Product Image -->
+                                <div class="col-md-2">
+                                    {% if item.variant %}
+                                        {% if item.variant.primary_variant_image %}
+                                            <img src="{{ item.variant.primary_variant_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% elif item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Product Details -->
+                                <div class="col-md-4">
+                                    <h5 class="mb-1">
+                                        <a href="{% url 'products:product_detail' item.product.pk %}" 
+                                           class="text-decoration-none text-dark">
+                                            {{ item.product.name }}
+                                        </a>
+                                    </h5>
+                                    {% if item.variant %}
+                                        <p class="text-muted mb-1">Color: {{ item.variant.get_color_display }}</p>
+                                        <p class="mb-0">
+                                            <strong>₹{{ item.variant.price }}</strong>
+                                        </p>
+                                        {% if not item.variant.is_in_stock %}
+                                            <span class="badge bg-warning text-dark mt-2">Out of Stock</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <p class="text-muted mb-1">Standard Product</p>
+                                        <p class="mb-0">
+                                            <strong>₹{{ item.product.base_price }}</strong>
+                                        </p>
+                                        {% if item.product.stock <= 0 %}
+                                            <span class="badge bg-warning text-dark mt-2">Out of Stock</span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 
                                 <!-- Quantity Controls -->
                                 <div class="col-md-3">
-                                    {% if not is_unavailable and item.variant.is_in_stock %}
-                                        <div class="input-group">
-                                            <button class="btn btn-outline-secondary btn-sm quantity-btn" 
-                                                    data-action="decrement" 
-                                                    data-item-id="{{ item.id }}"
-                                                    {% if item.quantity <= 1 %}disabled{% endif %}>
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="text" 
-                                                   class="form-control form-control-sm text-center" 
-                                                   value="{{ item.quantity }}" 
-                                                   readonly 
-                                                   style="max-width: 60px;">
-                                            <button class="btn btn-outline-secondary btn-sm quantity-btn" 
-                                                    data-action="increment" 
-                                                    data-item-id="{{ item.id }}"
-                                                    {% if item.quantity >= item.product.max_quantity_per_order or item.quantity >= item.variant.stock_quantity %}disabled{% endif %}>
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                        <small class="text-muted d-block mt-1">
-                                            Stock: {{ item.variant.stock_quantity }}
-                                        </small>
+                                    {% comment %} Check stock availability {% endcomment %}
+                                    {% if item.variant %}
+                                        {% if item.variant.is_in_stock %}
+                                            <div class="input-group">
+                                                <button class="btn btn-outline-secondary btn-sm quantity-btn" 
+                                                        data-action="decrement" 
+                                                        data-item-id="{{ item.id }}"
+                                                        {% if item.quantity <= 1 %}disabled{% endif %}>
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm text-center quantity-display" 
+                                                       value="{{ item.quantity }}" 
+                                                       readonly 
+                                                       style="max-width: 60px;">
+                                                <button class="btn btn-outline-secondary btn-sm quantity-btn" 
+                                                        data-action="increment" 
+                                                        data-item-id="{{ item.id }}"
+                                                        data-max-quantity="{{ item.product.max_quantity_per_order }}"
+                                                        data-stock-quantity="{{ item.variant.stock_quantity }}"
+                                                        {% if item.quantity >= item.product.max_quantity_per_order or item.quantity >= item.variant.stock_quantity %}disabled{% endif %}>
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Stock: {{ item.variant.stock_quantity }}
+                                            </small>
+                                        {% else %}
+                                            <span class="text-danger">Cannot checkout</span>
+                                        {% endif %}
                                     {% else %}
-                                        <span class="text-danger">Cannot checkout</span>
+                                        {% comment %} Product without variant {% endcomment %}
+                                        {% if item.product.stock > 0 %}
+                                            <div class="input-group">
+                                                <button class="btn btn-outline-secondary btn-sm quantity-btn" 
+                                                        data-action="decrement" 
+                                                        data-item-id="{{ item.id }}"
+                                                        {% if item.quantity <= 1 %}disabled{% endif %}>
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm text-center quantity-display" 
+                                                       value="{{ item.quantity }}" 
+                                                       readonly 
+                                                       style="max-width: 60px;">
+                                                <button class="btn btn-outline-secondary btn-sm quantity-btn" 
+                                                        data-action="increment" 
+                                                        data-item-id="{{ item.id }}"
+                                                        data-max-quantity="{{ item.product.max_quantity_per_order }}"
+                                                        data-stock-quantity="{{ item.product.stock }}"
+                                                        {% if item.quantity >= item.product.max_quantity_per_order or item.quantity >= item.product.stock %}disabled{% endif %}>
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                            <small class="text-muted d-block mt-1">
+                                                Stock: {{ item.product.stock }}
+                                            </small>
+                                        {% else %}
+                                            <span class="text-danger">Cannot checkout</span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 
@@ -99,16 +216,16 @@
                                     <p class="mb-2">
                                         <strong>₹<span class="item-total">{{ item.item_total }}</span></strong>
                                     </p>
-                                    <form method="post" action="{% url 'products:remove_cart_item' item.id %}" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fas fa-trash"></i> Remove
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger remove-cart-item-btn" 
+                                            data-item-id="{{ item.id }}">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 {% endfor %}
                 
                 <!-- Clear Cart Button -->
@@ -134,11 +251,11 @@
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tax (18%):</span>
-                            <strong>₹<span id="cart-tax">{{ cart.subtotal|floatformat:2 }}</span></strong>
+                            <strong>₹<span id="cart-tax">{% widthratio cart.subtotal 100 18 %}</span></strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Shipping:</span>
-                            <strong>
+                            <strong id="shipping-display">
                                 {% if cart.subtotal > 500 %}
                                     <span class="text-success">FREE</span>
                                 {% else %}
@@ -149,7 +266,16 @@
                         <hr>
                         <div class="d-flex justify-content-between mb-3">
                             <strong>Total:</strong>
-                            <strong class="text-primary">₹<span id="cart-total">{{ cart.total }}</span></strong>
+                            <strong class="text-primary">
+                                ₹<span id="cart-total">
+                                    {% if cart.subtotal > 500 %}
+                                        {% widthratio cart.subtotal 1 1.18 %}
+                                    {% else %}
+                                        {% widthratio cart.subtotal 1 1.18 as tax_total %}
+                                        {{ tax_total|add:50 }}
+                                    {% endif %}
+                                </span>
+                            </strong>
                         </div>
                         
                         {% if unavailable_items %}
@@ -176,11 +302,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const quantityButtons = document.querySelectorAll('.quantity-btn');
+    const removeButtons = document.querySelectorAll('.remove-cart-item-btn');
     
+    // Quantity update with AJAX
     quantityButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
             const action = this.dataset.action;
             const itemId = this.dataset.itemId;
+            const itemCard = this.closest('.cart-item-card');
+            const quantityInput = itemCard.querySelector('.quantity-display');
+            const buttons = itemCard.querySelectorAll('.quantity-btn');
+            
+            // Disable buttons during request
+            buttons.forEach(btn => btn.disabled = true);
             
             fetch(`/products/cart/update/${itemId}/`, {
                 method: 'POST',
@@ -193,17 +328,129 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    location.reload();
+                    // Update quantity display
+                    quantityInput.value = data.quantity;
+                    
+                    // Update item total
+                    const itemTotal = itemCard.querySelector('.item-total');
+                    itemTotal.textContent = data.item_total.toFixed(2);
+                    
+                    // Update cart summary
+                    updateCartSummary(data);
+                    
+                    // Update button states
+                    updateQuantityButtons(itemCard, data.quantity);
+                    
+                    showAlert('Cart updated successfully', 'success');
                 } else {
-                    alert(data.message);
+                    buttons.forEach(btn => btn.disabled = false);
+                    showAlert(data.message, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                buttons.forEach(btn => btn.disabled = false);
+                showAlert('An error occurred. Please try again.', 'error');
             });
         });
     });
+    
+    // Remove item with AJAX
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (!confirm('Are you sure you want to remove this item?')) {
+                return;
+            }
+            
+            const itemId = this.dataset.itemId;
+            const itemCard = this.closest('.cart-item-card');
+            
+            fetch(`/products/cart/remove/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fade out and remove
+                    itemCard.style.transition = 'opacity 0.3s';
+                    itemCard.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        itemCard.remove();
+                        
+                        // Update summary
+                        updateCartSummary(data);
+                        
+                        // Reload if cart empty
+                        if (data.cart_empty) {
+                            location.reload();
+                        }
+                        
+                        showAlert(data.message, 'success');
+                    }, 300);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred. Please try again.', 'error');
+            });
+        });
+    });
+    
+    function updateCartSummary(data) {
+        document.getElementById('cart-subtotal').textContent = data.cart_subtotal.toFixed(2);
+        document.getElementById('cart-tax').textContent = data.cart_tax.toFixed(2);
+        
+        const shippingDisplay = document.getElementById('shipping-display');
+        if (data.cart_shipping === 0) {
+            shippingDisplay.innerHTML = '<span class="text-success">FREE</span>';
+        } else {
+            shippingDisplay.textContent = '₹' + data.cart_shipping;
+        }
+        
+        document.getElementById('cart-total').textContent = data.cart_total.toFixed(2);
+        
+        // Update cart badge in header (if exists)
+        const cartBadge = document.querySelector('.cart-count');
+        if (cartBadge) {
+            cartBadge.textContent = data.cart_items_count;
+        }
+    }
+    
+    function updateQuantityButtons(itemCard, quantity) {
+        const decrementBtn = itemCard.querySelector('[data-action="decrement"]');
+        const incrementBtn = itemCard.querySelector('[data-action="increment"]');
+        const maxQuantity = parseInt(incrementBtn.dataset.maxQuantity);
+        const stockQuantity = parseInt(incrementBtn.dataset.stockQuantity);
+        
+        decrementBtn.disabled = (quantity <= 1);
+        incrementBtn.disabled = (quantity >= maxQuantity || quantity >= stockQuantity);
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
     
     function getCookie(name) {
         let cookieValue = null;
@@ -221,4 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+.cart-item-card {
+    transition: opacity 0.3s ease;
+}
+</style>
 {% endblock %}
+
+
+
+
+
+

@@ -11,13 +11,13 @@
     
     <style>
         :root {
-            --primary: #667eea;
+            --primary: #11a7edff;
             --primary-dark: #5568d3;
             --secondary: #764ba2;
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --info: #3b82f6;
+            --info: #196ef6d7;
         }
 
         * {
@@ -465,10 +465,15 @@
                             </a>
                         </li>
                         <li class="sidebar-nav-item">
-                            <a href="#" class="sidebar-nav-link">
+                            <a href="{% url 'products:order_list' %}" class="sidebar-nav-link {% if 'order' in request.resolver_match.url_name %}active{% endif %}">
                                 <i class="fas fa-shopping-bag"></i>Order History
                             </a>
                         </li>
+                        {% comment %} <li class="sidebar-nav-item">
+                            <a href="#" class="sidebar-nav-link">
+                                <i class="fas fa-shopping-bag"></i>Order History
+                            </a>
+                        </li> {% endcomment %}
                     </ul>
                 </div>
             </div>

@@ -40,6 +40,14 @@ urlpatterns = [
     path('orders/<str:order_id>/update-status/', views.update_order_status, name='update_order_status'),
     path('orders/<str:order_id>/cancel/', views.cancel_order, name='cancel_order'),
     path('orders/filters/clear/', views.clear_order_filters, name='clear_order_filters'),
+
+    # Coupon Management
+    path('coupons/', views.coupon_list, name='coupon_list'),
+    path('coupons/create/', views.create_coupon, name='create_coupon'),
+    path('coupons/<int:pk>/', views.coupon_detail, name='coupon_detail'),
+    path('coupons/<int:pk>/edit/', views.edit_coupon, name='edit_coupon'),
+    path('coupons/<int:pk>/delete/', views.delete_coupon, name='delete_coupon'),
+    path('coupons/<int:pk>/toggle-status/', views.toggle_coupon_status, name='toggle_coupon_status'),
     
     # Inventory Management
     path('inventory/report/', views.order_inventory_report, name='order_inventory_report'),

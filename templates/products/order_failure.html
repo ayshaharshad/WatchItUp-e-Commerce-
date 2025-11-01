@@ -1,0 +1,314 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}Payment Failed - WatchItUp{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Failure Card -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center py-5">
+                    <!-- Failure Animation/Icon -->
+                    <div class="failure-icon mb-4">
+                        <div class="error-circle">
+                            <span class="error-line error-line-left"></span>
+                            <span class="error-line error-line-right"></span>
+                            <div class="error-circle-border"></div>
+                        </div>
+                    </div>
+
+                    <!-- Failure Message -->
+                    <h2 class="text-danger mb-3">❌ Payment Failed</h2>
+                    <p class="text-muted mb-4">We couldn't process your payment. Please try again.</p>
+
+                    <!-- Order Details -->
+                    <div class="bg-light rounded p-4 mb-4">
+                        <div class="row text-start">
+                            <div class="col-6 mb-3">
+                                <small class="text-muted d-block">Order ID</small>
+                                <strong class="text-primary">{{ order.order_id }}</strong>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <small class="text-muted d-block">Payment Status</small>
+                                <span class="badge bg-danger">Failed</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Order Amount</small>
+                                <strong>₹{{ order.total }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Order Date</small>
+                                <strong>{{ order.created_at|date:"d M, Y" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Failure Reasons -->
+                    <div class="alert alert-warning text-start mb-4">
+                        <h6 class="alert-heading">Common reasons for payment failure:</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Insufficient balance in your account</li>
+                            <li>Incorrect card details or CVV</li>
+                            <li>Payment cancelled by user</li>
+                            <li>Bank declined the transaction</li>
+                            <li>Network or connectivity issues</li>
+                        </ul>
+                    </div>
+
+                    <!-- What happens next -->
+                    <div class="alert alert-info text-start mb-4">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-2"></i>What happens next?
+                        </h6>
+                        <p class="mb-2">Your order is currently on hold. You can:</p>
+                        <ul class="mb-0 ps-3">
+                            <li>Retry the payment immediately</li>
+                            <li>View order details and complete payment later</li>
+                            <li>Cancel the order if you don't wish to proceed</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center mb-3">
+                        <button class="btn btn-primary btn-lg px-4" id="retryPaymentBtn">
+                            <i class="fas fa-redo me-2"></i>Retry Payment
+                        </button>
+                        <a href="{% url 'products:order_detail' order.order_id %}" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="fas fa-eye me-2"></i>View Order Details
+                        </a>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+                        </a>
+                    </div>
+
+                    <!-- Help Section -->
+                    <div class="mt-4 pt-4 border-top">
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-question-circle me-2"></i>
+                            Need help? Contact our support team
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-envelope me-2"></i>
+                            support@watchitup.com | 
+                            <i class="fas fa-phone ms-2 me-2"></i>
+                            1800-XXX-XXXX
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Script for Retry -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const retryPaymentBtn = document.getElementById('retryPaymentBtn');
+
+    retryPaymentBtn.addEventListener('click', function() {
+        retryPayment();
+    });
+
+    function retryPayment() {
+        retryPaymentBtn.disabled = true;
+        retryPaymentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        // Get order details from hidden data or make API call
+        const orderId = '{{ order.order_id }}';
+        
+        // For retry, we need to get the address from the original order
+        // Since order is already created, we'll use a simplified approach
+        
+        // Option 1: Direct retry with existing order data
+        // You might want to create a dedicated retry endpoint that uses existing order data
+        alert('Please contact support to complete this payment or cancel and create a new order.');
+        retryPaymentBtn.disabled = false;
+        retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
+        
+        // Option 2: If you implement a retry endpoint, uncomment below:
+        /*
+        fetch('/products/order/{{ order.order_id }}/retry-payment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                initiateRazorpayPayment(data);
+            } else {
+                alert('Unable to retry payment. Please contact support.');
+                retryPaymentBtn.disabled = false;
+                retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
+            }
+        })
+        .catch(error => {
+            alert('Error occurred. Please try again.');
+            retryPaymentBtn.disabled = false;
+            retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
+        });
+        */
+    }
+
+    function initiateRazorpayPayment(orderData) {
+        const options = {
+            key: orderData.razorpay_key_id,
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: 'WatchItUp',
+            description: `Retry Payment - Order #${orderData.order_id}`,
+            order_id: orderData.razorpay_order_id,
+            prefill: {
+                name: orderData.user_name,
+                email: orderData.user_email,
+                contact: orderData.user_phone
+            },
+            theme: {
+                color: '#3399cc'
+            },
+            handler: function(response) {
+                verifyPayment(response, orderData.order_id);
+            },
+            modal: {
+                ondismiss: function() {
+                    retryPaymentBtn.disabled = false;
+                    retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
+                }
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+    }
+
+    function verifyPayment(response, orderId) {
+        fetch('{% url "products:verify_razorpay_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('Payment verification failed');
+                retryPaymentBtn.disabled = false;
+                retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
+            }
+        });
+    }
+});
+</script>
+
+<!-- Failure Icon Animation Styles -->
+<style>
+.failure-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.error-circle {
+    width: 80px;
+    height: 80px;
+    position: relative;
+    border-radius: 50%;
+    box-sizing: content-box;
+    border: 4px solid #f44336;
+}
+
+.error-circle .error-line {
+    height: 5px;
+    background-color: #f44336;
+    display: block;
+    border-radius: 2px;
+    position: absolute;
+    z-index: 10;
+    width: 47px;
+    top: 37px;
+}
+
+.error-circle .error-line-left {
+    left: 17px;
+    transform: rotate(45deg);
+    animation: error-line-left 0.75s;
+}
+
+.error-circle .error-line-right {
+    right: 16px;
+    transform: rotate(-45deg);
+    animation: error-line-right 0.75s;
+}
+
+.error-circle .error-circle-border {
+    top: -4px;
+    left: -4px;
+    z-index: 10;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    position: absolute;
+    box-sizing: content-box;
+    border: 4px solid rgba(244, 67, 54, .5);
+    animation: error-circle-pulse 0.75s;
+}
+
+@keyframes error-line-left {
+    0% {
+        width: 0;
+        left: 50%;
+    }
+    100% {
+        width: 47px;
+        left: 17px;
+    }
+}
+
+@keyframes error-line-right {
+    0% {
+        width: 0;
+        right: 50%;
+    }
+    100% {
+        width: 47px;
+        right: 16px;
+    }
+}
+
+@keyframes error-circle-pulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+</style>
+{% endblock %}
