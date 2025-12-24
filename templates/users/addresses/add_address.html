@@ -9,6 +9,128 @@
 {% endblock %}
 
 {% block page_actions %}
+{% if next == 'checkout' %}
+<a href="{% url 'products:checkout_view' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Back to Checkout
+</a>
+{% else %}
+<a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Back
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-header"><i class="fas fa-user me-2"></i>Contact Information</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8 mb-3">
+                    <label for="id_full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                    {{ form.full_name }}
+                    {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="id_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                    {{ form.phone }}
+                    {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Address Details</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="id_address_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
+                {{ form.address_line1 }}
+                <small class="form-text text-muted">Street address, house number, building name</small>
+                {% if form.address_line1.errors %}<div class="text-danger small">{{ form.address_line1.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="id_address_line2" class="form-label">Address Line 2 (Optional)</label>
+                {{ form.address_line2 }}
+                <small class="form-text text-muted">Apartment, suite, unit, floor</small>
+                {% if form.address_line2.errors %}<div class="text-danger small">{{ form.address_line2.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_city" class="form-label">City <span class="text-danger">*</span></label>
+                    {{ form.city }}
+                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="id_state" class="form-label">State/Province <span class="text-danger">*</span></label>
+                    {{ form.state }}
+                    {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
+                    {{ form.postal_code }}
+                    {% if form.postal_code.errors %}<div class="text-danger small">{{ form.postal_code.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="id_country" class="form-label">Country <span class="text-danger">*</span></label>
+                    {{ form.country }}
+                    {% if form.country.errors %}<div class="text-danger small">{{ form.country.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="form-check">
+                {{ form.is_default }}
+                <label class="form-check-label" for="id_is_default">
+                    Set as default address
+                </label>
+                <div class="form-text">This address will be pre-selected during checkout</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        {% if next == 'checkout' %}
+        <a href="{% url 'products:checkout_view' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Cancel
+        </a>
+        {% else %}
+        <a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Cancel
+        </a>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save me-1"></i>Save Address
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+
+
+{% comment %} {% extends "users/profile/base.html" %}
+
+{% block page_title %}Add New Address{% endblock %}
+{% block page_icon %}fas fa-plus{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item"><a href="{% url 'users:addresses' %}">Addresses</a></li>
+<li class="breadcrumb-item active">Add Address</li>
+{% endblock %}
+
+{% block page_actions %}
 <!-- FIXED: Check if coming from checkout, if so, go back to checkout -->
 {% if next == 'checkout' %}
 <a href="{% url 'products:checkout_view' %}" class="btn btn-outline-secondary btn-sm">
@@ -119,120 +241,13 @@
         </button>
     </div>
 </form>
-{% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-{% comment %} <!-- ========================================
-     4. add_address.html
-     ======================================== -->
-{% extends "users/profile/base.html" %}
-
-{% block page_title %}Add New Address{% endblock %}
-{% block page_icon %}fas fa-plus{% endblock %}
-
-{% block breadcrumb_items %}
-<li class="breadcrumb-item"><a href="{% url 'users:addresses' %}">Addresses</a></li>
-<li class="breadcrumb-item active">Add Address</li>
-{% endblock %}
-
-{% block page_actions %}
-<a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary btn-sm">
-    <i class="fas fa-arrow-left me-1"></i>Back
-</a>
-{% endblock %}
-
-{% block content %}
-<form method="post">
-    {% csrf_token %}
-    
-    <div class="card">
-        <div class="card-header"><i class="fas fa-user me-2"></i>Contact Information</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8 mb-3">
-                    <label for="id_full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
-                    {{ form.full_name }}
-                    {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="id_phone" class="form-label">Phone Number</label>
-                    {{ form.phone }}
-                    {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Address Details</div>
-        <div class="card-body">
-            <div class="mb-3">
-                <label for="id_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                {{ form.line1 }}
-                <small class="form-text text-muted">Street address, house number, building name</small>
-                {% if form.line1.errors %}<div class="text-danger small">{{ form.line1.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="mb-3">
-                <label for="id_line2" class="form-label">Address Line 2 (Optional)</label>
-                {{ form.line2 }}
-                <small class="form-text text-muted">Apartment, suite, unit, floor</small>
-                {% if form.line2.errors %}<div class="text-danger small">{{ form.line2.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="id_city" class="form-label">City <span class="text-danger">*</span></label>
-                    {{ form.city }}
-                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="id_state" class="form-label">State/Province <span class="text-danger">*</span></label>
-                    {{ form.state }}
-                    {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="id_postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
-                    {{ form.postal_code }}
-                    {% if form.postal_code.errors %}<div class="text-danger small">{{ form.postal_code.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="id_country" class="form-label">Country <span class="text-danger">*</span></label>
-                    {{ form.country }}
-                    {% if form.country.errors %}<div class="text-danger small">{{ form.country.errors.0 }}</div>{% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-body">
-            <div class="form-check">
-                {{ form.is_default }}
-                <label class="form-check-label" for="id_is_default">
-                    Set as default address
-                </label>
-                <div class="form-text">This address will be pre-selected during checkout</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="d-flex justify-content-between">
-        <a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-times me-1"></i>Cancel
-        </a>
-        <button type="submit" class="btn btn-success">
-            <i class="fas fa-save me-1"></i>Save Address
-        </button>
-    </div>
-</form>
 {% endblock %} {% endcomment %}
+
+
+
+
+
+
+
+
+

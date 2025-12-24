@@ -101,7 +101,7 @@
                         {% for product in products %}
                         <div class="col-lg-4 col-md-6 mb-4 text-center">
                             <div class="product-entry border">
-                                <a href="{% url 'products:product_detail' product.pk %}" class="prod-img">
+                                <a href="{% url 'products:product_detail' product.uuid %}" class="prod-img">
                                     {% if product.images.first %}
                                         <img src="{{ product.images.first.image.url }}" class="img-fluid" alt="{{ product.name }}">
                                     {% else %}
@@ -109,7 +109,7 @@
                                     {% endif %}
                                 </a>
                                 <div class="desc">
-                                    <h2><a href="{% url 'products:product_detail' product.pk %}">{{ product.name }}</a></h2>
+                                    <h2><a href="{% url 'products:product_detail' product.uuid %}">{{ product.name }}</a></h2>
                                     {% if product.brand %}
                                         <span class="brand">{{ product.brand.name }}</span>
                                     {% endif %}

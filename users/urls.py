@@ -27,6 +27,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile_view, name='edit_profile'),
     path('profile/change-password/', views.change_password_view, name='change_password'),
+    path('profile/wallet/', views.wallet_view, name='wallet'),
     
     # Email Change
     path('profile/change-email/', views.change_email_view, name='change_email'),
@@ -38,6 +39,9 @@ urlpatterns = [
     path('addresses/<int:address_id>/edit/', views.edit_address_view, name='edit_address'),
     path('addresses/<int:address_id>/delete/', views.delete_address_view, name='delete_address'),
     path('addresses/<int:address_id>/set-default/', views.set_default_address_view, name='set_default_address'),
+    path('addresses/add-ajax/', views.add_address_ajax_view, name='add_address_ajax'),
+
+    
 ]
 
 

@@ -120,24 +120,12 @@ document.addEventListener('DOMContentLoaded', function() {
         retryPaymentBtn.disabled = true;
         retryPaymentBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
 
-        // Get order details from hidden data or make API call
         const orderId = '{{ order.order_id }}';
         
-        // For retry, we need to get the address from the original order
-        // Since order is already created, we'll use a simplified approach
-        
-        // Option 1: Direct retry with existing order data
-        // You might want to create a dedicated retry endpoint that uses existing order data
-        alert('Please contact support to complete this payment or cancel and create a new order.');
-        retryPaymentBtn.disabled = false;
-        retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
-        
-        // Option 2: If you implement a retry endpoint, uncomment below:
-        /*
-        fetch('/products/order/{{ order.order_id }}/retry-payment/', {
+        fetch(`/products/order/${orderId}/retry-payment/`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
             }
         })
@@ -146,17 +134,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 initiateRazorpayPayment(data);
             } else {
-                alert('Unable to retry payment. Please contact support.');
+                alert(data.message || 'Unable to retry payment. Please contact support.');
                 retryPaymentBtn.disabled = false;
                 retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             alert('Error occurred. Please try again.');
             retryPaymentBtn.disabled = false;
             retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
         });
-        */
     }
 
     function initiateRazorpayPayment(orderData) {
@@ -208,10 +196,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 window.location.href = data.redirect_url;
             } else {
-                alert('Payment verification failed');
+                alert('Payment verification failed. Please contact support with Order ID: ' + orderId);
                 retryPaymentBtn.disabled = false;
                 retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
             }
+        })
+        .catch(error => {
+            console.error('Verification error:', error);
+            alert('Payment verification error. Please contact support.');
+            retryPaymentBtn.disabled = false;
+            retryPaymentBtn.innerHTML = '<i class="fas fa-redo me-2"></i>Retry Payment';
         });
     }
 });

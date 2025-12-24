@@ -1,5 +1,3 @@
-# users/forms.py
-
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model, authenticate
@@ -20,10 +18,20 @@ class CustomUserCreationForm(UserCreationForm):
             'autofocus': True
         })
     )
+    referral_code = forms.CharField(
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter referral code (optional)',
+            'style': 'text-transform: uppercase;'
+        }),
+        help_text='Have a referral code? Enter it here to give your friend a reward!'
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2', 'referral_code')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -79,6 +87,22 @@ class CustomUserCreationForm(UserCreationForm):
             raise forms.ValidationError("Password must contain at least one lowercase letter.")
             
         return password
+    
+    def clean_referral_code(self):
+        """Validate referral code"""
+        code = self.cleaned_data.get('referral_code', '').strip().upper()
+        
+        if code:
+            try:
+                referrer = User.objects.get(referral_code=code, is_active=True)
+                # Store referrer in form for later use
+                self.referrer = referrer
+            except User.DoesNotExist:
+                raise forms.ValidationError("Invalid referral code.")
+        else:
+            self.referrer = None
+        
+        return code
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):

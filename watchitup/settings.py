@@ -97,6 +97,22 @@ EMAIL_TIMEOUT = 30
 RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')
 
+# Add after ALLOWED_HOSTS
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None  # Important for Razorpay popup
+
+# Add CSP settings for Razorpay
+CSP_DEFAULT_SRC = ("'self'", "https://checkout.razorpay.com", "https://api.razorpay.com")
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "https://checkout.razorpay.com")
+CSP_FRAME_SRC = ("'self'", "https://api.razorpay.com")
+CSP_CONNECT_SRC = ("'self'", "https://api.razorpay.com", "https://lumberjack.razorpay.com")
+
+
+# IMPORTANT: Add CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
 # ------------------ OTP SETTINGS ------------------
 OTP_EXPIRY_TIME = 300  # 5 minutes in seconds
 
@@ -267,6 +283,22 @@ ADMIN_LOGOUT_REDIRECT_URL = '/admin_panel/login/'
 
 # ------------------ DEFAULTS ------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ------------------ REPORT GENERATION SETTINGS ------------------
+# For PDF reports using ReportLab
+REPORTLAB_FONT_PATH = BASE_DIR / 'fonts'  # Optional: for custom fonts
+
+# Maximum records in downloadable reports
+MAX_REPORT_RECORDS_PDF = 1000
+MAX_REPORT_RECORDS_EXCEL = 10000
+
+# Report caching (optional, for better performance)
+REPORT_CACHE_TIMEOUT = 300  # 5 minutes
+
+# ------------------ DATE FORMAT SETTINGS ------------------
+# For consistent date formatting in reports
+REPORT_DATE_FORMAT = '%Y-%m-%d'
+REPORT_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 APPEND_SLASHES = True
 

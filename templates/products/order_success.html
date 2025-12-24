@@ -40,6 +40,8 @@
                                 <strong>
                                     {% if order.payment_method == 'razorpay' %}
                                         💳 Online Payment
+                                    {% elif order.payment_method == 'wallet' %}
+                                        👛 Wallet Payment
                                     {% else %}
                                         💵 Cash on Delivery
                                     {% endif %}
@@ -57,9 +59,14 @@
                         <h6 class="text-muted mb-2">📍 Delivery Address</h6>
                         <p class="mb-0">
                             <strong>{{ order.shipping_full_name }}</strong><br>
-                            {{ order.shipping_line1 }}
-                            {% if order.shipping_line2 %}, {{ order.shipping_line2 }}{% endif %}<br>
+                            {{ order.shipping_line1 }}<br>
+                            {% if order.shipping_line2 and order.shipping_line2|length > 0 and order.shipping_line2|upper != 'N/A' %}
+                                {{ order.shipping_line2 }}<br>
+                            {% endif %}
                             {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}<br>
+                            {% if order.shipping_country and order.shipping_country|length > 0 and order.shipping_country|upper != 'N/A' %}
+                                {{ order.shipping_country }}<br>
+                            {% endif %}
                             📞 {{ order.shipping_phone }}
                         </p>
                     </div>
@@ -85,10 +92,13 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Action Buttons -->
+                    <!-- ✅ FIXED: Action Buttons with Download Invoice -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                         <a href="{% url 'products:order_detail' order.order_id %}" class="btn btn-primary btn-lg px-4">
                             <i class="fas fa-eye me-2"></i>View Order Details
+                        </a>
+                        <a href="{% url 'products:download_invoice' order.order_id %}" class="btn btn-success btn-lg px-4" target="_blank">
+                            <i class="fas fa-download me-2"></i>Download Invoice
                         </a>
                         <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary btn-lg px-4">
                             <i class="fas fa-shopping-bag me-2"></i>Continue Shopping

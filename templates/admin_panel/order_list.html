@@ -33,6 +33,529 @@
         <div class="col-md-6">
             <div class="card bg-success text-white">
                 <div class="card-body">
+                    <h5 class="card-title">Active Revenue (Current)</h5>
+                    <h2 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h2>
+                    <small>From active items only</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter"></i> Search & Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ filter_form.search }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.status }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.payment_method }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.date_from }}
+                        <small class="text-muted">From Date</small>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.date_to }}
+                        <small class="text-muted">To Date</small>
+                    </div>
+                    <div class="col-md-1 mb-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <a href="{% url 'admin_panel:order_list' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Orders List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Items Status</th>
+                            <th>Current Total</th>
+                            <th>Refunded</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr {% if order.has_mixed_statuses %}class="table-warning"{% endif %}>
+                            <td><strong>{{ order.order_id }}</strong></td>
+                            <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <div>{{ order.shipping_full_name }}</div>
+                                <small class="text-muted">{{ order.user.email }}</small>
+                            </td>
+                            <td>{{ order.shipping_phone }}</td>
+                            
+                            <!-- ✅ NEW: Item Status Breakdown -->
+                            <td>
+                                <div class="d-flex flex-column" style="gap: 2px;">
+                                    {% if order.cached_active_count > 0 %}
+                                        <span class="badge bg-success" style="font-size: 0.7rem;">
+                                            ✓ {{ order.cached_active_count }} Active
+                                        </span>
+                                    {% endif %}
+                                    {% if order.cached_cancelled_count > 0 %}
+                                        <span class="badge bg-danger" style="font-size: 0.7rem;">
+                                            ✗ {{ order.cached_cancelled_count }} Cancelled
+                                        </span>
+                                    {% endif %}
+                                    {% if order.cached_returned_count > 0 %}
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
+                                            ↺ {{ order.cached_returned_count }} Returned
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            
+                            <!-- ✅ FIXED: Show current total (active items only) -->
+                            <td>
+                                <strong class="text-success">₹{{ order.cached_display_total|floatformat:2 }}</strong>
+                                {% if order.has_mixed_statuses %}
+                                    <br><small class="text-muted">(Active items)</small>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- ✅ NEW: Show refunded amount -->
+                            <td>
+                                {% if order.cached_refund_total > 0 %}
+                                    <span class="text-danger">-₹{{ order.cached_refund_total|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td>
+                                {% if order.payment_method == 'cod' %}
+                                    <span class="badge bg-warning text-dark">COD</span>
+                                {% elif order.payment_method == 'razorpay' %}
+                                    <span class="badge bg-info">Online</span>
+                                {% elif order.payment_method == 'wallet' %}
+                                    <span class="badge bg-success">Wallet</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ order.get_payment_method_display }}</span>
+                                {% endif %}
+                            </td>
+                            
+                            <!-- ✅ FIXED: Use display_status with smart badge -->
+                            <td>
+                                {% with badge_info=order.status_badge_info %}
+                                <span class="badge bg-{{ badge_info.color }}" 
+                                      {% if badge_info.color == 'orange' or badge_info.color == 'teal' or badge_info.color == 'purple' %}
+                                      style="background-color: 
+                                      {% if badge_info.color == 'orange' %}#ff9800{% endif %}
+                                      {% if badge_info.color == 'teal' %}#20c997{% endif %}
+                                      {% if badge_info.color == 'purple' %}#6f42c1{% endif %}
+                                      !important;"
+                                      {% endif %}>
+                                    <i class="fas fa-{{ badge_info.icon }} me-1"></i>
+                                    {{ badge_info.text }}
+                                </span>
+                                {% endwith %}
+                            </td>
+                            
+                            <td>
+                                <a href="{% url 'admin_panel:order_detail' order.order_id %}" 
+                                   class="btn btn-sm btn-primary" 
+                                   title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:update_order_status' order.order_id %}" 
+                                   class="btn btn-sm btn-warning" 
+                                   title="Update Status">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <p class="text-muted mb-0">No orders found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if orders.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if orders.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ orders.number }} of {{ orders.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Highlight mixed-status orders */
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+/* Custom badge colors */
+.badge {
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+}
+</style>
+{% endblock %}
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Order Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Order Management</h2>
+                    <p class="text-muted">Manage and track all orders</p>
+                </div>
+                <a href="{% url 'admin_panel:order_inventory_report' %}" class="btn btn-info">
+                    <i class="fas fa-warehouse"></i> Inventory Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <h2 class="mb-0">{{ total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <h2 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter"></i> Search & Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ filter_form.search }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.status }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.payment_method }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.date_from }}
+                        <small class="text-muted">From Date</small>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        {{ filter_form.date_to }}
+                        <small class="text-muted">To Date</small>
+                    </div>
+                    <div class="col-md-1 mb-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <a href="{% url 'admin_panel:order_list' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sorting Options -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <label class="me-3 mb-0">Sort By:</label>
+                <select id="sortSelect" class="form-select" style="width: auto;">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                    <option value="-total" {% if sort_by == '-total' %}selected{% endif %}>Highest Amount</option>
+                    <option value="total" {% if sort_by == 'total' %}selected{% endif %}>Lowest Amount</option>
+                    <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status (A-Z)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Orders List</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Phone</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><strong>{{ order.order_id }}</strong></td>
+                            <td>{{ order.created_at|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <div>{{ order.shipping_full_name }}</div>
+                                <small class="text-muted">{{ order.user.email }}</small>
+                            </td>
+                            <td>{{ order.shipping_phone }}</td>
+                            <td>{{ order.items.count }}</td>
+                            <td><strong>₹{{ order.total|floatformat:2 }}</strong></td>
+                            <td>
+                                {% if order.payment_method == 'cod' %}
+                                    <span class="badge bg-warning text-dark">COD</span>
+                                {% elif order.payment_method == 'razorpay' %}
+                                    <span class="badge bg-info">Online</span>
+                                {% elif order.payment_method == 'wallet' %}
+                                    <span class="badge bg-success">Wallet</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ order.get_payment_method_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- ✅ FIXED: Added all status badges including return statuses -->
+                                {% if order.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif order.status == 'confirmed' %}
+                                    <span class="badge bg-info">Confirmed</span>
+                                {% elif order.status == 'processing' %}
+                                    <span class="badge bg-primary">Processing</span>
+                                {% elif order.status == 'shipped' %}
+                                    <span class="badge bg-primary">Shipped</span>
+                                {% elif order.status == 'out_for_delivery' %}
+                                    <span class="badge bg-purple">Out for Delivery</span>
+                                {% elif order.status == 'delivered' %}
+                                    <span class="badge bg-success">Delivered</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% elif order.status == 'return_requested' %}
+                                    <span class="badge bg-warning">Return Requested</span>
+                                {% elif order.status == 'return_approved' %}
+                                    <span class="badge bg-info">Return Approved</span>
+                                {% elif order.status == 'returned' %}
+                                    <span class="badge bg-secondary">Returned</span>
+                                {% elif order.status == 'refunded' %}
+                                    <span class="badge bg-dark">Refunded</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_panel:order_detail' order.order_id %}" 
+                                   class="btn btn-sm btn-primary" 
+                                   title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:update_order_status' order.order_id %}" 
+                                   class="btn btn-sm btn-warning" 
+                                   title="Update Status">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <p class="text-muted mb-0">No orders found.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if orders.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if orders.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ orders.number }} of {{ orders.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ orders.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if payment_filter %}&payment_method={{ payment_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.getElementById('sortSelect').addEventListener('change', function() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', this.value);
+    window.location.href = url.toString();
+});
+</script>
+
+<style>
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+/* Additional status badge colors for better visibility */
+.badge.bg-warning {
+    color: #000 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.badge.bg-dark {
+    background-color: #212529 !important;
+}
+</style>
+{% endblock %} {% endcomment %}
+
+
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Order Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Order Management</h2>
+                    <p class="text-muted">Manage and track all orders</p>
+                </div>
+                <a href="{% url 'admin_panel:order_inventory_report' %}" class="btn btn-info">
+                    <i class="fas fa-warehouse"></i> Inventory Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <h2 class="mb-0">{{ total_orders }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
                     <h5 class="card-title">Total Revenue</h5>
                     <h2 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h2>
                 </div>
@@ -222,4 +745,4 @@ document.getElementById('sortSelect').addEventListener('change', function() {
     background-color: #6f42c1 !important;
 }
 </style>
-{% endblock %}
+{% endblock %} {% endcomment %}

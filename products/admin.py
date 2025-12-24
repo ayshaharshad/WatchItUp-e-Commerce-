@@ -5,7 +5,7 @@ from .models import (
     Category, Brand, Product, ProductImage, ProductReview, Coupon, CouponUsage,
     ProductVariant, ProductVariantImage, Cart, CartItem, 
     Order, OrderItem, OrderCancellation, OrderReturn, RazorpayPayment,
-    Wishlist, WishlistItem, Checkout, CheckoutItem
+    Wishlist, WishlistItem, Checkout, CheckoutItem, ProductOffer, CategoryOffer, ReferralCoupon
 )
 
 # ------------------ CATEGORY ------------------
@@ -30,13 +30,20 @@ class ProductVariantImageInline(admin.TabularInline):
     extra = 1
     fields = ('image', 'zoom_image', 'is_primary', 'created_at')
     readonly_fields = ('created_at',)
+    verbose_name = "Variant Image"
+    verbose_name_plural = "Variant Images (Color-Specific)"
+
+
+
 
 # ------------------ PRODUCT VARIANT INLINE ------------------
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
-    extra = 1
+    extra = 0  # Don't show empty forms by default
     fields = ('color', 'color_hex', 'price', 'original_price', 'stock_quantity', 'sku', 'is_active')
     readonly_fields = ('sku',)
+    verbose_name = "Product Variant"
+    verbose_name_plural = "Product Variants (Colors)"
 
 # ------------------ PRODUCT IMAGE INLINE ------------------
 class ProductImageInline(admin.TabularInline):
@@ -44,6 +51,9 @@ class ProductImageInline(admin.TabularInline):
     extra = 1
     fields = ('image', 'zoom_image', 'is_primary', 'created_at')
     readonly_fields = ('created_at',)
+    verbose_name = "General Product Image"
+    verbose_name_plural = "General Product Images (Not Color-Specific)"
+
 
 # ------------------ PRODUCT REVIEW INLINE ------------------
 class ProductReviewInline(admin.TabularInline):
@@ -59,7 +69,21 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ('category', 'brand', 'is_active', 'created_at')
     search_fields = ('name', 'description')
     list_editable = ('base_price', 'is_active')
-    inlines = [ProductVariantInline, ProductImageInline, ProductReviewInline]
+    
+    # ✅ CRITICAL: Correct order - ProductImageInline FIRST (general), then ProductVariantInline
+    inlines = [ProductImageInline, ProductVariantInline, ProductReviewInline]
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'category', 'brand', 'base_price', 'description')
+        }),
+        ('Stock & Limits', {
+            'fields': ('stock', 'max_quantity_per_order')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category', 'brand').prefetch_related('variants')
@@ -68,18 +92,36 @@ class ProductAdmin(admin.ModelAdmin):
         return obj.total_stock
     get_total_stock.short_description = 'Total Stock'
 
+
 # ------------------ PRODUCT VARIANT ------------------
+
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
     list_display = ('product', 'color', 'price', 'original_price', 'stock_quantity', 'is_active', 'created_at')
     list_filter = ('color', 'is_active', 'created_at', 'product__category')
     search_fields = ('product__name', 'sku', 'color')
     list_editable = ('price', 'original_price', 'stock_quantity', 'is_active')
-    inlines = [ProductVariantImageInline]
+    inlines = [ProductVariantImageInline]  # ✅ Variant images managed here
     readonly_fields = ('sku', 'created_at')
+    
+    fieldsets = (
+        ('Variant Details', {
+            'fields': ('product', 'color', 'color_hex')
+        }),
+        ('Pricing', {
+            'fields': ('price', 'original_price')
+        }),
+        ('Stock', {
+            'fields': ('stock_quantity', 'sku')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('product')
+
 
 # ------------------ PRODUCT VARIANT IMAGE ------------------
 @admin.register(ProductVariantImage)
@@ -488,6 +530,178 @@ class CheckoutItemAdmin(admin.ModelAdmin):
     search_fields = ('checkout__session_id', 'product_name')
     readonly_fields = ('created_at',)
     raw_id_fields = ('checkout', 'product', 'variant')
+
+# ==================== OFFERS AND REFFERAL COUPONS ====================
+
+@admin.register(ProductOffer)
+class ProductOfferAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'product', 'discount_type', 'discount_value',
+        'start_date', 'end_date', 'is_active', 'get_validity_status'
+    )
+    list_filter = ('discount_type', 'is_active', 'start_date', 'end_date')
+    search_fields = ('name', 'product__name')
+    list_editable = ('is_active',)
+    raw_id_fields = ('product',)
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'start_date'
+    
+    fieldsets = (
+        ('Offer Details', {
+            'fields': ('name', 'product', 'discount_type', 'discount_value', 'max_discount')
+        }),
+        ('Validity Period', {
+            'fields': ('start_date', 'end_date', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_validity_status(self, obj):
+        if obj.is_valid:
+            return format_html('<span style="color: green; font-weight: bold;">✓ Active</span>')
+        elif obj.is_active and obj.start_date > timezone.now():
+            return format_html('<span style="color: orange;">⏰ Upcoming</span>')
+        elif obj.end_date < timezone.now():
+            return format_html('<span style="color: gray;">⏱ Expired</span>')
+        return format_html('<span style="color: red;">✗ Inactive</span>')
+    get_validity_status.short_description = 'Status'
+    
+    actions = ['activate_offers', 'deactivate_offers']
+    
+    def activate_offers(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} offers activated.')
+    activate_offers.short_description = 'Activate selected offers'
+    
+    def deactivate_offers(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} offers deactivated.')
+    deactivate_offers.short_description = 'Deactivate selected offers'
+
+
+@admin.register(CategoryOffer)
+class CategoryOfferAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'category', 'discount_type', 'discount_value',
+        'start_date', 'end_date', 'is_active', 'get_validity_status',
+        'get_affected_products_count'
+    )
+    list_filter = ('discount_type', 'is_active', 'start_date', 'end_date', 'category')
+    search_fields = ('name', 'category__name')
+    list_editable = ('is_active',)
+    raw_id_fields = ('category',)
+    readonly_fields = ('created_at', 'updated_at', 'get_affected_products_count')
+    date_hierarchy = 'start_date'
+    
+    fieldsets = (
+        ('Offer Details', {
+            'fields': ('name', 'category', 'discount_type', 'discount_value', 'max_discount')
+        }),
+        ('Validity Period', {
+            'fields': ('start_date', 'end_date', 'is_active')
+        }),
+        ('Statistics', {
+            'fields': ('get_affected_products_count',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_validity_status(self, obj):
+        if obj.is_valid:
+            return format_html('<span style="color: green; font-weight: bold;">✓ Active</span>')
+        elif obj.is_active and obj.start_date > timezone.now():
+            return format_html('<span style="color: orange;">⏰ Upcoming</span>')
+        elif obj.end_date < timezone.now():
+            return format_html('<span style="color: gray;">⏱ Expired</span>')
+        return format_html('<span style="color: red;">✗ Inactive</span>')
+    get_validity_status.short_description = 'Status'
+    
+    def get_affected_products_count(self, obj):
+        from .models import Product
+        count = Product.objects.filter(category=obj.category, is_active=True).count()
+        return format_html('<strong>{}</strong> products', count)
+    get_affected_products_count.short_description = 'Affected Products'
+    
+    actions = ['activate_offers', 'deactivate_offers']
+    
+    def activate_offers(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} offers activated.')
+    activate_offers.short_description = 'Activate selected offers'
+    
+    def deactivate_offers(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} offers deactivated.')
+    deactivate_offers.short_description = 'Deactivate selected offers'
+
+
+@admin.register(ReferralCoupon)
+class ReferralCouponAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_referrer', 'get_referred_user', 'get_coupon_code',
+        'is_used', 'created_at', 'used_at'
+    )
+    list_filter = ('is_used', 'created_at', 'used_at')
+    search_fields = (
+        'referrer__username', 'referrer__email',
+        'referred_user__username', 'referred_user__email',
+        'coupon__code'
+    )
+    raw_id_fields = ('referrer', 'referred_user', 'coupon')
+    readonly_fields = ('created_at', 'used_at')
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Referral Information', {
+            'fields': ('referrer', 'referred_user', 'coupon')
+        }),
+        ('Usage Status', {
+            'fields': ('is_used', 'used_at')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_referrer(self, obj):
+        return format_html(
+            '<a href="/admin/users/customuser/{}/change/">{}</a>',
+            obj.referrer.id,
+            obj.referrer.username
+        )
+    get_referrer.short_description = 'Referrer'
+    
+    def get_referred_user(self, obj):
+        return format_html(
+            '<a href="/admin/users/customuser/{}/change/">{}</a>',
+            obj.referred_user.id,
+            obj.referred_user.username
+        )
+    get_referred_user.short_description = 'Referred User'
+    
+    def get_coupon_code(self, obj):
+        return format_html(
+            '<a href="/admin/products/coupon/{}/change/"><code>{}</code></a>',
+            obj.coupon.id,
+            obj.coupon.code
+        )
+    get_coupon_code.short_description = 'Coupon Code'
+    
+    def has_add_permission(self, request):
+        # Referral coupons should only be created programmatically
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        # Prevent deletion for audit trail
+        return False
 
 # Customize Admin Site Header
 admin.site.site_header = 'WatchItUp Admin'

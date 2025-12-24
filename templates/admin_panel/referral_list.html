@@ -1,0 +1,212 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Referral Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="fas fa-user-friends"></i> Referral Management</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total Referrals</h5>
+                    <h2>{{ total_referrals }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Active Coupons</h5>
+                    <h2>{{ active_referrals }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Used Coupons</h5>
+                    <h2>{{ used_referrals }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="col-md-10">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Search by referrer or referred user..." 
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Referrals Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if referrals %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th>Referred User</th>
+                            <th>Coupon Code</th>
+                            <th>Status</th>
+                            <th>Created Date</th>
+                            <th>Used Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for referral in referrals %}
+                        <tr>
+                            <td>
+                                <strong>{{ referral.referrer.username }}</strong><br>
+                                <small class="text-muted">{{ referral.referrer.email }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ referral.referred_user.username }}</strong><br>
+                                <small class="text-muted">{{ referral.referred_user.email }}</small>
+                            </td>
+                            <td>
+                                <code>{{ referral.coupon.code }}</code>
+                            </td>
+                            <td>
+                                {% if referral.is_used %}
+                                    <span class="badge badge-success">Used</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ referral.created_at|date:"d M Y, g:i A" }}</td>
+                            <td>
+                                {% if referral.used_at %}
+                                    {{ referral.used_at|date:"d M Y, g:i A" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if referrals.has_other_pages %}
+            <nav aria-label="Referral pagination">
+                <ul class="pagination justify-content-center">
+                    {% if referrals.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ referrals.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                Previous
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in referrals.paginator.page_range %}
+                        {% if referrals.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > referrals.number|add:'-3' and num < referrals.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if referrals.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ referrals.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                                Next
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No referrals found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Top Referrers -->
+    {% if top_referrers %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Referrers</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Total Referrals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in top_referrers %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge badge-primary">{{ user.referral_count }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #e83e8c;
+}
+</style>
+{% endblock %}

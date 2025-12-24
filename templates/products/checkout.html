@@ -5,7 +5,763 @@
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="mb-4">Checkout</h2>
+    <h1 class="mb-4">
+        <i class="fas fa-shopping-cart"></i> Checkout
+        {% if is_partial_checkout %}
+        <span class="badge bg-info">{{ selected_items_count }} Selected Item(s)</span>
+        {% endif %}
+    </h1>
+
+    {% if is_partial_checkout %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        You are checking out {{ selected_items_count }} selected item(s) from your cart.
+        <a href="{% url 'products:cart_view' %}" class="alert-link">Go back to cart</a>
+    </div>
+    {% endif %}
+
+    {% if not cod_allowed %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        Cash on Delivery is not available for orders above ₹{{ cod_max_amount }}. 
+        Your order total is ₹{{ total|floatformat:2 }}. Please choose Card/UPI or Wallet payment.
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Left Column: Address & Items -->
+        <div class="col-lg-8">
+            <!-- Delivery Address Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Delivery Address</h5>
+                </div>
+                <div class="card-body">
+                    {% if addresses %}
+                    <!-- Address Selection -->
+                    <div id="address-selection">
+                        {% for address in addresses %}
+                        <div class="form-check border rounded p-3 mb-3">
+                            <input class="form-check-input" type="radio" name="address" 
+                                   id="address{{ address.id }}" value="{{ address.id }}"
+                                   {% if address.is_default %}checked{% endif %}>
+                            <label class="form-check-label w-100" for="address{{ address.id }}">
+                                <strong>{{ address.full_name }}</strong>
+                                {% if address.is_default %}
+                                <span class="badge bg-success">Default</span>
+                                {% endif %}
+                                <br>
+                                {{ address.address_line1 }}
+                                {% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}
+                                <br>
+                                {{ address.city }}, {{ address.state }} - {{ address.postal_code }}
+                                <br>
+                                <i class="fas fa-phone"></i> {{ address.phone }}
+                            </label>
+                        </div>
+                        {% endfor %}
+
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="show-add-address-form">
+                            <i class="fas fa-plus"></i> Add New Address
+                        </button>
+                    </div>
+
+                    <!-- Add New Address Form (Hidden by default) -->
+                    <div id="add-address-form" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Adding a new delivery address
+                            <button type="button" class="btn btn-sm btn-link float-end" id="cancel-add-address">
+                                Select Existing Address
+                            </button>
+                        </div>
+
+                        <form id="new-address-form">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="full_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone Number *</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           placeholder="+1234567890" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="address_line1" class="form-label">Address Line 1 *</label>
+                                <input type="text" class="form-control" id="address_line1" name="address_line1" 
+                                       placeholder="Street address, P.O. box" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="address_line2" class="form-label">Address Line 2</label>
+                                <input type="text" class="form-control" id="address_line2" name="address_line2" 
+                                       placeholder="Apartment, suite, unit, building (optional)">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="city" class="form-label">City *</label>
+                                    <input type="text" class="form-control" id="city" name="city" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="state" class="form-label">State *</label>
+                                    <input type="text" class="form-control" id="state" name="state" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="postal_code" class="form-label">Postal Code *</label>
+                                    <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="country" class="form-label">Country *</label>
+                                    <input type="text" class="form-control" id="country" name="country" 
+                                           value="India" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="is_default" name="is_default">
+                                <label class="form-check-label" for="is_default">
+                                    Set as default address
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-success" id="save-address-btn">
+                                <i class="fas fa-save"></i> Save Address & Continue
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancel-add-address-2">
+                                Cancel
+                            </button>
+                        </form>
+                    </div>
+
+                    {% else %}
+                    <!-- No Address - Show Form by Default -->
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        You don't have any saved addresses. Please add a delivery address to continue.
+                    </div>
+
+                    <form id="new-address-form">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       placeholder="+1234567890" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address_line1" class="form-label">Address Line 1 *</label>
+                            <input type="text" class="form-control" id="address_line1" name="address_line1" 
+                                   placeholder="Street address, P.O. box" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address_line2" class="form-label">Address Line 2</label>
+                            <input type="text" class="form-control" id="address_line2" name="address_line2" 
+                                   placeholder="Apartment, suite, unit, building (optional)">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="state" name="state" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="postal_code" class="form-label">Postal Code *</label>
+                                <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="country" class="form-label">Country *</label>
+                                <input type="text" class="form-control" id="country" name="country" 
+                                       value="India" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="is_default" name="is_default" checked>
+                            <label class="form-check-label" for="is_default">
+                                Set as default address
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-success" id="save-address-btn">
+                            <i class="fas fa-save"></i> Save Address & Continue
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box"></i> Order Items 
+                        ({% if is_partial_checkout %}{{ selected_items_count }}{% else %}{{ cart.total_items }}{% endif %} items)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for item in cart_items %}
+                    <div class="d-flex mb-3 pb-3 border-bottom">
+                        <img src="{{ item.product.images.first.image.url }}" alt="{{ item.product.name }}" 
+                             class="img-fluid me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                        <div class="flex-grow-1">
+                            <h6>{{ item.product.name }}</h6>
+                            {% if item.variant %}
+                            <small class="text-muted">Color: {{ item.variant.get_color_display }}</small><br>
+                            {% endif %}
+                            
+                            {% if item.offer_info.has_offer %}
+                            <div class="mt-1">
+                                <span class="text-success fw-bold">₹{{ item.offer_info.discounted_price }}</span>
+                                <span class="text-muted text-decoration-line-through">₹{{ item.offer_info.original_price }}</span>
+                                <span class="badge bg-danger">{{ item.offer_info.discount_percentage }}% OFF</span>
+                                × {{ item.quantity }}
+                            </div>
+                            <small class="text-success">{{ item.offer_info.offer_name }}</small>
+                            {% else %}
+                            <div class="mt-1">₹{{ item.unit_price }} × {{ item.quantity }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <strong>₹{{ item.item_total }}</strong>
+                            {% if item.offer_info.has_offer %}
+                            <br><small class="text-success">Saved: ₹{{ item.offer_info.savings|floatformat:2 }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Coupon Section -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Apply Coupon</h5>
+                </div>
+                <div class="card-body">
+                    {% if applied_coupon %}
+                    <div class="alert alert-success">
+                        <strong>{{ applied_coupon.code }}</strong> applied! You saved ₹{{ coupon_discount }}
+                        <form method="post" action="{% url 'products:remove_coupon' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger float-end">Remove</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <form method="post" action="{% url 'products:apply_coupon' %}" class="input-group">
+                        {% csrf_token %}
+                        <input type="text" name="coupon_code" class="form-control" placeholder="Enter coupon code">
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </form>
+                    {% endif %}
+
+                    {% if available_coupons %}
+                    <div class="mt-3">
+                        <strong>Available Coupons:</strong>
+                        <ul class="list-unstyled mt-2">
+                            {% for coupon in available_coupons %}
+                            <li class="mb-1">
+                                <span class="badge bg-secondary">{{ coupon.code }}</span> -
+                                {% if coupon.discount_type == 'percentage' %}
+                                {{ coupon.discount_value }}% OFF
+                                {% else %}
+                                ₹{{ coupon.discount_value }} OFF
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Notes -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <label for="order_notes" class="form-label">Order Notes (Optional)</label>
+                    <textarea class="form-control" id="order_notes" rows="3" 
+                              placeholder="Add any special instructions for your order"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Order Summary -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if offer_discount_total > 0 %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Original Total:</span>
+                        <span>₹{{ original_total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Offer Discount:</span>
+                        <span>-₹{{ offer_discount_total }}</span>
+                    </div>
+                    <hr>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>₹{{ subtotal }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (18%):</span>
+                        <span>₹{{ tax|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Shipping:</span>
+                        <span>
+                            {% if shipping_charge == 0 %}
+                            <span class="text-success">FREE</span>
+                            {% else %}
+                            ₹{{ shipping_charge }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if coupon_discount > 0 %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Coupon Discount:</span>
+                        <span>-₹{{ coupon_discount }}</span>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total:</strong>
+                        <strong class="text-primary fs-5">₹{{ total|floatformat:2 }}</strong>
+                    </div>
+
+                    <div class="alert alert-info py-2">
+                        <small>
+                            <strong>Wallet Balance:</strong> ₹{{ wallet_balance|floatformat:2 }}<br>
+                            {% if can_use_wallet %}
+                            <span class="text-success">✓ Sufficient balance for this order</span>
+                            {% else %}
+                            <span class="text-danger">✗ Insufficient balance</span>
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    {% if offer_discount_total > 0 or coupon_discount > 0 %}
+                    <div class="alert alert-success py-2">
+                        <strong>Total Savings:</strong>
+                        ₹{% widthratio offer_discount_total 1 1 as offer_savings %}{% widthratio coupon_discount 1 1 as coupon_savings %}{{ offer_savings|add:coupon_savings|floatformat:2 }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-footer">
+                    <h6 class="mb-3">Payment Method</h6>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="payment_method" 
+                               id="wallet" value="wallet" 
+                               {% if not can_use_wallet %}disabled{% endif %}>
+                        <label class="form-check-label" for="wallet">
+                            💰 Wallet Payment
+                            {% if not can_use_wallet %}
+                            <span class="badge bg-danger">Insufficient Balance</span>
+                            {% endif %}
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="payment_method" 
+                               id="razorpay" value="razorpay" checked>
+                        <label class="form-check-label" for="razorpay">
+                            💳 Credit/Debit Card/UPI (Razorpay)
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" 
+                               id="cod" value="cod" 
+                               {% if not cod_allowed %}disabled{% endif %}>
+                        <label class="form-check-label" for="cod">
+                            💵 Cash on Delivery (COD)
+                            {% if not cod_allowed %}
+                            <span class="badge bg-danger">Not available for orders above ₹{{ cod_max_amount }}</span>
+                            {% endif %}
+                        </label>
+                    </div>
+
+                    <button type="button" class="btn btn-success w-100 btn-lg" id="place-order-btn">
+                        Place Order
+                    </button>
+
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-lock"></i> Secure Checkout
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-check-input:disabled ~ .form-check-label {
+        opacity: 0.5;
+    }
+    .invalid-feedback {
+        display: none;
+    }
+    .is-invalid ~ .invalid-feedback {
+        display: block;
+    }
+</style>
+
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hasAddresses = {{ addresses|length }} > 0;
+    const addressSelection = document.getElementById('address-selection');
+    const addAddressForm = document.getElementById('add-address-form');
+    const showFormBtn = document.getElementById('show-add-address-form');
+    const cancelBtns = document.querySelectorAll('#cancel-add-address, #cancel-add-address-2');
+    const newAddressForm = document.getElementById('new-address-form');
+    const saveAddressBtn = document.getElementById('save-address-btn');
+
+    // Toggle between address selection and add form
+    if (showFormBtn) {
+        showFormBtn.addEventListener('click', function() {
+            addressSelection.style.display = 'none';
+            addAddressForm.style.display = 'block';
+        });
+    }
+
+    cancelBtns.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', function() {
+                if (hasAddresses) {
+                    addressSelection.style.display = 'block';
+                    addAddressForm.style.display = 'none';
+                    newAddressForm.reset();
+                    clearErrors();
+                }
+            });
+        }
+    });
+
+    // Handle new address form submission via AJAX
+    if (newAddressForm) {
+        newAddressForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            clearErrors();
+            saveAddressBtn.disabled = true;
+            saveAddressBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const formData = new FormData(newAddressForm);
+
+            fetch("{% url 'users:add_address_ajax' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('Address saved successfully! You can now place your order.');
+                    
+                    // Reload the page to show the new address
+                    window.location.reload();
+                } else {
+                    // Show validation errors
+                    displayErrors(data.errors);
+                    saveAddressBtn.disabled = false;
+                    saveAddressBtn.innerHTML = '<i class="fas fa-save"></i> Save Address & Continue';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                saveAddressBtn.disabled = false;
+                saveAddressBtn.innerHTML = '<i class="fas fa-save"></i> Save Address & Continue';
+            });
+        });
+    }
+
+    function displayErrors(errors) {
+        for (const [field, messages] of Object.entries(errors)) {
+            const input = document.getElementById(field);
+            if (input) {
+                input.classList.add('is-invalid');
+                const feedback = input.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = messages.join(', ');
+                }
+            }
+        }
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        document.querySelectorAll('.invalid-feedback').forEach(el => {
+            el.textContent = '';
+        });
+    }
+
+    // Place Order button - Full payment integration
+    const placeOrderBtn = document.getElementById('place-order-btn');
+    if (placeOrderBtn) {
+        placeOrderBtn.addEventListener('click', function() {
+            // Check if address is selected
+            const selectedAddress = document.querySelector('input[name="address"]:checked');
+            
+            if (!selectedAddress && hasAddresses && (!addAddressForm || addAddressForm.style.display === 'none')) {
+                alert('Please select a delivery address');
+                return;
+            }
+
+            // If no addresses exist or add form is showing, user must save address first
+            if (!hasAddresses || (addAddressForm && addAddressForm.style.display !== 'none')) {
+                const fullName = document.getElementById('full_name').value.trim();
+                if (!fullName) {
+                    alert('Please save your delivery address first by clicking "Save Address & Continue"');
+                    return;
+                }
+            }
+
+            // Check payment method
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+            if (!paymentMethod) {
+                alert('Please select a payment method');
+                return;
+            }
+
+            const addressId = selectedAddress ? selectedAddress.value : null;
+            const notes = document.getElementById('order_notes').value;
+            const method = paymentMethod.value;
+
+            // Handle different payment methods
+            if (method === 'wallet') {
+                placeWalletOrder(addressId, notes);
+            } else if (method === 'razorpay') {
+                createRazorpayOrder(addressId, notes);
+            } else if (method === 'cod') {
+                placeCODOrder(addressId, notes);
+            }
+        });
+    }
+
+    // Payment method functions
+    function placeWalletOrder(addressId, notes) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "products:place_order_wallet" %}';
+        
+        form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="hidden" name="address_id" value="${addressId}">
+            <input type="hidden" name="notes" value="${notes}">
+        `;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function createRazorpayOrder(addressId, notes) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        fetch('{% url "products:create_razorpay_order" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `address_id=${addressId}&notes=${encodeURIComponent(notes)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                initiateRazorpayPayment(data);
+            } else {
+                alert(data.message || 'Failed to create order');
+                resetOrderButton();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating order. Please try again.');
+            resetOrderButton();
+        });
+    }
+
+    function initiateRazorpayPayment(orderData) {
+        const options = {
+            key: orderData.razorpay_key_id,
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: 'WatchItUp',
+            description: `Order #${orderData.order_id}`,
+            order_id: orderData.razorpay_order_id,
+            prefill: {
+                name: orderData.user_name,
+                email: orderData.user_email,
+                contact: orderData.user_phone
+            },
+            theme: { color: '#3399cc' },
+            modal: {
+                ondismiss: function() {
+                    resetOrderButton();
+                    if (confirm('Payment cancelled. Do you want to try again?')) {
+                        return;
+                    } else {
+                        window.location.href = `/products/order/failure/${orderData.order_id}/`;
+                    }
+                }
+            },
+            handler: function(response) {
+                verifyPayment(response, orderData.order_id);
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function(response) {
+            alert('Payment failed: ' + response.error.description);
+            resetOrderButton();
+        });
+        rzp.open();
+    }
+
+    function verifyPayment(response, orderId) {
+        fetch('{% url "products:verify_razorpay_payment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            window.location.href = data.redirect_url;
+        });
+    }
+
+    function placeCODOrder(addressId, notes) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        fetch('{% url "products:place_order_cod" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `address_id=${addressId}&notes=${encodeURIComponent(notes)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.message || 'Failed to place order');
+                resetOrderButton();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error placing order. Please try again.');
+            resetOrderButton();
+        });
+    }
+
+    function resetOrderButton() {
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.innerHTML = 'Place Order';
+    }
+});
+</script>
+{% endblock %}
+
+
+
+{% comment %} {% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}Checkout - WatchItUp{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4">
+        Checkout
+        {% if is_partial_checkout %}
+        <span class="badge bg-info">{{ selected_items_count }} Selected Item(s)</span>
+        {% endif %}
+    </h2>
+    
+    {% if is_partial_checkout %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> You are checking out <strong>{{ selected_items_count }} selected item(s)</strong> from your cart.
+        <a href="{% url 'products:cart_view' %}" class="alert-link">Go back to cart</a>
+    </div>
+    {% endif %}
+    
+    <!-- ✅ NEW: COD Restriction Alert -->
+    {% if not cod_allowed %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i> 
+        <strong>Cash on Delivery is not available</strong> for orders above ₹{{ cod_max_amount }}. 
+        Your order total is ₹{{ total|floatformat:2 }}. Please choose Card/UPI or Wallet payment.
+    </div>
+    {% endif %}
     
     <div class="row">
         <!-- Left Column: Address & Items -->
@@ -49,7 +805,10 @@
             <!-- Cart Items -->
             <div class="card mb-4">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">🛒 Order Items ({{ cart.total_items }} items)</h5>
+                    <h5 class="mb-0">
+                        🛒 Order Items 
+                        ({% if is_partial_checkout %}{{ selected_items_count }}{% else %}{{ cart.total_items }}{% endif %} items)
+                    </h5>
                 </div>
                 <div class="card-body">
                     {% for item in cart_items %}
@@ -64,12 +823,30 @@
                             <small class="text-muted">Color: {{ item.variant.get_color_display }}</small>
                             {% endif %}
                             <div class="mt-1">
-                                <span class="text-primary fw-bold">₹{{ item.unit_price }}</span>
-                                <span class="text-muted"> × {{ item.quantity }}</span>
+                                {% if item.offer_info.has_offer %}
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="text-success fw-bold">₹{{ item.offer_info.discounted_price }}</span>
+                                        <small class="text-muted text-decoration-line-through">₹{{ item.offer_info.original_price }}</small>
+                                        <span class="badge bg-success">{{ item.offer_info.discount_percentage }}% OFF</span>
+                                        <span class="text-muted"> × {{ item.quantity }}</span>
+                                    </div>
+                                    <small class="text-success d-block">
+                                        <i class="fas fa-tag"></i> {{ item.offer_info.offer_name }}
+                                    </small>
+                                {% else %}
+                                    <span class="text-primary fw-bold">₹{{ item.unit_price }}</span>
+                                    <span class="text-muted"> × {{ item.quantity }}</span>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="text-end">
                             <strong>₹{{ item.item_total }}</strong>
+                            {% if item.offer_info.has_offer %}
+                                <br>
+                                <small class="text-success">
+                                    Saved: ₹{{ item.offer_info.savings|floatformat:2 }}
+                                </small>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -84,7 +861,6 @@
                 <div class="card-body">
                     <div id="couponSection">
                         {% if applied_coupon %}
-                        <!-- Coupon Applied -->
                         <div class="alert alert-success d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>{{ applied_coupon.code }}</strong> applied!
@@ -94,7 +870,6 @@
                             <button type="button" class="btn btn-sm btn-outline-danger" id="removeCouponBtn">Remove</button>
                         </div>
                         {% else %}
-                        <!-- Apply Coupon Form -->
                         <div id="couponForm">
                             <div class="input-group">
                                 <input type="text" class="form-control" id="couponCode" placeholder="Enter coupon code" maxlength="50">
@@ -105,7 +880,6 @@
                         {% endif %}
                     </div>
 
-                    <!-- Available Coupons -->
                     {% if available_coupons %}
                     <div class="mt-3">
                         <small class="text-muted">Available Coupons:</small>
@@ -144,6 +918,16 @@
                     <h5 class="mb-0">Order Summary</h5>
                 </div>
                 <div class="card-body">
+                    {% if offer_discount_total > 0 %}
+                    <div class="d-flex justify-content-between mb-2 text-muted">
+                        <span>Original Total:</span>
+                        <span class="text-decoration-line-through">₹{{ original_total }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span><i class="fas fa-tag"></i> Offer Discount:</span>
+                        <strong id="summaryOfferDiscount">-₹{{ offer_discount_total }}</strong>
+                    </div>
+                    {% endif %}
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
                         <span id="summarySubtotal">₹{{ subtotal }}</span>
@@ -174,24 +958,67 @@
                         <strong class="text-primary" id="summaryTotal">₹{{ total|floatformat:2 }}</strong>
                     </div>
 
-                    <!-- Payment Method Selection -->
+                    <div class="alert alert-info py-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-wallet me-2"></i>Wallet Balance:</span>
+                            <strong>₹{{ wallet_balance|floatformat:2 }}</strong>
+                        </div>
+                        {% if can_use_wallet %}
+                            <small class="text-success">
+                                <i class="fas fa-check-circle"></i> Sufficient balance for this order
+                            </small>
+                        {% else %}
+                            <small class="text-danger">
+                                <i class="fas fa-exclamation-circle"></i> Insufficient balance
+                            </small>
+                        {% endif %}
+                    </div>
+
+                    {% if offer_discount_total > 0 or coupon_discount > 0 %}
+                    <div class="alert alert-success py-2 mb-3">
+                        <small>
+                            <i class="fas fa-check-circle"></i> 
+                            Total Savings: ₹{% widthratio offer_discount_total 1 1 as offer_savings %}{% widthratio coupon_discount 1 1 as coupon_savings %}{{ offer_savings|add:coupon_savings|floatformat:2 }}
+                        </small>
+                    </div>
+                    {% endif %}
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Payment Method</label>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="wallet" value="wallet" 
+                                   {% if can_use_wallet %}{% else %}disabled{% endif %}>
+                            <label class="form-check-label" for="wallet">
+                                💰 Wallet Payment
+                                {% if not can_use_wallet %}
+                                    <span class="badge bg-danger ms-2">Insufficient Balance</span>
+                                {% endif %}
+                            </label>
+                        </div>
+                        
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="payment_method" id="razorpay" value="razorpay" checked>
                             <label class="form-check-label" for="razorpay">
                                 💳 Credit/Debit Card/UPI (Razorpay)
                             </label>
                         </div>
+                        
+                        <!-- ✅ UPDATED: COD option with conditional disable -->
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod">
+                            <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" 
+                                   {% if not cod_allowed %}disabled{% endif %}>
                             <label class="form-check-label" for="cod">
                                 💵 Cash on Delivery (COD)
+                                {% if not cod_allowed %}
+                                    <span class="badge bg-warning text-dark ms-2">
+                                        Not available for orders above ₹{{ cod_max_amount }}
+                                    </span>
+                                {% endif %}
                             </label>
                         </div>
                     </div>
 
-                    <!-- Place Order Button -->
                     <button type="button" class="btn btn-primary w-100 btn-lg" id="placeOrderBtn">
                         <i class="fas fa-lock me-2"></i>Place Order
                     </button>
@@ -205,17 +1032,25 @@
     </div>
 </div>
 
-<!-- Razorpay Script -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Razorpay === 'undefined') {
+        console.error('❌ Razorpay script not loaded!');
+        alert('Payment system not loaded. Please refresh the page.');
+        return;
+    }
+
+    // ✅ NEW: Store COD allowed status
+    const codAllowed = {{ cod_allowed|lower }};
+    const codMaxAmount = {{ cod_max_amount }};
+
     const applyCouponBtn = document.getElementById('applyCouponBtn');
     const removeCouponBtn = document.getElementById('removeCouponBtn');
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     const couponBadges = document.querySelectorAll('.coupon-badge');
 
-    // Apply Coupon
     if (applyCouponBtn) {
         applyCouponBtn.addEventListener('click', function() {
             const couponCode = document.getElementById('couponCode').value.trim();
@@ -227,14 +1062,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Remove Coupon
     if (removeCouponBtn) {
         removeCouponBtn.addEventListener('click', function() {
             removeCoupon();
         });
     }
 
-    // Coupon Badge Click
     couponBadges.forEach(badge => {
         badge.addEventListener('click', function() {
             const couponCode = this.dataset.coupon;
@@ -243,7 +1076,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Apply Coupon Function
     function applyCoupon(code) {
         fetch('{% url "products:apply_coupon" %}', {
             method: 'POST',
@@ -264,11 +1096,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            console.error('Coupon error:', error);
             showCouponMessage('Error applying coupon', 'danger');
         });
     }
 
-    // Remove Coupon Function
     function removeCoupon() {
         fetch('{% url "products:remove_coupon" %}', {
             method: 'POST',
@@ -285,7 +1117,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Show Coupon Message
     function showCouponMessage(message, type) {
         const messageDiv = document.getElementById('couponMessage');
         messageDiv.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -294,7 +1125,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`;
     }
 
-    // Update Order Summary
     function updateOrderSummary(data) {
         document.getElementById('summarySubtotal').textContent = `₹${data.subtotal}`;
         document.getElementById('summaryTax').textContent = `₹${data.tax.toFixed(2)}`;
@@ -302,7 +1132,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('summaryTotal').textContent = `₹${data.total.toFixed(2)}`;
     }
 
-    // Place Order
     placeOrderBtn.addEventListener('click', function() {
         const addressRadio = document.querySelector('input[name="address_id"]:checked');
         const paymentRadio = document.querySelector('input[name="payment_method"]:checked');
@@ -313,17 +1142,55 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const paymentMethod = paymentRadio.value;
+        
+        // ✅ NEW: Validate COD selection
+        if (paymentMethod === 'cod' && !codAllowed) {
+            alert(`Cash on Delivery is not available for orders above ₹${codMaxAmount}. Please choose another payment method.`);
+            return;
+        }
+        
         const addressId = addressRadio.value;
         const notes = document.getElementById('orderNotes').value;
 
-        if (paymentMethod === 'razorpay') {
+        if (paymentMethod === 'wallet') {
+            placeWalletOrder(addressId, notes);
+        } else if (paymentMethod === 'razorpay') {
             createRazorpayOrder(addressId, notes);
         } else {
             placeCODOrder(addressId, notes);
         }
     });
 
-    // Create Razorpay Order
+    function placeWalletOrder(addressId, notes) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "products:place_order_wallet" %}';
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        
+        const addressInput = document.createElement('input');
+        addressInput.type = 'hidden';
+        addressInput.name = 'address_id';
+        addressInput.value = addressId;
+        
+        const notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.name = 'notes';
+        notesInput.value = notes;
+        
+        form.appendChild(csrfInput);
+        form.appendChild(addressInput);
+        form.appendChild(notesInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     function createRazorpayOrder(addressId, notes) {
         placeOrderBtn.disabled = true;
         placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
@@ -341,19 +1208,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 initiateRazorpayPayment(data);
             } else {
-                alert(data.message);
-                placeOrderBtn.disabled = false;
-                placeOrderBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Place Order';
+                alert(data.message || 'Failed to create order');
+                resetButton();
             }
         })
         .catch(error => {
+            console.error('Error:', error);
             alert('Error creating order. Please try again.');
-            placeOrderBtn.disabled = false;
-            placeOrderBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Place Order';
+            resetButton();
         });
     }
 
-    // Initiate Razorpay Payment
     function initiateRazorpayPayment(orderData) {
         const options = {
             key: orderData.razorpay_key_id,
@@ -370,21 +1235,40 @@ document.addEventListener('DOMContentLoaded', function() {
             theme: {
                 color: '#3399cc'
             },
-            handler: function(response) {
-                verifyPayment(response, orderData.order_id);
-            },
             modal: {
                 ondismiss: function() {
-                    window.location.href = `/products/order/failure/${orderData.order_id}/`;
-                }
+                    resetButton();
+                    if (confirm('Payment cancelled. Do you want to try again?')) {
+                        return;
+                    } else {
+                        window.location.href = `/products/order/failure/${orderData.order_id}/`;
+                    }
+                },
+                escape: true,
+                backdropclose: true
+            },
+            handler: function(response) {
+                verifyPayment(response, orderData.order_id);
             }
         };
 
-        const rzp = new Razorpay(options);
-        rzp.open();
+        try {
+            const rzp = new Razorpay(options);
+            
+            rzp.on('payment.failed', function(response) {
+                alert('Payment failed: ' + response.error.description);
+                resetButton();
+                window.location.href = `/products/order/failure/${orderData.order_id}/`;
+            });
+            
+            rzp.open();
+        } catch (error) {
+            console.error('Razorpay error:', error);
+            alert('Failed to initialize payment. Please try again.');
+            resetButton();
+        }
     }
 
-    // Verify Razorpay Payment
     function verifyPayment(response, orderId) {
         fetch('{% url "products:verify_razorpay_payment" %}', {
             method: 'POST',
@@ -407,39 +1291,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
+            console.error('Verification error:', error);
             window.location.href = `/products/order/failure/${orderId}/`;
         });
     }
 
-    // Place COD Order
     function placeCODOrder(addressId, notes) {
         placeOrderBtn.disabled = true;
         placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
 
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '{% url "products:place_order_cod" %}';
-        
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        
-        const addressInput = document.createElement('input');
-        addressInput.type = 'hidden';
-        addressInput.name = 'address_id';
-        addressInput.value = addressId;
-        
-        const notesInput = document.createElement('input');
-        notesInput.type = 'hidden';
-        notesInput.name = 'notes';
-        notesInput.value = notes;
-        
-        form.appendChild(csrfInput);
-        form.appendChild(addressInput);
-        form.appendChild(notesInput);
-        document.body.appendChild(form);
-        form.submit();
+        fetch('{% url "products:place_order_cod" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `address_id=${addressId}&notes=${encodeURIComponent(notes)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.message || 'Failed to place order');
+                resetButton();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error placing order. Please try again.');
+            resetButton();
+        });
+    }
+
+    function resetButton() {
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Place Order';
     }
 });
 </script>
@@ -473,8 +1360,6 @@ document.addEventListener('DOMContentLoaded', function() {
     z-index: 10;
 }
 </style>
-{% endblock %}
-
-
+{% endblock %} {% endcomment %}
 
 

@@ -5,6 +5,504 @@
 
 {% block page_title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 30px;
+    }
+    
+    .filter-buttons {
+        margin-bottom: 20px;
+    }
+    
+    .filter-btn {
+        padding: 8px 20px;
+        margin-right: 10px;
+        border: 2px solid #667eea;
+        background: white;
+        color: #667eea;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-btn.active,
+    .filter-btn:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .top-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .top-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: #f8f9fa;
+        border-radius: 5px;
+        transition: all 0.2s;
+    }
+    
+    .top-list-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    .rank-badge.gold {
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+    
+    .rank-badge.silver {
+        background: linear-gradient(135deg, #C0C0C0, #808080);
+    }
+    
+    .rank-badge.bronze {
+        background: linear-gradient(135deg, #CD7F32, #8B4513);
+    }
+    
+    .item-name {
+        flex: 1;
+        font-weight: 500;
+    }
+    
+    .item-stats {
+        text-align: right;
+    }
+    
+    .stat-value {
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards Row -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 4px solid #4e73df;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Revenue</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            ₹{{ total_revenue|floatformat:2 }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-rupee-sign fa-2x text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 4px solid #1cc88a;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Orders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-cart fa-2x text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2" style="border-left: 4px solid #36b9cc;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Products</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-box fa-2x text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2" style="border-left: 4px solid #f6c23e;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Orders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_orders }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
+                <div class="filter-buttons">
+                    <button class="filter-btn {% if chart_filter == 'monthly' %}active{% endif %}" 
+                            onclick="window.location.href='?chart_filter=monthly'">
+                        Monthly
+                    </button>
+                    <button class="filter-btn {% if chart_filter == 'yearly' %}active{% endif %}" 
+                            onclick="window.location.href='?chart_filter=yearly'">
+                        Yearly
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top 10 Lists -->
+<div class="row">
+    <!-- Top Products -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-trophy"></i> Top 10 Products
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_products %}
+                <ul class="top-list">
+                    {% for product in top_products %}
+                    <li class="top-list-item">
+                        <span class="rank-badge {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                            {{ forloop.counter }}
+                        </span>
+                        <span class="item-name">{{ product.product__name|truncatewords:4 }}</span>
+                        <div class="item-stats">
+                            <div class="stat-value">{{ product.total_quantity }} units</div>
+                            <div class="stat-label">₹{{ product.total_revenue|floatformat:0 }}</div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center">No sales data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Categories -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 bg-success text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-list"></i> Top 10 Categories
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_categories %}
+                <ul class="top-list">
+                    {% for category in top_categories %}
+                    <li class="top-list-item">
+                        <span class="rank-badge {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                            {{ forloop.counter }}
+                        </span>
+                        <span class="item-name">{{ category.product__category__name }}</span>
+                        <div class="item-stats">
+                            <div class="stat-value">{{ category.total_quantity }} units</div>
+                            <div class="stat-label">₹{{ category.total_revenue|floatformat:0 }}</div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center">No sales data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Brands -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header py-3 bg-info text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fas fa-star"></i> Top 10 Brands
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_brands %}
+                <ul class="top-list">
+                    {% for brand in top_brands %}
+                    <li class="top-list-item">
+                        <span class="rank-badge {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                            {{ forloop.counter }}
+                        </span>
+                        <span class="item-name">{{ brand.product__brand__name }}</span>
+                        <div class="item-stats">
+                            <div class="stat-value">{{ brand.total_quantity }} units</div>
+                            <div class="stat-label">₹{{ brand.total_revenue|floatformat:0 }}</div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center">No sales data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline-primary btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <div>Manage Users</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'admin_panel:add_category' %}" class="btn btn-outline-success btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                                <div>Add Category</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'admin_panel:add_product' %}" class="btn btn-outline-info btn-block h-100 d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <i class="fas fa-box fa-2x mb-2"></i>
+                                <div>Add Product</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Info</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <i class="fas fa-server fa-3x text-primary mb-3"></i>
+                    <h5>Admin Panel</h5>
+                    <p class="text-muted">Version 1.0</p>
+                    <hr>
+                    <div class="small">
+                        <div class="mb-2">
+                            <i class="fas fa-calendar text-primary"></i>
+                            Last Login: {{ user.last_login|date:"M d, Y H:i" }}
+                        </div>
+                        <div>
+                            <i class="fas fa-user text-primary"></i>
+                            Logged in as: {{ user.username }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Alerts -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Stock Alerts
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="border-right pb-3">
+                            <h4 class="text-warning">{{ low_stock_count }}</h4>
+                            <p class="text-muted">Low Stock Items (≤5 units)</p>
+                            <a href="{% url 'admin_panel:variant_stock_update' %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-boxes"></i> Manage Stock
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="pb-3">
+                            <h4 class="text-danger">{{ out_of_stock_count }}</h4>
+                            <p class="text-muted">Out of Stock Items</p>
+                            <a href="{% url 'admin_panel:variant_list' %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-exclamation-circle"></i> View Items
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Sales Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Sales (₹)',
+                data: {{ chart_sales|safe }},
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y',
+            }, {
+                label: 'Orders',
+                data: {{ chart_orders|safe }},
+                borderColor: '#1cc88a',
+                backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.datasetIndex === 0) {
+                                    label += '₹' + context.parsed.y.toLocaleString();
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Sales (₹)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Orders'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
+
+
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
 <div class="row">
     <!-- Stats Cards -->
@@ -208,4 +706,4 @@
         color: #5a5c69;
     }
 </style>
-{% endblock %}
+{% endblock %} {% endcomment %}

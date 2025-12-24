@@ -1,126 +1,75 @@
 {% extends 'admin_panel/base.html' %}
 {% load static %}
 
-{% block title %}Order {{ order.order_id }}{% endblock %}
+{% block title %}Order #{{ order.order_id }} - Admin Panel{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-0">Order Details: {{ order.order_id }}</h2>
-                    <p class="text-muted">Order placed on {{ order.created_at|date:"F d, Y at H:i" }}</p>
-                </div>
-                <div>
-                    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Orders
-                    </a>
-                    <a href="{% url 'admin_panel:update_order_status' order.order_id %}" class="btn btn-warning">
-                        <i class="fas fa-edit"></i> Update Status
-                    </a>
-                    {% if order.can_cancel %}
-                    <a href="{% url 'admin_panel:cancel_order' order.order_id %}" class="btn btn-danger">
-                        <i class="fas fa-times"></i> Cancel Order
-                    </a>
+<div class="container-fluid">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:order_list' %}">Orders</a></li>
+            <li class="breadcrumb-item active">{{ order.order_id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Back Button -->
+    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+    </a>
+
+    <!-- Order Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h3 class="mb-1">Order #{{ order.order_id }}</h3>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar me-2"></i>Placed on {{ order.created_at|date:"F d, Y at h:i A" }}
+                    </p>
+                    {% if order.has_mixed_statuses %}
+                    <div class="alert alert-warning mt-2 mb-0 py-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Mixed Item Status:</strong> This order contains items with different statuses
+                    </div>
                     {% endif %}
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {% with badge_info=order.status_badge_info %}
+                    <span class="badge fs-6 px-3 py-2"
+                          style="background-color: 
+                          {% if badge_info.color == 'success' %}#28a745{% endif %}
+                          {% if badge_info.color == 'danger' %}#dc3545{% endif %}
+                          {% if badge_info.color == 'warning' %}#ffc107{% endif %}
+                          {% if badge_info.color == 'info' %}#17a2b8{% endif %}
+                          {% if badge_info.color == 'orange' %}#ff9800{% endif %}
+                          {% if badge_info.color == 'teal' %}#20c997{% endif %}
+                          {% if badge_info.color == 'purple' %}#6f42c1{% endif %}
+                          {% if badge_info.color == 'gray' %}#6c757d{% endif %}
+                          !important; color: white !important;">
+                        <i class="fas fa-{{ badge_info.icon }} me-2"></i>
+                        {{ badge_info.text }}
+                    </span>
+                    {% endwith %}
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Order Status Card -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Order Status</h5>
+        <!-- Left Column: Order Items & Details -->
+        <div class="col-lg-8">
+            
+            <!-- ✅ ACTIVE ITEMS SECTION -->
+            {% if order.active_items %}
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>Active Items ({{ order.active_items.count }})
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label class="text-muted">Current Status</label>
-                        <div class="mt-2">
-                            {% if order.status == 'pending' %}
-                                <span class="badge bg-warning text-dark fs-6">Pending</span>
-                            {% elif order.status == 'confirmed' %}
-                                <span class="badge bg-info fs-6">Confirmed</span>
-                            {% elif order.status == 'shipped' %}
-                                <span class="badge bg-primary fs-6">Shipped</span>
-                            {% elif order.status == 'out_for_delivery' %}
-                                <span class="badge bg-purple fs-6">Out for Delivery</span>
-                            {% elif order.status == 'delivered' %}
-                                <span class="badge bg-success fs-6">Delivered</span>
-                            {% elif order.status == 'cancelled' %}
-                                <span class="badge bg-danger fs-6">Cancelled</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="mb-3">
-                        <label class="text-muted">Payment Method</label>
-                        <div class="mt-2">
-                            {% if order.payment_method == 'cod' %}
-                                <span class="badge bg-warning text-dark">Cash on Delivery</span>
-                            {% else %}
-                                <span class="badge bg-info">Online Payment</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="mb-3">
-                        <label class="text-muted">Order Date</label>
-                        <p class="mb-0">{{ order.created_at|date:"F d, Y H:i" }}</p>
-                    </div>
-                    {% if order.delivered_at %}
-                    <div class="mb-3">
-                        <label class="text-muted">Delivered Date</label>
-                        <p class="mb-0">{{ order.delivered_at|date:"F d, Y H:i" }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Customer Details -->
-        <div class="col-md-8 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-user"></i> Customer & Shipping Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Customer Information</h6>
-                            <p class="mb-1"><strong>Name:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
-                            <p class="mb-1"><strong>Email:</strong> {{ order.user.email }}</p>
-                            <p class="mb-1"><strong>Username:</strong> {{ order.user.username }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-primary">Shipping Address</h6>
-                            <p class="mb-1"><strong>{{ order.shipping_full_name }}</strong></p>
-                            <p class="mb-1">{{ order.shipping_line1 }}</p>
-                            {% if order.shipping_line2 %}
-                            <p class="mb-1">{{ order.shipping_line2 }}</p>
-                            {% endif %}
-                            <p class="mb-1">{{ order.shipping_city }}, {{ order.shipping_state }}</p>
-                            <p class="mb-1">{{ order.shipping_postal_code }}, {{ order.shipping_country }}</p>
-                            <p class="mb-1"><strong>Phone:</strong> {{ order.shipping_phone }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Order Items -->
-    <div class="row">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Order Items</h5>
-                </div>
-                <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
@@ -129,28 +78,471 @@
                                     <th>Variant</th>
                                     <th>Price</th>
                                     <th>Quantity</th>
-                                    <th>Subtotal</th>
-                                    <th>Status</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in order_items %}
+                                {% for item in order.active_items %}
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             {% if item.product_image %}
-                                            <img src="{{ item.product_image.url }}" alt="{{ item.product_name }}" style="width: 50px; height: 50px; object-fit: cover;" class="me-2">
+                                            <img src="{{ item.product_image.url }}" 
+                                                 alt="{{ item.product_name }}" 
+                                                 class="rounded me-2"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
                                             {% endif %}
-                                            <div>
-                                                <strong>{{ item.product_name }}</strong>
-                                            </div>
+                                            <span>{{ item.product_name }}</span>
                                         </div>
                                     </td>
                                     <td>
                                         {% if item.variant_name %}
                                             <span class="badge bg-secondary">{{ item.variant_name }}</span>
                                         {% else %}
-                                            -
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ item.price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong class="text-success">₹{{ item.item_total|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Active Subtotal:</th>
+                                    <th>₹{{ order.active_subtotal|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ✅ CANCELLED ITEMS SECTION -->
+            {% if order.cancelled_items %}
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-times-circle me-2"></i>Cancelled Items ({{ order.cancelled_items.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Variant</th>
+                                    <th>Was Priced</th>
+                                    <th>Quantity</th>
+                                    <th>Refunded</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.cancelled_items %}
+                                <tr class="text-muted" style="text-decoration: line-through;">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product_image %}
+                                            <img src="{{ item.product_image.url }}" 
+                                                 alt="{{ item.product_name }}" 
+                                                 class="rounded me-2 opacity-50"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <span>{{ item.product_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.variant_name %}
+                                            <span class="badge bg-secondary">{{ item.variant_name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ item.price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong class="text-danger">-₹{{ item.item_total|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Total Cancelled:</th>
+                                    <th class="text-danger">
+                                        -₹{{ order.cancelled_total|floatformat:2 }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ✅ RETURNED ITEMS SECTION -->
+            {% if order.returned_items %}
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-undo me-2"></i>Returned Items ({{ order.returned_items.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Variant</th>
+                                    <th>Was Priced</th>
+                                    <th>Quantity</th>
+                                    <th>Refunded</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.returned_items %}
+                                <tr class="text-muted">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product_image %}
+                                            <img src="{{ item.product_image.url }}" 
+                                                 alt="{{ item.product_name }}" 
+                                                 class="rounded me-2 opacity-75"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <span>{{ item.product_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.variant_name %}
+                                            <span class="badge bg-secondary">{{ item.variant_name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ item.price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong class="text-warning">-₹{{ item.item_total|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Total Returned:</th>
+                                    <th class="text-warning">
+                                        -₹{{ order.returned_total|floatformat:2 }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ✅ FINANCIAL SUMMARY - Shows active vs refunded -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator me-2"></i>Financial Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-0">
+                        <tbody>
+                            <!-- Original Order Total -->
+                            <tr>
+                                <td><strong>Original Order Total:</strong></td>
+                                <td class="text-end">₹{{ order.total|floatformat:2 }}</td>
+                            </tr>
+                            
+                            <!-- Refunded Amount -->
+                            {% if order.refunded_amount > 0 %}
+                            <tr class="text-danger">
+                                <td><strong>Refunded Amount:</strong></td>
+                                <td class="text-end">-₹{{ order.refunded_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <!-- Current Active Total -->
+                            <tr class="table-success">
+                                <td><strong>Current Active Total:</strong></td>
+                                <td class="text-end"><h5 class="mb-0 text-success">₹{{ order.active_total|floatformat:2 }}</h5></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    {% if order.has_mixed_statuses %}
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small>
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Active total reflects only items that are currently active. 
+                            Refunded amount has been credited to customer's wallet.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Customer Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
+                            <p><strong>Username:</strong> {{ order.user.username }}</p>
+                            <p><strong>Email:</strong> <a href="mailto:{{ order.user.email }}">{{ order.user.email }}</a></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+                            <p><strong>User ID:</strong> {{ order.user.id }}</p>
+                            <p><strong>Account Created:</strong> {{ order.user.date_joined|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Delivery Address
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>{{ order.shipping_full_name }}</strong></p>
+                    <p class="mb-1">{{ order.shipping_line1 }}</p>
+                    {% if order.shipping_line2 %}
+                    <p class="mb-1">{{ order.shipping_line2 }}</p>
+                    {% endif %}
+                    <p class="mb-1">{{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}</p>
+                    <p class="mb-1">{{ order.shipping_country }}</p>
+                    <p class="mb-0"><i class="fas fa-phone me-2"></i>{{ order.shipping_phone }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions & Summary -->
+        <div class="col-lg-4">
+            <!-- Admin Actions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>Admin Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'admin_panel:update_order_status' order.order_id %}" class="btn btn-warning w-100 mb-2">
+                        <i class="fas fa-edit me-2"></i>Update Order Status
+                    </a>
+                    
+                    {% if order.can_cancel %}
+                    <a href="{% url 'admin_panel:cancel_order' order.order_id %}" class="btn btn-danger w-100 mb-2">
+                        <i class="fas fa-ban me-2"></i>Cancel Order
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'admin_panel:user_wallet_detail' order.user.id %}" class="btn btn-info w-100 mb-2">
+                        <i class="fas fa-wallet me-2"></i>View User Wallet
+                    </a>
+                    
+                    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-list me-2"></i>Back to All Orders
+                    </a>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Payment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Method:</strong><br>
+                        {% if order.payment_method == 'razorpay' %}
+                            <span class="badge bg-info">💳 Online Payment (Razorpay)</span>
+                        {% elif order.payment_method == 'wallet' %}
+                            <span class="badge bg-success">💰 Wallet Payment</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">💵 Cash on Delivery</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{% if order.payment_status == 'completed' %}success{% elif order.payment_status == 'pending' %}warning{% elif order.payment_status == 'failed' %}danger{% elif order.payment_status == 'refunded' %}info{% else %}secondary{% endif %}">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </p>
+                    {% if order.coupon %}
+                    <p class="mb-0">
+                        <strong>Coupon Used:</strong><br>
+                        <code>{{ order.coupon.code }}</code>
+                        <span class="text-success">(-₹{{ order.discount|floatformat:2 }})</span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Order Summary (Current)</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-7">Active Subtotal:</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.active_subtotal|floatformat:2 }}</dd>
+
+                        <dt class="col-sm-7">Tax (18%):</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.active_tax|floatformat:2 }}</dd>
+
+                        <dt class="col-sm-7">Shipping:</dt>
+                        <dd class="col-sm-5 text-end">
+                            {% if order.active_subtotal > 500 %}
+                                <span class="text-success">FREE</span>
+                            {% else %}
+                                ₹50.00
+                            {% endif %}
+                        </dd>
+
+                        {% if order.refunded_amount > 0 %}
+                        <dt class="col-sm-7 text-danger border-top pt-2">Refunded:</dt>
+                        <dd class="col-sm-5 text-end text-danger border-top pt-2">-₹{{ order.refunded_amount|floatformat:2 }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-7 border-top pt-2"><strong>Current Total:</strong></dt>
+                        <dd class="col-sm-5 text-end border-top pt-2">
+                            <strong class="text-primary">₹{{ order.active_total|floatformat:2 }}</strong>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if order.notes %}
+            <!-- Order Notes -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Order Notes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted" style="white-space: pre-line;">{{ order.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.opacity-50 {
+    opacity: 0.5;
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+</style>
+{% endblock %}
+
+
+
+
+{% comment %} {% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_id }} - Admin Panel{% endblock %}
+
+{% block page_title %}Order Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:order_list' %}">Orders</a></li>
+            <li class="breadcrumb-item active">{{ order.order_id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Back Button -->
+    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-outline-secondary mb-3">
+        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+    </a>
+
+    <!-- Order Header -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h3 class="mb-1">Order #{{ order.order_id }}</h3>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar me-2"></i>Placed on {{ order.created_at|date:"F d, Y at h:i A" }}
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'return_requested' %}warning{% elif order.status == 'return_approved' %}info{% elif order.status == 'returned' %}secondary{% else %}info{% endif %} fs-6 px-3 py-2">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Order Items & Details -->
+        <div class="col-lg-8">
+            <!-- Order Items -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box me-2"></i>Order Items ({{ order.items.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Variant</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product_image %}
+                                            <img src="{{ item.product_image.url }}" 
+                                                 alt="{{ item.product_name }}" 
+                                                 class="rounded me-2"
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <span>{{ item.product_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if item.variant_name %}
+                                            <span class="badge bg-secondary">{{ item.variant_name }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td>₹{{ item.price|floatformat:2 }}</td>
@@ -168,65 +560,374 @@
                                 </tr>
                                 {% endfor %}
                             </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Subtotal:</th>
+                                    <th colspan="2">₹{{ order.subtotal|floatformat:2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="4" class="text-end">Tax (18%):</th>
+                                    <th colspan="2">₹{{ order.tax|floatformat:2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="4" class="text-end">Shipping:</th>
+                                    <th colspan="2">
+                                        {% if order.shipping_charge == 0 %}
+                                            <span class="text-success">FREE</span>
+                                        {% else %}
+                                            ₹{{ order.shipping_charge|floatformat:2 }}
+                                        {% endif %}
+                                    </th>
+                                </tr>
+                                {% if order.discount > 0 %}
+                                <tr>
+                                    <th colspan="4" class="text-end text-success">Discount:</th>
+                                    <th colspan="2" class="text-success">-₹{{ order.discount|floatformat:2 }}</th>
+                                </tr>
+                                {% endif %}
+                                <tr class="table-primary">
+                                    <th colspan="4" class="text-end">TOTAL:</th>
+                                    <th colspan="2"><h5 class="mb-0">₹{{ order.total|floatformat:2 }}</h5></th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Order Summary -->
-    <div class="row">
-        <div class="col-md-8 mb-4">
-            {% if order.notes %}
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Order Notes</h5>
+            <!-- Customer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Customer Information
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <pre class="mb-0" style="white-space: pre-wrap;">{{ order.notes }}</pre>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
+                            <p><strong>Username:</strong> {{ order.user.username }}</p>
+                            <p><strong>Email:</strong> <a href="mailto:{{ order.user.email }}">{{ order.user.email }}</a></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+                            <p><strong>User ID:</strong> {{ order.user.id }}</p>
+                            <p><strong>Account Created:</strong> {{ order.user.date_joined|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Delivery Address
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>{{ order.shipping_full_name }}</strong></p>
+                    <p class="mb-1">{{ order.shipping_line1 }}</p>
+                    {% if order.shipping_line2 %}
+                    <p class="mb-1">{{ order.shipping_line2 }}</p>
+                    {% endif %}
+                    <p class="mb-1">{{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}</p>
+                    <p class="mb-1">{{ order.shipping_country }}</p>
+                    <p class="mb-0"><i class="fas fa-phone me-2"></i>{{ order.shipping_phone }}</p>
+                </div>
+            </div>
+
+            <!-- Order Timeline -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Order Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item {% if order.status != 'pending' %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Order Placed</h6>
+                                <small class="text-muted">{{ order.created_at|date:"M d, Y h:i A" }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if order.status == 'confirmed' or order.status == 'processing' or order.status == 'shipped' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Order Confirmed</h6>
+                                <small class="text-muted">{{ order.updated_at|date:"M d, Y h:i A" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if order.status == 'shipped' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Shipped</h6>
+                                <small class="text-muted">In transit</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if order.status == 'delivered' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Delivered</h6>
+                                <small class="text-muted">{{ order.delivered_at|date:"M d, Y h:i A" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if order.status == 'cancelled' %}
+                        <div class="timeline-item cancelled">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Order Cancelled</h6>
+                                <small class="text-muted">{{ order.cancelled_at|date:"M d, Y h:i A" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if order.status == 'return_requested' %}
+                        <div class="timeline-item" style="color: #ff9800;">
+                            <div class="timeline-marker" style="background: #ff9800; box-shadow: 0 0 0 2px #ff9800;"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Return Requested</h6>
+                                <small class="text-muted">Awaiting admin approval</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if order.status == 'return_approved' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Return Approved</h6>
+                                <small class="text-muted">Refund processed</small>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if order.status == 'returned' %}
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Order Returned</h6>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Actions & Summary -->
+        <div class="col-lg-4">
+            <!-- Admin Actions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>Admin Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- ✅ CRITICAL: Update Status button stays in admin panel -->
+                    <a href="{% url 'admin_panel:update_order_status' order.order_id %}" class="btn btn-warning w-100 mb-2">
+                        <i class="fas fa-edit me-2"></i>Update Order Status
+                    </a>
+                    
+                    {% if order.can_cancel %}
+                    <!-- ✅ Admin cancel order (stays in admin panel) -->
+                    <a href="{% url 'admin_panel:cancel_order' order.order_id %}" class="btn btn-danger w-100 mb-2">
+                        <i class="fas fa-ban me-2"></i>Cancel Order
+                    </a>
+                    {% endif %}
+                    
+                    <!-- ✅ CRITICAL: View user wallet stays in admin panel -->
+                    <a href="{% url 'admin_panel:user_wallet_detail' order.user.id %}" class="btn btn-info w-100 mb-2">
+                        <i class="fas fa-wallet me-2"></i>View User Wallet
+                    </a>
+                    
+                    <!-- ✅ CRITICAL: Back to orders stays in admin panel -->
+                    <a href="{% url 'admin_panel:order_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-list me-2"></i>Back to All Orders
+                    </a>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Payment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Method:</strong><br>
+                        {% if order.payment_method == 'razorpay' %}
+                            <span class="badge bg-info">💳 Online Payment (Razorpay)</span>
+                        {% elif order.payment_method == 'wallet' %}
+                            <span class="badge bg-success">💰 Wallet Payment</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">💵 Cash on Delivery</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-2">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-{% if order.payment_status == 'completed' %}success{% elif order.payment_status == 'pending' %}warning{% elif order.payment_status == 'failed' %}danger{% elif order.payment_status == 'refunded' %}info{% else %}secondary{% endif %}">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </p>
+                    {% if order.coupon %}
+                    <p class="mb-0">
+                        <strong>Coupon Used:</strong><br>
+                        <code>{{ order.coupon.code }}</code>
+                        <span class="text-success">(-₹{{ order.discount|floatformat:2 }})</span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-7">Subtotal:</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.subtotal|floatformat:2 }}</dd>
+
+                        <dt class="col-sm-7">Tax:</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.tax|floatformat:2 }}</dd>
+
+                        <dt class="col-sm-7">Shipping:</dt>
+                        <dd class="col-sm-5 text-end">
+                            {% if order.shipping_charge == 0 %}
+                                <span class="text-success">FREE</span>
+                            {% else %}
+                                ₹{{ order.shipping_charge|floatformat:2 }}
+                            {% endif %}
+                        </dd>
+
+                        {% if order.discount > 0 %}
+                        <dt class="col-sm-7 text-success">Discount:</dt>
+                        <dd class="col-sm-5 text-end text-success">-₹{{ order.discount|floatformat:2 }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-7 border-top pt-2"><strong>Total:</strong></dt>
+                        <dd class="col-sm-5 text-end border-top pt-2">
+                            <strong class="text-primary">₹{{ order.total|floatformat:2 }}</strong>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if order.notes %}
+            <!-- Order Notes -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Order Notes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted" style="white-space: pre-line;">{{ order.notes }}</p>
                 </div>
             </div>
             {% endif %}
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-calculator"></i> Order Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Subtotal:</span>
-                        <strong>₹{{ order.subtotal|floatformat:2 }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Tax:</span>
-                        <strong>₹{{ order.tax|floatformat:2 }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Shipping:</span>
-                        <strong>₹{{ order.shipping_charge|floatformat:2 }}</strong>
-                    </div>
-                    {% if order.discount > 0 %}
-                    <div class="d-flex justify-content-between mb-2 text-success">
-                        <span>Discount:</span>
-                        <strong>-₹{{ order.discount|floatformat:2 }}</strong>
-                    </div>
-                    {% endif %}
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <span class="h5 mb-0">Total:</span>
-                        <span class="h5 mb-0 text-primary"><strong>₹{{ order.total|floatformat:2 }}</strong></span>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 <style>
-.bg-purple {
-    background-color: #6f42c1 !important;
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -36px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #dee2e6;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #28a745;
+    box-shadow: 0 0 0 2px #28a745;
+}
+
+.timeline-item.cancelled .timeline-marker {
+    background: #dc3545;
+    box-shadow: 0 0 0 2px #dc3545;
+}
+
+.timeline-content h6 {
+    font-weight: 600;
+    color: #495057;
+}
+
+.timeline-item.completed .timeline-content h6 {
+    color: #28a745;
+}
+
+.timeline-item.cancelled .timeline-content h6 {
+    color: #dc3545;
+}
+
+/* Card Shadows */
+.card {
+    border: none;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Table Styling */
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Badge Styling */
+.badge {
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
 }
 </style>
 {% endblock %}
+
+ {% endcomment %}

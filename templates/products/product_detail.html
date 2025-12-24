@@ -2,9 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
-<!-- Font Awesome for icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% endblock %}
 
@@ -29,80 +27,53 @@
     </div>
 </div>
 
-{% comment %} <!-- Messages -->
-{% if messages %}
-<div class="container">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %} {% endcomment %}
-
 <div class="colorlib-product">
     <div class="container">
         <div class="row row-pb-lg product-detail-wrap">
-            <!-- Image Carousel -->
+            <!-- ========================================== -->
+            <!-- IMAGE CAROUSEL SECTION -->
+            <!-- ========================================== -->
             <div class="col-sm-8">
                 <div class="product-image-carousel">
                     {% if all_images %}
-                    <!-- Main Image Display -->
                     <div class="main-image-container">
                         <div class="image-wrapper">
                             <img src="{{ all_images.0.url|default:'/static/products/images/no-image.jpg' }}" 
                                  alt="{{ product.name }}" 
                                  class="main-image" 
-                                 id="main-image">
+                                 id="main-image"
+                                 data-zoom="{{ all_images.0.zoom_image|default:all_images.0.url }}">
                             
-                            <!-- Enhanced Zoom Lens -->
-                            <div class="zoom-lens" id="zoom-lens"></div>
-                            
-                            <!-- Enhanced Zoomed Image Container -->
-                            <div class="zoom-result" id="zoom-result">
-                                <img src="{{ all_images.0.url|default:'/static/products/images/no-image.jpg' }}" 
-                                     alt="{{ product.name }}" 
-                                     id="zoom-image">
-                            </div>
-                            
-                            <!-- Image Type Indicator -->
                             <div class="image-indicator" id="image-indicator">
-                                {% if all_images.0.type == 'general' %}
-                                    Product Overview
-                                {% else %}
-                                    {{ all_images.0.variant_name }} View
-                                {% endif %}
+                                {{ all_images.0.variant_name|default:"Product Overview" }}
                             </div>
                             
-                            <!-- Navigation Arrows -->
-                            <button class="nav-arrow prev" id="prev-btn">
+                            <button class="nav-arrow prev" id="prev-btn" aria-label="Previous Image">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <button class="nav-arrow next" id="next-btn">
+                            <button class="nav-arrow next" id="next-btn" aria-label="Next Image">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                             
-                            <!-- Image Counter -->
                             <div class="image-counter">
                                 <span id="current-num">1</span> / <span id="total-num">{{ all_images|length }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Thumbnail Strip -->
                     <div class="thumbnail-strip">
                         <div class="thumbnails" id="thumbnails">
                             {% for image in all_images %}
                             <div class="thumbnail {% if forloop.first %}active{% endif %}" 
                                  data-index="{{ forloop.counter0 }}"
                                  data-type="{{ image.type }}"
-                                 data-variant-color="{{ image.variant_color|default:'' }}">
+                                 data-variant-color="{{ image.variant_color|default:'' }}"
+                                 role="button" tabindex="0">
                                 <img src="{{ image.url|default:'/static/products/images/no-image.jpg' }}" 
                                      alt="{{ product.name }}">
                                 <div class="thumb-label">
                                     {% if image.type == 'general' %}
-                                        <span class="general-label">General</span>
+                                        <span class="general-label">Overview</span>
                                     {% else %}
                                         <span class="variant-label" style="background-color: {{ image.color_hex }};">
                                             {{ image.variant_name }}
@@ -114,7 +85,6 @@
                         </div>
                     </div>
                     {% else %}
-                    <!-- No Images Fallback -->
                     <div class="no-images">
                         <img src="{% static 'products/images/no-image.jpg' %}" 
                              alt="No Image Available" 
@@ -124,9 +94,12 @@
                 </div>
             </div>
 
-            <!-- Product Information -->
+            <!-- ========================================== -->
+            <!-- PRODUCT INFORMATION SECTION -->
+            <!-- ========================================== -->
             <div class="col-sm-4">
                 <div class="product-detail-desc">
+                    <!-- ✅ GENERAL PRODUCT INFO -->
                     <h3>{{ product.name }}</h3>
                     {% if product.brand %}
                         <p class="brand-name">Brand: <strong>{{ product.brand.name }}</strong></p>
@@ -155,113 +128,6 @@
                     </div>
                     {% endif %}
 
-                    <!-- Dynamic Information -->
-                    <div class="info-section" id="info-section">
-                        <!-- General Info -->
-                        <div class="info-content general-info active" id="general-info">
-                            <h5><i class="fas fa-info-circle"></i> Product Overview</h5>
-                            <div class="price-section">
-                                <span class="price-text">{{ product.price_range }}</span>
-                                {% if product.has_variants %}
-                                <small class="price-note">Price varies by color</small>
-                                {% endif %}
-                            </div>
-                            <div class="stock-info">
-                                {% if product.is_in_stock %}
-                                    {% if product.has_variants %}
-                                    <span class="stock-available">
-                                        <i class="fas fa-check-circle"></i>
-                                        Available in {{ variants.count }} color{% if variants.count > 1 %}s{% endif %}
-                                    </span>
-                                    {% else %}
-                                    <span class="stock-available">
-                                        <i class="fas fa-check-circle"></i>
-                                        In Stock ({{ product.stock }} available)
-                                    </span>
-                                    {% endif %}
-                                {% else %}
-                                <span class="stock-out">
-                                    <i class="fas fa-times-circle"></i>
-                                    Currently Out of Stock
-                                </span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <!-- Variant Info -->
-                        {% for variant in variants %}
-                        <div class="info-content variant-info" id="variant-info-{{ variant.color }}">
-                            <h5>
-                                <i class="fas fa-palette"></i> 
-                                {{ variant.get_color_display }} Variant
-                                <div class="color-dot" style="background-color: {{ variant.color_hex }};"></div>
-                            </h5>
-                            <div class="price-section">
-                                {% if variant.original_price and variant.discount_percentage > 0 %}
-                                <span class="current-price">₹{{ variant.price }}</span>
-                                <span class="original-price">₹{{ variant.original_price }}</span>
-                                <span class="discount-badge">{{ variant.discount_percentage }}% OFF</span>
-                                {% else %}
-                                <span class="current-price">₹{{ variant.price }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="variant-details">
-                                <p><strong>SKU:</strong> {{ variant.sku }}</p>
-                                <p><strong>Stock:</strong>
-                                    {% if variant.is_in_stock %}
-                                        {% if variant.stock_quantity <= 5 %}
-                                            <span class="stock-low">Only {{ variant.stock_quantity }} left</span>
-                                        {% else %}
-                                            <span class="stock-available">{{ variant.stock_quantity }} available</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="stock-out">Out of Stock</span>
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Color Selection (Only show if product has variants) -->
-                    {% if product.has_variants %}
-                    <div class="color-selection mb-4">
-                        <h6>Select Color:</h6>
-                        <div class="color-options">
-                            {% for variant in variants %}
-                            <div class="color-option" 
-                                 data-variant-color="{{ variant.color }}"
-                                 title="{{ variant.get_color_display }} - ₹{{ variant.price }}">
-                                <div class="color-swatch" style="background-color: {{ variant.color_hex }};"></div>
-                                <span>{{ variant.get_color_display }}</span>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Coupons -->
-                    {% if available_coupons %}
-                    <div class="coupons mb-3">
-                        <h6>Available Offers:</h6>
-                        {% for coupon in available_coupons %}
-                        <div class="coupon">
-                            <code>{{ coupon.code }}</code>
-                            <span>
-                                {% if coupon.discount_type == 'percentage' %}
-                                Get {{ coupon.discount_value }}% off
-                                {% else %}
-                                Get ₹{{ coupon.discount_value }} off
-                                {% endif %}
-                                {% if coupon.minimum_amount > 0 %}
-                                (Min: ₹{{ coupon.minimum_amount }})
-                                {% endif %}
-                            </span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
                     <!-- Description -->
                     {% if product.description %}
                     <div class="description mb-4">
@@ -270,39 +136,120 @@
                     </div>
                     {% endif %}
 
-                    
-                    <!-- Actions -->
+                    <!-- ========================================== -->
+                    <!-- ✅ VARIANT SELECTION (Colors Only) -->
+                    <!-- ========================================== -->
+                    {% if has_variants %}
+                    <div class="variant-selection mb-4">
+                        <h6>Available Colors:</h6>
+                        <p class="text-muted small">Select a color to view price, stock, and details</p>
+                        <div class="color-options">
+                            {% for option in variant_options %}
+                            <div class="color-option" 
+                                 data-variant-color="{{ option.color }}"
+                                 data-is-available="{{ option.is_in_stock|yesno:'true,false' }}"
+                                 {% if not option.is_in_stock %}disabled{% endif %}
+                                 title="{{ option.color_display }}{% if not option.is_in_stock %} - Out of Stock{% endif %}"
+                                 role="button" tabindex="0">
+                                <div class="color-swatch" style="background-color: {{ option.color_hex }};"></div>
+                                <span>{{ option.color_display }}</span>
+                                {% if not option.is_in_stock %}
+                                    <span class="text-danger small">(Out of Stock)</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ========================================== -->
+                    <!-- ✅ VARIANT DETAILS (Shows ONLY after selection) -->
+                    <!-- ========================================== -->
+                    <div id="variant-details" style="display: none;">
+                        <div class="variant-info-card">
+                            <!-- Price Section -->
+                            <div class="price-section mb-3" id="price-display">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            
+                            <!-- Stock Section -->
+                            <div class="stock-info mb-3" id="stock-display">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            
+                            <!-- SKU Section -->
+                            <div class="sku-display mb-3">
+                                <strong>SKU:</strong> 
+                                <span id="display-sku">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- NO VARIANT PRODUCTS (Show basic info) -->
+                    <!-- ========================================== -->
+                    {% if not has_variants %}
+                    <div class="no-variant-info">
+                        <div class="price-section mb-3">
+                            {% if best_offer %}
+                                {% with offer_price=best_offer.get_discounted_price|floatformat:2 %}
+                                <span class="current-price text-success">₹{{ offer_price }}</span>
+                                <span class="original-price">₹{{ product.base_price }}</span>
+                                <span class="discount-badge">{{ best_offer.discount_percentage|floatformat:0 }}% OFF</span>
+                                {% endwith %}
+                            {% else %}
+                                <span class="current-price">₹{{ product.base_price }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="stock-info mb-3">
+                            {% if product.stock > 0 %}
+                                <span class="stock-available">
+                                    <i class="fas fa-check-circle"></i>
+                                    In Stock - {{ product.stock }} available
+                                </span>
+                            {% else %}
+                                <span class="stock-out">
+                                    <i class="fas fa-times-circle"></i>
+                                    Out of Stock
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="sku-display mb-3">
+                            <strong>SKU:</strong> WU-{{ product.id|stringformat:"04d" }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ========================================== -->
+                    <!-- ACTION BUTTONS -->
+                    <!-- ========================================== -->
                     <div class="product-actions mt-4">
-                        <!-- Add to Cart Form -->
-                        <form method="post" action="{% url 'products:add_to_cart' product.pk %}" id="cart-form">
+                        <form method="post" action="{% url 'products:add_to_cart' uuid=product.uuid %}" id="cart-form">
                             {% csrf_token %}
-                            <input type="hidden" name="variant_color" id="selected-variant" value="{% if not product.has_variants %}no-variant{% endif %}">
+                            <input type="hidden" name="variant_color" id="selected-variant" value="">
                             <input type="hidden" name="quantity" value="1">
                             
                             <div class="action-buttons">
-                                {% if product.is_in_stock %}
-                                <button type="submit" class="btn btn-primary btn-lg btn-add-cart">
-                                    <i class="icon-shopping-cart"></i> Add to Cart
+                                <button type="submit" class="btn btn-primary btn-lg btn-add-cart" id="add-to-cart-btn" 
+                                        {% if has_variants %}disabled{% endif %}>
+                                    <i class="icon-shopping-cart"></i> 
+                                    {% if has_variants %}Select Color First{% else %}Add to Cart{% endif %}
                                 </button>
-                                {% else %}
-                                <button type="button" class="btn btn-secondary btn-lg" disabled>
-                                    <i class="icon-ban"></i> Out of Stock
-                                </button>
-                                {% endif %}
                                 
-                                <!-- Wishlist Button -->
                                 {% if user.is_authenticated %}
                                     <button type="button" 
                                             class="btn btn-outline-secondary btn-lg btn-wishlist" 
                                             id="wishlist-btn"
-                                            data-product-id="{{ product.pk }}"
-                                            data-in-wishlist="false">
+                                            data-product-uuid="{{ product.uuid }}"
+                                            {% if has_variants %}disabled{% endif %}>
                                         <i class="icon-heart" id="wishlist-icon"></i>
                                         <span id="wishlist-text">Wishlist</span>
                                     </button>
                                 {% else %}
                                     <a href="{% url 'users:login' %}?next={{ request.path }}" 
-                                    class="btn btn-outline-secondary btn-lg">
+                                       class="btn btn-outline-secondary btn-lg">
                                         <i class="icon-heart"></i> Login to Save
                                     </a>
                                 {% endif %}
@@ -310,51 +257,14 @@
                             
                             <div class="cart-note">
                                 <small id="cart-note-text">
-                                    {% if product.is_in_stock %}
-                                        {% if product.has_variants %}
-                                            Select a color variant to add to cart
-                                        {% else %}
-                                            Ready to add to cart ({{ product.stock }} available)
-                                        {% endif %}
+                                    {% if has_variants %}
+                                        Please select a color to continue
                                     {% else %}
-                                        Product is currently out of stock
+                                        Ready to add to cart
                                     {% endif %}
                                 </small>
                             </div>
                         </form>
-                    </div>
-
-                    <!-- Meta Information -->
-                    <div class="product-meta mt-4">
-                        <h6>Product Information</h6>
-                        <div class="meta-grid">
-                            <div class="meta-item">
-                                <strong>SKU:</strong> <span id="meta-sku">WU-{{ product.id|stringformat:"04d" }}</span>
-                            </div>
-                            <div class="meta-item">
-                                <strong>Category:</strong> {{ product.category.name }}
-                            </div>
-                            {% if product.brand %}
-                            <div class="meta-item">
-                                <strong>Brand:</strong> {{ product.brand.name }}
-                            </div>
-                            {% endif %}
-                            <div class="meta-item">
-                                <strong>Available Colors:</strong> 
-                                {% if product.has_variants %}{{ variants.count }} options{% else %}Standard{% endif %}
-                            </div>
-                            <div class="meta-item">
-                                <strong>Stock:</strong> 
-                                {% if product.has_variants %}
-                                    Total {{ product.total_stock }} units
-                                {% else %}
-                                    {{ product.stock }} units
-                                {% endif %}
-                            </div>
-                            <div class="meta-item">
-                                <strong>Added:</strong> {{ product.created_at|date:"M d, Y" }}
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -362,1024 +272,314 @@
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- STYLES -->
+<!-- ========================================== -->
 <style>
-/* [Keep all your existing styles exactly as they are] */
-/* Main Image Container */
-.product-image-carousel {
-    position: relative;
-}
-
-.main-image-container {
-    background: #f8f9fa;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.image-wrapper {
-    position: relative;
-    min-height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.main-image {
-    width: 100%;
-    max-height: 600px;
-    object-fit: contain;
-    cursor: crosshair;
-    display: block;
-}
-
-/* CSS Only Zoom Effect */
-.main-image {
-    transition: transform 0.3s ease;
-    transform-origin: center center;
-}
-
-/* Hover Zoom Effect */
-.main-image:hover {
-    transform: scale(1.5);
-    cursor: zoom-in;
-}
-
-/* Alternative: Click to Zoom */
-.main-image.zoomed {
-    transform: scale(2);
-    cursor: zoom-out;
-}
-
-/* Zoom Container for Better Control */
-.image-wrapper {
-    overflow: hidden;
-    position: relative;
-}
-
-/* Optional: Smooth pan on hover */
-.image-wrapper:hover .main-image {
-    animation: zoomPan 10s infinite linear;
-}
-
-@keyframes zoomPan {
-    0% { transform: scale(1.5) translate(0, 0); }
-    25% { transform: scale(1.5) translate(-10px, -10px); }
-    50% { transform: scale(1.5) translate(10px, -10px); }
-    75% { transform: scale(1.5) translate(10px, 10px); }
-    100% { transform: scale(1.5) translate(0, 0); }
-}
-
-/* Lens Style Zoom (Pure CSS) */
-.zoom-lens {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    border: 2px solid #007bff;
-    border-radius: 50%;
-    background: rgba(0, 123, 255, 0.1);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 10;
-}
-
-.image-wrapper:hover .zoom-lens {
-    opacity: 1;
-}
-
-/* Follow mouse with CSS (limited but works) */
-.image-wrapper:hover .main-image {
-    transform: scale(1.8);
-}
-
-/* Alternative Zoom Styles */
-.zoom-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-}
-
-.image-wrapper:hover .zoom-overlay {
-    opacity: 1;
-}
-
-/* Zoom Result - Pure CSS version */
-.zoom-result {
-    position: absolute;
-    top: 0;
-    right: -350px;
-    width: 320px;
-    height: 400px;
-    border: 2px solid #dee2e6;
-    background: white;
-    opacity: 0;
-    overflow: hidden;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    z-index: 1000;
-    transition: opacity 0.3s ease;
-}
-
-.image-wrapper:hover .zoom-result {
-    opacity: 1;
-}
-
-.zoom-result img {
-    width: 200%;
-    height: 200%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-/* Image Indicator */
-.image-indicator {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    z-index: 5;
-}
-
-/* Navigation Arrows */
-.nav-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 5;
-}
-
-.nav-arrow:hover {
-    background: #88c8bc;
-    color: white;
-    transform: translateY(-50%) scale(1.1);
-}
-
-.nav-arrow.prev {
-    left: 15px;
-}
-
-.nav-arrow.next {
-    right: 15px;
-}
-
-/* Image Counter */
-.image-counter {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    z-index: 5;
-}
+/* Image Carousel */
+.product-image-carousel { position: relative; }
+.main-image-container { background: #f8f9fa; border-radius: 12px; overflow: hidden; margin-bottom: 20px; position: relative; }
+.image-wrapper { position: relative; min-height: 400px; display: flex; align-items: center; justify-content: center; }
+.main-image { width: 100%; max-height: 600px; object-fit: contain; cursor: pointer; display: block; transition: transform 0.3s ease; }
+.image-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.8); color: white; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: 500; z-index: 5; }
+.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.9); border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); z-index: 5; }
+.nav-arrow:hover { background: #88c8bc; color: white; }
+.nav-arrow.prev { left: 15px; }
+.nav-arrow.next { right: 15px; }
+.image-counter { position: absolute; bottom: 15px; right: 15px; background: rgba(0, 0, 0, 0.7); color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; z-index: 5; }
 
 /* Thumbnails */
-.thumbnail-strip {
-    padding: 10px 0;
-}
+.thumbnail-strip { padding: 10px 0; }
+.thumbnails { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+.thumbnail { flex: 0 0 80px; height: 80px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; position: relative; transition: all 0.3s ease; }
+.thumbnail:hover { border-color: #88c8bc; transform: translateY(-2px); }
+.thumbnail.active { border-color: #88c8bc; box-shadow: 0 0 0 2px rgba(136, 200, 188, 0.3); }
+.thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.thumb-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 2px 4px; font-size: 9px; text-align: center; font-weight: 600; }
+.general-label { background: rgba(0, 0, 0, 0.8); color: white; }
+.variant-label { color: white; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 
-.thumbnails {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-}
+/* ✅ Color Selection - No Details Yet */
+.color-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.color-option { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; transition: all 0.3s ease; font-size: 13px; }
+.color-option:hover:not([disabled]) { border-color: #88c8bc; background: #f0f9f8; }
+.color-option.selected { border-color: #88c8bc; background: #e0f5f2; font-weight: 600; }
+.color-option[disabled] { opacity: 0.5; cursor: not-allowed; }
+.color-swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ccc; }
 
-.thumbnail {
-    flex: 0 0 80px;
-    height: 80px;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    border: 2px solid transparent;
-    position: relative;
-    transition: all 0.3s ease;
-}
+/* ✅ Variant Details Card - Shows After Selection */
+.variant-info-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border: 2px solid #88c8bc; }
 
-.thumbnail:hover {
-    border-color: #88c8bc;
-    transform: translateY(-2px);
-}
-
-.thumbnail.active {
-    border-color: #88c8bc;
-    box-shadow: 0 0 0 2px rgba(136, 200, 188, 0.3);
-}
-
-.thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.thumb-label {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 2px 4px;
-    font-size: 9px;
-    text-align: center;
-    font-weight: 600;
-}
-
-.general-label {
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-}
-
-.variant-label {
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-/* Info Section */
-.info-section {
-    background: #f8f9fa;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    border-left: 4px solid #88c8bc;
-}
-
-.info-content {
-    padding: 20px;
-    display: none;
-}
-
-.info-content.active {
-    display: block;
-}
-
-.info-content h5 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 15px;
-    color: #333;
-}
-
-.color-dot {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    margin-left: auto;
-}
-
-/* Price */
-.price-section {
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.current-price, .price-text {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: #28a745;
-}
-
-.original-price {
-    text-decoration: line-through;
-    color: #6c757d;
-    font-size: 1.2em;
-    margin-left: 10px;
-}
-
-.discount-badge {
-    background: #dc3545;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: 600;
-    margin-left: 10px;
-}
-
-.price-note {
-    display: block;
-    margin-top: 5px;
-    font-size: 0.85em;
-    color: #6c757d;
-}
+/* Price Display */
+.current-price { font-size: 1.8em; font-weight: bold; color: #28a745; }
+.original-price { text-decoration: line-through; color: #6c757d; font-size: 1.2em; margin-left: 10px; }
+.discount-badge { background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; margin-left: 10px; }
 
 /* Stock Status */
 .stock-available { color: #28a745; font-weight: 500; }
-.stock-low { color: #ffc107; font-weight: 500; }
 .stock-out { color: #dc3545; font-weight: 500; }
 
-/* Color Selection */
-.color-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.color-option {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 13px;
-}
-
-.color-option:hover, .color-option.selected {
-    border-color: #88c8bc;
-    background: #f0f9f8;
-}
-
-.color-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 1px solid #ccc;
-}
-
 /* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 15px;
-}
+.action-buttons { display: flex; gap: 12px; margin-bottom: 15px; }
+.action-buttons .btn { flex: 1; padding: 12px 20px; font-weight: 600; border-radius: 8px; }
+.btn-wishlist.btn-danger { background-color: #dc3545; border-color: #dc3545; color: white; }
+.btn-wishlist.btn-danger:hover { background-color: #c82333; border-color: #bd2130; }
+.cart-note { text-align: center; padding: 8px 12px; background: #e3f2fd; border-radius: 6px; }
 
-.action-buttons .btn {
-    flex: 1;
-    padding: 12px 20px;
-    font-weight: 600;
-    border-radius: 8px;
-}
-
-.cart-note {
-    text-align: center;
-    padding: 8px 12px;
-    background: #e3f2fd;
-    border-radius: 6px;
-}
-
-/* Meta Grid */
-.meta-grid {
-    display: grid;
-    gap: 8px;
-}
-
-.meta-item {
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-}
-
-.meta-item:last-child {
-    border-bottom: none;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-    .zoom-result {
-        display: none !important;
-    }
-    
-    .zoom-lens {
-        display: none !important;
-    }
-    
-    .main-image {
-        cursor: default !important;
-    }
-    
-    .nav-arrow {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .action-buttons {
-        flex-direction: column;
-    }
-    
-    .thumbnail {
-        flex: 0 0 60px;
-        height: 60px;
-    }
+    .nav-arrow { width: 35px; height: 35px; }
+    .action-buttons { flex-direction: column; }
+    .thumbnail { flex: 0 0 60px; height: 60px; }
 }
-
-@media (min-width: 1200px) {
-    .zoom-result {
-        right: -380px;
-        width: 350px;
-        height: 450px;
-    }
-}
-
 </style>
 
+<!-- ========================================== -->
+<!-- JAVASCRIPT -->
+<!-- ========================================== -->
 <script>
 $(document).ready(function() {
-    let currentIndex = 0;
-    let images = [];
+    let currentIndex = 0, images = [], filteredImages = [];
+    const hasVariants = {{ has_variants|yesno:"true,false" }};
+    const productUuid = "{{ product.uuid }}";
+    let selectedVariantColor = null;
     
-    // Product has variants check
-    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
-    const isInStock = {{ product.is_in_stock|yesno:"true,false" }};
-    
-    // Initialize images array
+    // Build images array
     {% for image in all_images %}
     images.push({
-        url: "{{ image.url|default:'/static/products/images/no-image.jpg'|escapejs }}",
-        type: "{{ image.type|escapejs }}",
-        variantColor: "{{ image.variant_color|default:''|escapejs }}",
-        variantName: "{{ image.variant_name|default:''|escapejs }}"
+        url: "{{ image.url|escapejs }}",
+        zoom: "{{ image.zoom_image|escapejs }}",
+        type: "{{ image.type }}",
+        variantColor: "{{ image.variant_color|escapejs }}",
+        variantName: "{{ image.variant_name|escapejs }}"
     });
     {% endfor %}
     
-    // Simple Click-to-Zoom (Optional)
-    function initZoom() {
-        const mainImage = $('#main-image');
-        
-        // Click to toggle zoom
-        mainImage.on('click', function(e) {
-            if (window.innerWidth <= 768) return;
-            
-            $(this).toggleClass('zoomed');
-            
-            // Optional: Center zoom on click position
-            if ($(this).hasClass('zoomed')) {
-                const rect = this.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                $(this).css('transform-origin', `${x}% ${y}%`);
-            } else {
-                $(this).css('transform-origin', 'center center');
-            }
+    // Initialize - show only general images
+    function initializeImages() {
+        filteredImages = images.filter(img => img.type === 'general');
+        if (filteredImages.length === 0) filteredImages = images;
+        currentIndex = 0;
+        updateDisplay();
+        updateThumbnails();
+    }
+    
+    function filterToVariant(variantColor) {
+        selectedVariantColor = variantColor;
+        filteredImages = images.filter(img => 
+            img.type === 'variant' && img.variantColor === variantColor
+        );
+        if (filteredImages.length === 0) {
+            filteredImages = images.filter(img => img.type === 'general');
+        }
+        currentIndex = 0;
+        updateDisplay();
+        updateThumbnails();
+    }
+    
+    function updateDisplay() {
+        if (!filteredImages.length) return;
+        const current = filteredImages[currentIndex];
+        $('#main-image').attr('src', current.url).attr('data-zoom', current.zoom);
+        $('#image-indicator').text(current.variantName);
+        $('#current-num').text(currentIndex + 1);
+        $('#total-num').text(filteredImages.length);
+    }
+    
+    function updateThumbnails() {
+        const $thumbnails = $('#thumbnails');
+        $thumbnails.empty();
+        filteredImages.forEach((img, idx) => {
+            const isActive = idx === currentIndex ? 'active' : '';
+            const labelClass = img.type === 'general' ? 'general-label' : 'variant-label';
+            const labelText = img.type === 'general' ? 'Overview' : img.variantName;
+            const $thumb = $(`<div class="thumbnail ${isActive}" data-index="${idx}"><img src="${img.url}" alt="${img.variantName}"><div class="thumb-label"><span class="${labelClass}">${labelText}</span></div></div>`);
+            $thumb.on('click', function() {
+                currentIndex = idx;
+                updateDisplay();
+                $('.thumbnail').removeClass('active');
+                $(this).addClass('active');
+            });
+            $thumbnails.append($thumb);
         });
     }
     
-    // Update main display
-    function updateDisplay() {
-        if (images.length === 0) return;
-        
-        const current = images[currentIndex];
-        const mainImage = $('#main-image');
-        const zoomImage = $('#zoom-image');
-        const indicator = $('#image-indicator');
-        const currentNum = $('#current-num');
-        
-        // Update images
-        mainImage.attr('src', current.url);
-        zoomImage.attr('src', current.url);
-        
-        // Update indicator
-        if (current.type === 'general') {
-            indicator.text('Product Overview');
-        } else {
-            indicator.text(current.variantName + ' View');
-        }
-        
-        // Update counter
-        currentNum.text(currentIndex + 1);
-        
-        // Update thumbnails
-        $('.thumbnail').removeClass('active');
-        $(`.thumbnail[data-index="${currentIndex}"]`).addClass('active');
-        
-        // Scroll thumbnail into view
-        scrollThumbnailIntoView(currentIndex);
-        
-        // Update info section
-        updateInfo(current);
-        
-        // Reinitialize zoom after image change
-        setTimeout(initZoom, 100);
-    }
+    $('#prev-btn').on('click', () => { currentIndex = currentIndex > 0 ? currentIndex - 1 : filteredImages.length - 1; updateDisplay(); updateThumbnails(); });
+    $('#next-btn').on('click', () => { currentIndex = (currentIndex + 1) % filteredImages.length; updateDisplay(); updateThumbnails(); });
     
-    // Scroll thumbnail into view
-    function scrollThumbnailIntoView(index) {
-        const thumbnails = $('.thumbnails');
-        const thumbnail = $(`.thumbnail[data-index="${index}"]`);
+    // ✅ VARIANT SELECTION - Fetch and Display Details
+    $('.color-option').on('click', function() {
+        if ($(this).attr('disabled')) return;
         
-        if (thumbnail.length) {
-            const scrollLeft = thumbnail.offset().left - thumbnails.offset().left + thumbnails.scrollLeft() - (thumbnails.width() / 2) + (thumbnail.width() / 2);
-            thumbnails.animate({ scrollLeft: scrollLeft }, 300);
-        }
-    }
-    
-    // FIX: Updated info section logic
-    function updateInfo(current) {
-        $('.info-content').removeClass('active');
-        
-        const cartNote = $('#cart-note-text');
-        const selectedVariant = $('#selected-variant');
-        const metaSku = $('#meta-sku');
-        
-        // Check if product is out of stock
-        if (!isInStock) {
-            cartNote.text('Product is currently out of stock');
-            return;
-        }
-        
-        // CASE 1: Viewing GENERAL product image
-        if (current.type === 'general') {
-            $('#general-info').addClass('active');
-            
-            if (hasVariants) {
-                // Product HAS variants - show general overview
-                cartNote.text('Select a color variant to add to cart');
-                selectedVariant.val('');
-            } else {
-                // Product WITHOUT variants - ready to add
-                cartNote.text('Ready to add to cart ({{ product.stock }} available)');
-                selectedVariant.val('no-variant');
-            }
-            
-            metaSku.text('WU-{{ product.id|stringformat:"04d" }}');
-            
-            // Deselect any selected color option
-            $('.color-option').removeClass('selected');
-        } 
-        // CASE 2: Viewing VARIANT product image
-        else if (current.type === 'variant' && current.variantColor) {
-            const variantInfo = $(`#variant-info-${current.variantColor}`);
-            
-            if (variantInfo.length) {
-                variantInfo.addClass('active');
-                
-                // Check if this specific variant is in stock
-                const stockText = variantInfo.find('p:contains("Stock:")').text();
-                const isVariantInStock = !stockText.includes('Out of Stock');
-                
-                if (isVariantInStock) {
-                    cartNote.text(`${current.variantName} variant selected. Ready to add to cart.`);
-                    selectedVariant.val(current.variantColor);
-                } else {
-                    cartNote.text(`${current.variantName} variant is out of stock. Please select another color.`);
-                    selectedVariant.val('');
-                }
-                
-                // Update SKU from variant
-                const skuText = variantInfo.find('p:contains("SKU:")').text();
-                const sku = skuText.split(': ')[1];
-                if (sku) metaSku.text(sku);
-                
-                // Select the color option
-                $('.color-option').removeClass('selected');
-                $(`.color-option[data-variant-color="${current.variantColor}"]`).addClass('selected');
-            }
-        }
-    }
-    
-    // Navigation functions
-    function navigatePrev() {
-        currentIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
-        updateDisplay();
-    }
-    
-    function navigateNext() {
-        currentIndex = (currentIndex + 1) % images.length;
-        updateDisplay();
-    }
-    
-    // Event Handlers
-    
-    // Navigation arrows
-    $('#prev-btn').click(navigatePrev);
-    $('#next-btn').click(navigateNext);
-    
-    // Thumbnail clicks
-    $('.thumbnail').click(function() {
-        const newIndex = parseInt($(this).data('index'));
-        if (newIndex !== currentIndex) {
-            currentIndex = newIndex;
-            updateDisplay();
-        }
-    });
-    
-    // FIX: Updated color option click handler
-    $('.color-option').click(function() {
         const variantColor = $(this).data('variant-color');
         
-        // Find first image for this variant
-        const variantIndex = images.findIndex(img => 
-            img.variantColor === variantColor && img.type === 'variant'
-        );
+        $('.color-option').removeClass('selected');
+        $(this).addClass('selected');
+        $('#selected-variant').val(variantColor);
         
-        if (variantIndex !== -1) {
-            // Found variant image - navigate to it
-            currentIndex = variantIndex;
-            updateDisplay();
-        } else {
-            // No variant image found - just update info without changing image
-            $('.info-content').removeClass('active');
-            const variantInfo = $(`#variant-info-${variantColor}`);
-            
-            if (variantInfo.length) {
-                variantInfo.addClass('active');
-                
-                // Check stock status
-                const stockText = variantInfo.find('p:contains("Stock:")').text();
-                const isVariantInStock = !stockText.includes('Out of Stock');
-                
-                if (isVariantInStock) {
-                    $('#cart-note-text').text('Selected variant. Ready to add to cart.');
-                    $('#selected-variant').val(variantColor);
-                } else {
-                    $('#cart-note-text').text('This variant is out of stock. Please select another color.');
-                    $('#selected-variant').val('');
-                }
-                
-                // Update SKU
-                const skuText = variantInfo.find('p:contains("SKU:")').text();
-                const sku = skuText.split(': ')[1];
-                if (sku) $('#meta-sku').text(sku);
-            }
-            
-            // Select the color option
-            $('.color-option').removeClass('selected');
-            $(this).addClass('selected');
-        }
-    });
-    
-    // Keyboard navigation
-    $(document).keydown(function(e) {
-        if (e.key === 'ArrowLeft') {
-            navigatePrev();
-        } else if (e.key === 'ArrowRight') {
-            navigateNext();
-        }
-    });
-    
-    // Touch support for mobile swipe
-    let touchStartX = 0;
-    let touchStartY = 0;
-    
-    $('.main-image').on('touchstart', function(e) {
-        touchStartX = e.originalEvent.touches[0].clientX;
-        touchStartY = e.originalEvent.touches[0].clientY;
-    });
-    
-    $('.main-image').on('touchend', function(e) {
-        const touchEndX = e.originalEvent.changedTouches[0].clientX;
-        const touchEndY = e.originalEvent.changedTouches[0].clientY;
+        filterToVariant(variantColor);
         
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-        
-        // Swipe detection (minimum 50px swipe)
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-            if (deltaX > 0) {
-                navigatePrev();
-            } else {
-                navigateNext();
-            }
-        }
-    });
-    
-    // Initialize everything
-    updateDisplay();
-    initZoom();
-    
-    // Reinitialize zoom when image loads
-    $('#main-image').on('load', function() {
-        setTimeout(initZoom, 50);
-    });
-    
-    // Window resize handler
-    $(window).resize(function() {
-        setTimeout(initZoom, 100);
-    });
-    
-    // Preload adjacent images for smoother navigation
-    function preloadImages() {
-        const prevIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
-        const nextIndex = (currentIndex + 1) % images.length;
-        
-        [prevIndex, nextIndex].forEach(index => {
-            if (images[index]) {
-                const img = new Image();
-                img.src = images[index].url;
-            }
-        });
-    }
-    
-    // Preload images after initial load
-    setTimeout(preloadImages, 1000);
-    
-    // Add smooth hover effects
-    $('.thumbnail').hover(
-        function() {
-            $(this).css('transform', 'translateY(-2px) scale(1.05)');
-        },
-        function() {
-            if (!$(this).hasClass('active')) {
-                $(this).css('transform', 'translateY(0) scale(1)');
-            }
-        }
-    );
-    
-    $('.color-option').hover(
-        function() {
-            $(this).css('transform', 'scale(1.05)');
-        },
-        function() {
-            if (!$(this).hasClass('selected')) {
-                $(this).css('transform', 'scale(1)');
-            }
-        }
-    );
-    
-    // Enhanced zoom result positioning for larger screens
-    function adjustZoomPosition() {
-        const zoomResult = $('#zoom-result');
-        const container = $('.main-image-container');
-        const containerRect = container[0].getBoundingClientRect();
-        const windowWidth = $(window).width();
-        
-        // If there's not enough space on the right, position on the left
-        if (containerRect.right + 350 > windowWidth) {
-            zoomResult.css({
-                right: 'auto',
-                left: '-350px'
-            });
-        } else {
-            zoomResult.css({
-                left: 'auto',
-                right: '-350px'
-            });
-        }
-    }
-    
-    // Adjust zoom position on window resize
-    $(window).resize(adjustZoomPosition);
-    adjustZoomPosition();
-});
-
-
-// ============= WISHLIST FUNCTIONALITY =============
-
-{% if user.is_authenticated %}
-(function() {
-    const wishlistBtn = $('#wishlist-btn');
-    if (!wishlistBtn.length) return;
-    
-    const wishlistIcon = $('#wishlist-icon');
-    const wishlistText = $('#wishlist-text');
-    const productId = wishlistBtn.data('product-id');
-    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
-    
-    // Get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    
-    const csrftoken = getCookie('csrftoken');
-    
-    // Check wishlist status on page load
-    function checkWishlistStatus() {
-        let variantColor = $('#selected-variant').val();
-        
-        // FIX: For products without variants OR single variant, send empty string
-        if (!hasVariants || variantColor === 'no-variant') {
-            variantColor = '';
-        }
-        
+        // ✅ FETCH VARIANT DATA FROM SERVER
         $.ajax({
-            url: `/products/wishlist/check/${productId}/`,
+            url: `/products/api/variant/${productUuid}/${variantColor}/`,
             method: 'GET',
-            data: { variant_color: variantColor },
             success: function(response) {
-                updateWishlistButton(response.in_wishlist);
-                if (response.wishlist_count !== undefined) {
-                    $('#wishlist-count').text(response.wishlist_count);
+                if (response.success) {
+                    const v = response.variant;
+                    
+                    // Show variant details section
+                    $('#variant-details').slideDown(300);
+                    
+                    // Update Price
+                    let priceHtml = '';
+                    if (v.has_offer && v.offer_price) {
+                        const discount = Math.round((1 - v.offer_price / v.price) * 100);
+                        priceHtml = `<span class="current-price text-success">₹${parseFloat(v.offer_price).toFixed(2)}</span>
+                                    <span class="original-price">₹${parseFloat(v.price).toFixed(2)}</span>
+                                    <span class="discount-badge">${discount}% OFF</span>`;
+                    } else {
+                        priceHtml = `<span class="current-price">₹${parseFloat(v.price).toFixed(2)}</span>`;
+                    }
+                    $('#price-display').html(priceHtml);
+                    
+                    // Update Stock
+                    if (v.is_in_stock) {
+                        $('#stock-display').html(`<span class="stock-available"><i class="fas fa-check-circle"></i> In Stock - ${v.stock_quantity} available</span>`);
+                        $('#add-to-cart-btn').prop('disabled', false).html('<i class="icon-shopping-cart"></i> Add to Cart');
+                        $('#wishlist-btn').prop('disabled', false);
+                    } else {
+                        $('#stock-display').html(`<span class="stock-out"><i class="fas fa-times-circle"></i> Out of Stock</span>`);
+                        $('#add-to-cart-btn').prop('disabled', true).html('<i class="icon-ban"></i> Out of Stock');
+                        $('#wishlist-btn').prop('disabled', true);
+                    }
+                    
+                    // Update SKU
+                    $('#display-sku').text(v.sku);
+                    
+                    // Update note
+                    $('#cart-note-text').text(`${v.color_display} variant selected`);
+                    
+                    checkWishlistStatus();
+                } else {
+                    showMessage('Failed to load variant details', 'error');
                 }
             },
-            error: function(xhr, status, error) {
-                console.log('Failed to check wishlist status:', error);
+            error: () => showMessage('Failed to load variant details', 'error')
+        });
+    });
+    
+    // Add to Cart
+    $('#cart-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (hasVariants && !$('#selected-variant').val()) {
+            showMessage('Please select a color variant', 'warning');
+            return false;
+        }
+        
+        const $btn = $('#add-to-cart-btn');
+        const originalText = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Adding...');
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.success) {
+                    $('#cart-count').text(response.cart_count);
+                    showMessage(response.message, 'success');
+                    $btn.html('<i class="fas fa-check"></i> Added!').removeClass('btn-primary').addClass('btn-success');
+                    setTimeout(() => {
+                        if (confirm('View cart now?')) {
+                            window.location.href = '{% url "products:cart_view" %}';
+                        } else {
+                            $btn.prop('disabled', false).html(originalText).removeClass('btn-success').addClass('btn-primary');
+                        }
+                    }, 1000);
+                } else {
+                    showMessage(response.message, 'error');
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: () => { showMessage('Failed to add to cart', 'error'); $btn.prop('disabled', false).html(originalText); }
+        });
+        
+        return false;
+    });
+    
+    // Wishlist
+    function checkWishlistStatus() {
+        const selectedVariantColor = $('#selected-variant').val();
+        $.ajax({
+            url: `/products/wishlist/check/${productUuid}/`,
+            method: 'GET',
+            data: { 'variant_color': selectedVariantColor },
+            success: function(response) {
+                const $btn = $('#wishlist-btn');
+                if (response.in_wishlist) {
+                    $btn.removeClass('btn-outline-secondary').addClass('btn-danger');
+                    $('#wishlist-text').text('In Wishlist');
+                } else {
+                    $btn.removeClass('btn-danger').addClass('btn-outline-secondary');
+                    $('#wishlist-text').text('Wishlist');
+                }
+                if ($('#wishlist-count').length && response.wishlist_count) {
+                    $('#wishlist-count').text(response.wishlist_count);
+                }
             }
         });
     }
     
-    // Update button appearance
-    function updateWishlistButton(inWishlist) {
-        wishlistBtn.data('in-wishlist', inWishlist);
-        
-        if (inWishlist) {
-            wishlistBtn.addClass('in-wishlist');
-            wishlistBtn.css({
-                'background-color': '#dc3545',
-                'border-color': '#dc3545',
-                'color': 'white'
-            });
-            wishlistText.text('In Wishlist');
-            wishlistIcon.css('color', 'white');
-        } else {
-            wishlistBtn.removeClass('in-wishlist');
-            wishlistBtn.css({
-                'background-color': '',
-                'border-color': '',
-                'color': ''
-            });
-            wishlistText.text('Wishlist');
-            wishlistIcon.css('color', '');
-        }
-    }
-    
-    // Handle wishlist button click
-    wishlistBtn.on('click', function(e) {
+    $('#wishlist-btn').on('click', function(e) {
         e.preventDefault();
+        const $btn = $(this);
+        const selectedVariantColor = $('#selected-variant').val();
         
-        let variantColor = $('#selected-variant').val();
-        const inWishlist = wishlistBtn.data('in-wishlist');
-        
-        // FIX: Only require variant selection if product has MULTIPLE variants
-        const variantCount = {{ variants.count }};
-        
-        // Only validate if product has variants AND multiple color options
-        if (hasVariants && variantCount > 1 && (!variantColor || variantColor === 'no-variant')) {
+        if (hasVariants && !selectedVariantColor) {
             showMessage('Please select a color variant first', 'warning');
             return;
         }
         
-        // For products without variants or single variant
-        if (!hasVariants || variantColor === 'no-variant' || variantCount <= 1) {
-            variantColor = '';  // Send empty for backend to handle
-        }
+        $btn.prop('disabled', true);
         
-        if (inWishlist) {
-            showMessage('This item is already in your wishlist', 'info');
-            return;
-        }
-        
-        // Add to wishlist
         $.ajax({
-            url: `/products/wishlist/add/${productId}/`,
+            url: `/products/wishlist/add/${productUuid}/`,
             method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            },
             data: {
-                variant_color: variantColor
+                'variant_color': selectedVariantColor,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
             },
             success: function(response) {
                 if (response.success) {
-                    updateWishlistButton(true);
-                    $('#wishlist-count').text(response.wishlist_count);
+                    $btn.removeClass('btn-outline-secondary').addClass('btn-danger');
+                    $('#wishlist-text').text('In Wishlist');
+                    if ($('#wishlist-count').length) $('#wishlist-count').text(response.wishlist_count);
                     showMessage(response.message, 'success');
                 } else {
                     showMessage(response.message, 'error');
                 }
+                $btn.prop('disabled', false);
             },
-            error: function(xhr, status, error) {
-                console.log('Error adding to wishlist:', error);
-                console.log('Response:', xhr.responseText);
-                
-                // Try to parse error message from response
-                let errorMsg = 'Failed to add to wishlist. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMsg = xhr.responseJSON.message;
-                }
-                
-                showMessage(errorMsg, 'error');
-            }
+            error: () => { showMessage('Failed to add to wishlist', 'error'); $btn.prop('disabled', false); }
         });
     });
     
-    // Check status on page load
-    setTimeout(checkWishlistStatus, 500);
-    
-    // Re-check when variant changes
-    $('.color-option').on('click', function() {
-        setTimeout(checkWishlistStatus, 100);
-    });
-    
-})();
-{% endif %}
-
-// ============= ADD TO CART FUNCTIONALITY =============
-$('#cart-form').on('submit', function(e) {
-    e.preventDefault();
-    
-    const form = $(this);
-    const submitBtn = form.find('.btn-add-cart');
-    const originalText = submitBtn.html();
-    let variantColor = $('#selected-variant').val();
-    const hasVariants = {{ product.has_variants|yesno:"true,false" }};
-    
-    // Check if product is in stock
-    if (!{{ product.is_in_stock|yesno:"true,false" }}) {
-        showMessage('This product is currently out of stock', 'error');
-        return false;
+    function showMessage(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : type === 'warning' ? 'alert-warning' : 'alert-danger';
+        const alertDiv = $(`<div class="alert ${alertClass} alert-dismissible fade show" style="position:fixed;top:20px;right:20px;z-index:9999;min-width:300px;">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+        $('body').append(alertDiv);
+        setTimeout(() => alertDiv.fadeOut(300, function() { $(this).remove(); }), 5000);
     }
     
-    // Count number of variants
-    const variantCount = {{ variants.count }};
+    initializeImages();
     
-    // FIX: Only validate variant selection if product has MULTIPLE variants
-    if (hasVariants && variantCount > 1 && (!variantColor || variantColor === 'no-variant')) {
-        showMessage('Please select a color variant first', 'warning');
-        return false;
-    }
-    
-    // For products without variants or single variant
-    if (!hasVariants) {
-        variantColor = '';  // Send empty for products without variants
-    } else if (variantColor === 'no-variant' || variantCount <= 1) {
-        variantColor = '';
-    }
-    
-    // Disable button and show loading
-    submitBtn.prop('disabled', true).html('<i class="icon-refresh"></i> Adding...');
-    
-    $.ajax({
-        url: form.attr('action'),
-        method: 'POST',
-        data: form.serialize(),
-        success: function(response) {
-            if (response.success) {
-                // Update cart count
-                $('#cart-count').text(response.cart_count);
-                
-                // Show success message
-                showMessage(response.message, 'success');
-                
-                // Optional: Ask if user wants to view cart
-                setTimeout(function() {
-                    if (confirm('Item added to cart! View cart now?')) {
-                        window.location.href = '{% url "products:cart_view" %}';
-                    }
-                }, 500);
-            } else {
-                showMessage(response.message, 'error');
-            }
-            
-            // Reset button
-            submitBtn.prop('disabled', false).html(originalText);
-        },
-        error: function(xhr) {
-            let errorMsg = 'Failed to add to cart. Please try again.';
-            
-            if (xhr.responseJSON && xhr.responseJSON.message) {
-                errorMsg = xhr.responseJSON.message;
-            }
-            
-            showMessage(errorMsg, 'error');
-            submitBtn.prop('disabled', false).html(originalText);
-        }
-    });
-    
-    return false;
+    // Check wishlist for non-variant products
+    {% if not has_variants %}
+    checkWishlistStatus();
+    {% endif %}
 });
-
-// ============= MESSAGE DISPLAY FUNCTION =============
-function showMessage(message, type) {
-    if (typeof showAlert === 'function') {
-        showAlert(message, type, 5000);
-    } else {
-        alert(message);
-    }
-}
-
-
-
 </script>
 {% endblock %}
-
-
 
 
 

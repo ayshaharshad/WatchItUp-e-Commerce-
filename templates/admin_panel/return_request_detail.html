@@ -1,0 +1,315 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Return Request #{{ return_request.id }} - Admin Panel{% endblock %}
+
+{% block page_title %}Return Request Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Return Request Information -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-undo-alt me-2"></i>Return Request #{{ return_request.id }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-shopping-cart me-2"></i>Order ID:</strong>
+                            <a href="{% url 'admin_panel:order_detail' return_request.order.order_id %}" class="text-decoration-none">
+                                {{ return_request.order.order_id }}
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-info-circle me-2"></i>Status:</strong>
+                            {% if return_request.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending Review</span>
+                            {% elif return_request.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% elif return_request.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% elif return_request.status == 'completed' %}
+                                <span class="badge bg-info">Completed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-user me-2"></i>Customer:</strong><br>
+                            <div class="ms-4 mt-2">
+                                <strong>{{ return_request.order.user.username }}</strong><br>
+                                <small class="text-muted">
+                                    <i class="fas fa-envelope me-1"></i>{{ return_request.order.user.email }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-money-bill-wave me-2"></i>Refund Amount:</strong><br>
+                            <h4 class="text-success mt-2 ms-4">₹{{ return_request.refund_amount|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-clock me-2"></i>Requested At:</strong><br>
+                            <span class="ms-4">{{ return_request.requested_at|date:"M d, Y H:i A" }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-credit-card me-2"></i>Refund Status:</strong>
+                            {% if return_request.refund_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% else %}
+                                <span class="badge bg-success">Processed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <strong><i class="fas fa-comment-alt me-2"></i>Return Reason:</strong>
+                        <div class="alert alert-light mt-2">
+                            {{ return_request.reason }}
+                        </div>
+                    </div>
+
+                    {% if return_request.additional_comments %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-comments me-2"></i>Additional Comments:</strong>
+                        <div class="alert alert-light mt-2">
+                            {{ return_request.additional_comments }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if return_request.images %}
+                    <div class="mb-3">
+                        <strong><i class="fas fa-image me-2"></i>Product Images:</strong><br>
+                        <div class="mt-2">
+                            <img src="{{ return_request.images.url }}" class="img-thumbnail" style="max-width: 400px; cursor: pointer;" 
+                                 data-bs-toggle="modal" data-bs-target="#imageModal">
+                        </div>
+                    </div>
+
+                    <!-- Image Modal -->
+                    <div class="modal fade" id="imageModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Product Image</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <img src="{{ return_request.images.url }}" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if return_request.reviewed_at %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-user-check me-2"></i>Review Information:</h6>
+                        <strong>Reviewed by:</strong> {{ return_request.reviewed_by.username }}<br>
+                        <strong>Reviewed at:</strong> {{ return_request.reviewed_at|date:"M d, Y H:i A" }}
+                        {% if return_request.admin_notes %}
+                        <hr class="my-2">
+                        <strong>Admin Notes:</strong><br>
+                        <em>{{ return_request.admin_notes }}</em>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if return_request.rejection_reason %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-times-circle me-2"></i>Rejection Reason:</h6>
+                        {{ return_request.rejection_reason }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-box me-2"></i>Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Variant</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product_image %}
+                                            <img src="{{ item.product_image.url }}" alt="{{ item.product_name }}" 
+                                                 style="width: 50px; height: 50px; object-fit: cover;" class="me-2 rounded">
+                                            {% endif %}
+                                            <span>{{ item.product_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.variant_name|default:"-" }}</td>
+                                    <td>₹{{ item.price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong>₹{{ item.item_total|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Order Total:</th>
+                                    <th>₹{{ order.total|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Panel -->
+        <div class="col-md-4">
+            {% if return_request.status == 'pending' %}
+            <!-- Approve Return Card -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Approve Return</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin_panel:approve_return_request' return_request.pk %}" 
+                          onsubmit="return confirm('Are you sure you want to APPROVE this return request? ₹{{ return_request.refund_amount|floatformat:2 }} will be refunded to the user\'s wallet.');">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="admin_notes" class="form-label">
+                                <i class="fas fa-sticky-note me-1"></i>Admin Notes (Optional)
+                            </label>
+                            <textarea name="admin_notes" id="admin_notes" class="form-control" rows="3" 
+                                      placeholder="Add any internal notes about this approval..."></textarea>
+                            <small class="text-muted">These notes are for internal use only.</small>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check me-2"></i>Approve & Refund to Wallet
+                        </button>
+                        <div class="alert alert-success mt-3 mb-0">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>₹{{ return_request.refund_amount|floatformat:2 }}</strong> will be credited to user's wallet
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Reject Return Card -->
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-times-circle me-2"></i>Reject Return</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'admin_panel:reject_return_request' return_request.pk %}" 
+                          onsubmit="return confirm('Are you sure you want to REJECT this return request?');">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Rejection Reason *
+                            </label>
+                            <textarea name="rejection_reason" id="rejection_reason" class="form-control" rows="3" 
+                                      placeholder="Explain why this return is rejected..." required></textarea>
+                            <small class="text-muted">This will be visible to the customer.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="admin_notes_reject" class="form-label">
+                                <i class="fas fa-sticky-note me-1"></i>Admin Notes (Optional)
+                            </label>
+                            <textarea name="admin_notes" id="admin_notes_reject" class="form-control" rows="2" 
+                                      placeholder="Internal notes..."></textarea>
+                            <small class="text-muted">For internal use only.</small>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-times me-2"></i>Reject Return Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <!-- Status Card for Processed Requests -->
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if return_request.status == 'approved' %}
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                        <h5>Request Approved</h5>
+                    {% elif return_request.status == 'rejected' %}
+                        <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                        <h5>Request Rejected</h5>
+                    {% elif return_request.status == 'completed' %}
+                        <i class="fas fa-check-double fa-4x text-info mb-3"></i>
+                        <h5>Request Completed</h5>
+                    {% endif %}
+                    <p class="text-muted">This return request has been {{ return_request.status }}.</p>
+                    <a href="{% url 'admin_panel:return_request_list' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Order Summary Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-7">Subtotal:</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.subtotal|floatformat:2 }}</dd>
+
+                        <dt class="col-sm-7">Shipping:</dt>
+                        <dd class="col-sm-5 text-end">₹{{ order.shipping_charge|floatformat:2 }}</dd>
+
+                        {% if order.discount %}
+                        <dt class="col-sm-7">Discount:</dt>
+                        <dd class="col-sm-5 text-end text-danger">-₹{{ order.discount|floatformat:2 }}</dd>
+                        {% endif %}
+
+                        <dt class="col-sm-7 border-top pt-2"><strong>Total:</strong></dt>
+                        <dd class="col-sm-5 text-end border-top pt-2"><strong>₹{{ order.total|floatformat:2 }}</strong></dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-link me-2"></i>Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'admin_panel:order_detail' return_request.order.order_id %}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-shopping-cart me-2"></i>View Full Order
+                    </a>
+                    <a href="{% url 'admin_panel:user_wallet_detail' return_request.order.user.id %}" class="btn btn-outline-success w-100 mb-2">
+                        <i class="fas fa-wallet me-2"></i>View User Wallet
+                    </a>
+                    <a href="{% url 'admin_panel:return_request_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-list me-2"></i>All Return Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

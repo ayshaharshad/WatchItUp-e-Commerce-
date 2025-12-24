@@ -14,6 +14,9 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from datetime import timedelta
 from django.views.decorators.cache import never_cache
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .models import Wallet, WalletTransaction
+from django.views.decorators.http import require_http_methods
 
 
 
@@ -94,6 +97,9 @@ def signup_view(request):
 
     if request.user.is_authenticated:
         return redirect('products:home')
+    
+    
+    ref_code = request.GET.get('ref', '').strip().upper()
         
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -103,6 +109,13 @@ def signup_view(request):
                 user = form.save(commit=False)
                 user.is_active = False
                 user.is_email_verified = False
+                user.save()
+
+                # Handle referral
+                referral_code = form.cleaned_data.get('referral_code')
+                if referral_code and hasattr(form, 'referrer'):
+                    user.referred_by = form.referrer
+                
                 user.save()
 
                 # Generate and store OTP
@@ -130,9 +143,63 @@ def signup_view(request):
                 for error in errors:
                     messages.error(request, f"{field.title()}: {error}")
     else:
-        form = CustomUserCreationForm()
+        # Pre-fill referral code if present in URL
+        initial_data = {}
+        if ref_code:
+            initial_data['referral_code'] = ref_code
+        
+        form = CustomUserCreationForm(initial=initial_data)
     
-    return render(request, 'users/signup.html', {'form': form})
+    return render(request, 'users/signup.html', {'form': form, 'ref_code': ref_code})
+
+
+def process_referral_signup(user):
+    """
+    Process referral after successful signup.
+    Call this function in verify_otp_view after user is activated.
+    """
+    from products.models import Coupon, ReferralCoupon
+    from datetime import timedelta
+    
+    if not user.referred_by:
+        return
+    
+    try:
+        # Create referral coupon for referrer
+        referrer = user.referred_by
+        
+        # Generate unique coupon code
+        coupon_code = f"REF{referrer.referral_code[:4]}{user.id}"
+        
+        # Create coupon (10% discount, valid for 30 days)
+        coupon = Coupon.objects.create(
+            code=coupon_code,
+            discount_type='percentage',
+            discount_value=Decimal('10'),  # 10% discount
+            minimum_amount=Decimal('500'),  # Minimum order ₹500
+            max_discount=Decimal('200'),  # Max ₹200 discount
+            valid_from=timezone.now(),
+            valid_to=timezone.now() + timedelta(days=30),
+            is_active=True,
+            usage_limit=1,
+            usage_per_user=1
+        )
+        
+        # Create referral coupon record
+        ReferralCoupon.objects.create(
+            referrer=referrer,
+            referred_user=user,
+            coupon=coupon
+        )
+        
+        # Increment referrer's count
+        referrer.referral_count += 1
+        referrer.save()
+        
+        logger.info(f"Referral processed: {referrer.username} referred {user.username}")
+        
+    except Exception as e:
+        logger.error(f"Error processing referral: {str(e)}")
 
 # ------------------ LOGIN ------------------
 @never_cache
@@ -193,6 +260,7 @@ def logout_view(request):
 
 @never_cache
 def verify_otp_view(request, purpose):
+
     if not request.session.get('otp') or not request.session.get('otp_user'):
         messages.error(request, "No OTP verification in progress. Please start over.")
         if purpose == 'signup':
@@ -218,11 +286,22 @@ def verify_otp_view(request, purpose):
                         user.is_active = True
                         user.is_email_verified = True
                         user.save()
+
+                        process_referral_signup(user)
                         
                         clear_otp_session(request)
                         # FIXED: 
                         login(request, user, backend='users.backends.EmailOrUsernameModelBackend')
-                        messages.success(request, f"Welcome to Watchitup, {user.username}! Your email has been verified.")
+                        
+                        # Show success message with referral info
+                        if user.referred_by:
+                            messages.success(
+                                request, 
+                                f"Welcome {user.username}! You were referred by {user.referred_by.username}. "
+                                f"They've received a special coupon as a thank you!"
+                            )
+                        else:
+                            messages.success(request, f"Welcome to Watchitup, {user.username}!")
                         return redirect('products:home')
                         
                     elif purpose == 'reset':
@@ -603,6 +682,45 @@ def set_default_address_view(request, address_id):
     messages.success(request, f'"{address.full_name}" set as default address.')
     return redirect('users:addresses')
 
+
+# Add this new view for AJAX address submission from checkout
+@login_required
+@require_POST
+def add_address_ajax_view(request):
+    """Add address via AJAX from checkout page"""
+    form = AddressForm(request.POST)
+    
+    if form.is_valid():
+        address = form.save(commit=False)
+        address.user = request.user
+        address.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Address added successfully!',
+            'address': {
+                'id': address.id,
+                'full_name': address.full_name,
+                'address_line1': address.address_line1,
+                'address_line2': address.address_line2,
+                'city': address.city,
+                'state': address.state,
+                'postal_code': address.postal_code,
+                'phone': address.phone,
+                'is_default': address.is_default,
+                'full_address': address.full_address
+            }
+        })
+    else:
+        # Return form errors
+        errors = {}
+        for field, error_list in form.errors.items():
+            errors[field] = [str(error) for error in error_list]
+        
+        return JsonResponse({
+            'success': False,
+            'errors': errors
+        })
 @login_required
 def add_address_view(request):
     """Add new address with optional redirect to checkout"""
@@ -614,12 +732,13 @@ def add_address_view(request):
             address.save()
             messages.success(request, 'Address added successfully!')
             
-            # FIXED: Check if coming from checkout
+            # ✅ FIX: Check if coming from checkout
             next_url = request.POST.get('next') or request.GET.get('next')
             if next_url == 'checkout':
-                return redirect('products:checkout_view')
+                # Redirect back to checkout view in products app
+                return redirect('products:checkout_view')  # ✅ FIXED: Use correct namespace
             
-            return redirect('users:profile')
+            return redirect('users:addresses')  # Default redirect to addresses page
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -627,13 +746,45 @@ def add_address_view(request):
     else:
         form = AddressForm()
     
-    # FIXED: Get the next parameter to pass to template
+    # ✅ FIX: Get the next parameter to pass to template
     next_url = request.GET.get('next', '')
     
     return render(request, 'users/addresses/add_address.html', {
         'form': form,
-        'next': next_url
+        'next': next_url  # Pass to template
     })
+
+# @login_required
+# def add_address_view(request):
+#     """Add new address with optional redirect to checkout"""
+#     if request.method == 'POST':
+#         form = AddressForm(request.POST)
+#         if form.is_valid():
+#             address = form.save(commit=False)
+#             address.user = request.user
+#             address.save()
+#             messages.success(request, 'Address added successfully!')
+            
+#             # FIXED: Check if coming from checkout
+#             next_url = request.POST.get('next') or request.GET.get('next')
+#             if next_url == 'checkout':
+#                 return redirect('products:checkout_view')
+            
+#             return redirect('users:profile')
+#         else:
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, error)
+#     else:
+#         form = AddressForm()
+    
+#     # FIXED: Get the next parameter to pass to template
+#     next_url = request.GET.get('next', '')
+    
+#     return render(request, 'users/addresses/add_address.html', {
+#         'form': form,
+#         'next': next_url
+#     })
 
 
 @login_required
@@ -750,7 +901,59 @@ def send_otp_email(email, otp, purpose='verification'):
         return False
 
 
+# ------------------ WALLET VIEWS ------------------
 
+@login_required
+def wallet_view(request):
+    """Display user's wallet balance and transaction history"""
+    # Get or create wallet
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    
+    # Get all transactions
+    transactions = WalletTransaction.objects.filter(wallet=wallet).order_by('-created_at')
+    
+    # Add abs_amount attribute for template display
+    for t in transactions:
+        t.abs_amount = abs(t.amount)
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(transactions, 15)
+    
+    try:
+        transactions_page = paginator.page(page)
+    except PageNotAnInteger:
+        transactions_page = paginator.page(1)
+    except EmptyPage:
+        transactions_page = paginator.page(paginator.num_pages)
+    
+    # Calculate totals
+    total_credits = sum(t.amount for t in transactions if t.is_credit)
+    total_debits = abs(sum(t.amount for t in transactions if t.is_debit))
+    
+    context = {
+        'wallet': wallet,
+        'transactions': transactions_page,
+        'total_credits': total_credits,
+        'total_debits': total_debits,
+        'total_transactions': transactions.count()
+    }
+    return render(request, 'users/profile/wallet.html', context)
+
+
+@login_required
+def wallet_transaction_detail(request, transaction_id):
+    """View detailed information about a specific transaction"""
+    transaction = get_object_or_404(
+        WalletTransaction,
+        id=transaction_id,
+        wallet__user=request.user
+    )
+    
+    context = {
+        'transaction': transaction
+    }
+    return render(request, 'users/wallet/transaction_detail.html', context)
 
 
 

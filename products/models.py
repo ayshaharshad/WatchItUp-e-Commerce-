@@ -7,6 +7,8 @@ from django.conf import settings
 import uuid
 from django.core.exceptions import ValidationError
 from decimal import Decimal
+from datetime import date
+
 
 # ------------------ CATEGORY ------------------
 class Category(models.Model):
@@ -32,8 +34,12 @@ class Brand(models.Model):
     def __str__(self):
         return self.name
 
+
+
+
 # ------------------ PRODUCT ------------------
 class Product(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     name = models.CharField(max_length=200)
     category = models.ForeignKey(
         Category,
@@ -219,7 +225,8 @@ class ProductVariant(models.Model):
         ('white', 'White'),
         ('brown', 'Brown'),
     ]
-    
+
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     color = models.CharField(max_length=20, choices=COLOR_CHOICES)
     color_hex = models.CharField(max_length=7, blank=True, help_text="Hex color code (e.g., #000000)")
@@ -309,6 +316,7 @@ class ProductVariant(models.Model):
 
 # ------------------ PRODUCT VARIANT IMAGE ------------------
 class ProductVariantImage(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="variant_images/")
     zoom_image = models.ImageField(upload_to="variant_images/zoom/", blank=True, null=True)
@@ -348,6 +356,7 @@ class ProductVariantImage(models.Model):
 
 # ------------------ PRODUCT IMAGE (General Product Images) ------------------
 class ProductImage(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="products_images/")
     zoom_image = models.ImageField(upload_to="products_images/zoom/", blank=True, null=True)
@@ -387,6 +396,7 @@ class ProductImage(models.Model):
 
 # ------------------ PRODUCT REVIEW ------------------
 class ProductReview(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="reviews", null=True, blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -411,6 +421,7 @@ class ProductReview(models.Model):
 # |----------CART models---------------|
 
 class Cart(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at= models.DateTimeField(auto_now=True)
@@ -432,9 +443,10 @@ class Cart(models.Model):
         return self.subtotal
     
 class CartItem(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
-    variant = models.ForeignKey('ProductVariant', on_delete=models.CASCADE, null=True, blank=True)  # Allow NULL
+    variant = models.ForeignKey('ProductVariant', on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -448,16 +460,22 @@ class CartItem(models.Model):
     
     @property
     def item_total(self):
-        """Calculate item total - works for both products with and without variants"""
+        """Calculate item total with offer support"""
         if self.variant:
             price = self.variant.price
         else:
             price = self.product.base_price
+        
+        # Apply offer if available
+        best_offer = self.product.get_best_offer()
+        if best_offer:
+            price = best_offer.get_discounted_price(price)
+        
         return price * self.quantity
     
     @property
     def available_stock(self):
-        """Get available stock - works for both products with and without variants"""
+        """Get available stock"""
         if self.variant:
             return self.variant.stock_quantity
         else:
@@ -465,11 +483,17 @@ class CartItem(models.Model):
     
     @property
     def unit_price(self):
-        """Get unit price"""
+        """Get unit price with offer"""
         if self.variant:
-            return self.variant.price
+            price = self.variant.price
         else:
-            return self.product.base_price
+            price = self.product.base_price
+        
+        best_offer = self.product.get_best_offer()
+        if best_offer:
+            price = best_offer.get_discounted_price(price)
+        
+        return price
     
     @property
     def display_name(self):
@@ -485,21 +509,19 @@ class CartItem(models.Model):
         if not self.product.is_active or not self.product.category.is_active:
             raise ValidationError("This product is unavailable")
         
-        # Check variant status if variant exists
         if self.variant and not self.variant.is_active:
             raise ValidationError("This variant is unavailable")
         
-        # Check stock
         if self.quantity > self.available_stock:
             raise ValidationError(f"Only {self.available_stock} items available")
-
+        
 # ------------------ COUPON (UPDATED) ------------------
 class Coupon(models.Model):
     DISCOUNT_TYPE_CHOICES = [
         ('percentage', 'Percentage'),
         ('fixed', 'Fixed Amount'),
     ]
-    
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     code = models.CharField(max_length=50, unique=True)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
     discount_value = models.DecimalField(max_digits=10, decimal_places=2)
@@ -573,6 +595,7 @@ class CouponUsage(models.Model):
 
 # |-------ORDER models (UPDATED)---------------|
 
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -591,6 +614,7 @@ class Order(models.Model):
     PAYMENT_CHOICES = [
         ('cod', 'Cash on Delivery'),
         ('razorpay', 'Razorpay (Online)'),
+        ('wallet', 'Wallet Payment'),  # ✅ Add wallet payment option
     ]
     
     PAYMENT_STATUS_CHOICES = [
@@ -600,7 +624,7 @@ class Order(models.Model):
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
     ]
-
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     order_id = models.CharField(max_length=20, unique=True, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
 
@@ -672,9 +696,19 @@ class Order(models.Model):
     @property
     def can_return(self):
         """Check if order can be returned (within 7 days of delivery)"""
-        if self.status != 'delivered' or not self.delivered_at:
+        # Must be delivered
+        if self.status != 'delivered':
             return False
-        
+    
+        # Must have delivery date
+        if not self.delivered_at:
+            return False
+    
+        # Check if already returned or return requested
+        if self.status in ['returned', 'return_requested', 'return_approved']:
+            return False
+    
+    # Must be within 7 days
         from datetime import timedelta
         return timezone.now() <= self.delivered_at + timedelta(days=7)
     
@@ -689,6 +723,176 @@ class Order(models.Model):
         if self.payment_method == 'cod' and self.status == 'pending':
             return 0  # No refund for COD pending orders
         return self.total
+    
+    @property
+    def can_cancel(self):
+        """Check if order can be cancelled"""
+        return self.status in ['pending', 'confirmed', 'processing'] and \
+               self.payment_status != 'refunded'
+
+    @property
+    def can_return(self):
+        """Check if order can be returned (within 7 days of delivery)"""
+        # Must be delivered
+        if self.status != 'delivered':
+            return False
+    
+        # Must have delivery date
+        if not self.delivered_at:
+            return False
+    
+        # Check if already returned or return requested
+        if self.status in ['returned', 'return_requested', 'return_approved', 'cancelled']:
+            return False
+    
+        # Must be within 7 days
+        from datetime import timedelta
+        return timezone.now() <= self.delivered_at + timedelta(days=7)
+    
+    @property
+    def is_returnable(self):
+        """Alias for can_return"""
+        return self.can_return
+    
+    @property
+    def return_deadline(self):
+        """Get the deadline for return request"""
+        if self.delivered_at:
+            from datetime import timedelta
+            return self.delivered_at + timedelta(days=7)
+        return None
+    
+    @property
+    def days_until_return_deadline(self):
+        """Calculate days remaining for return"""
+        if not self.delivered_at:
+            return None
+        
+        deadline = self.return_deadline
+        if deadline:
+            days = (deadline - timezone.now()).days
+            return max(0, days)
+        return None
+    @property
+    def active_items(self):
+        """Get only active (non-cancelled, non-returned) items"""
+        return self.items.filter(status='active')
+    
+    @property
+    def cancelled_items(self):
+        """Get cancelled items"""
+        return self.items.filter(status='cancelled')
+    
+    @property
+    def returned_items(self):
+        """Get returned items"""
+        return self.items.filter(status='returned')
+    
+    @property
+    def active_subtotal(self):
+        """Calculate subtotal for ACTIVE items only"""
+        return sum(item.item_total for item in self.active_items)
+    
+    @property
+    def active_tax(self):
+        """Calculate tax for ACTIVE items only"""
+        return self.active_subtotal * Decimal('0.18')
+    
+    @property
+    def active_total(self):
+        """Calculate total for ACTIVE items only"""
+        active_subtotal = self.active_subtotal
+        if active_subtotal == 0:
+            return Decimal('0')
+        
+        tax = self.active_tax
+        shipping = Decimal('0') if active_subtotal > 500 else Decimal('50')
+        
+        return active_subtotal + tax + shipping
+    
+    @property
+    def refunded_amount(self):
+        """Calculate total refunded amount"""
+        cancelled_total = sum(item.item_total for item in self.cancelled_items)
+        returned_total = sum(item.item_total for item in self.returned_items)
+        return cancelled_total + returned_total
+    
+    @property
+    def cancelled_total(self):
+        """Calculate total from cancelled items"""
+        return sum(item.item_total for item in self.cancelled_items)
+    
+    @property
+    def returned_total(self):
+        """Calculate total from returned items"""
+        return sum(item.item_total for item in self.returned_items)
+    
+    @property
+    def display_status(self):
+        """
+        Smart status display for mixed-status orders
+        Returns human-readable status based on item statuses
+        """
+        active_count = self.active_items.count()
+        cancelled_count = self.cancelled_items.count()
+        returned_count = self.returned_items.count()
+        total_items = self.items.count()
+        
+        # All items cancelled
+        if cancelled_count == total_items:
+            return 'cancelled'
+        
+        # All items returned
+        if returned_count == total_items:
+            return 'returned'
+        
+        # All items active - use original status
+        if active_count == total_items:
+            return self.status
+        
+        # Mixed statuses - prioritize what needs attention
+        if returned_count > 0 and active_count > 0:
+            return 'partially_returned'
+        
+        if cancelled_count > 0 and active_count > 0:
+            return 'partially_cancelled'
+        
+        if cancelled_count > 0 and returned_count > 0:
+            return 'mixed_cancellation_return'
+        
+        return self.status
+    
+    @property
+    def status_badge_info(self):
+        """
+        Return status info for frontend display
+        Returns: dict with 'text', 'color', 'icon'
+        """
+        status_map = {
+            'pending': {'text': 'Pending', 'color': 'warning', 'icon': 'clock'},
+            'confirmed': {'text': 'Confirmed', 'color': 'info', 'icon': 'check-circle'},
+            'processing': {'text': 'Processing', 'color': 'primary', 'icon': 'cog'},
+            'shipped': {'text': 'Shipped', 'color': 'primary', 'icon': 'truck'},
+            'out_for_delivery': {'text': 'Out for Delivery', 'color': 'purple', 'icon': 'shipping-fast'},
+            'delivered': {'text': 'Delivered', 'color': 'success', 'icon': 'box-check'},
+            'cancelled': {'text': 'Cancelled', 'color': 'danger', 'icon': 'times-circle'},
+            'return_requested': {'text': 'Return Requested', 'color': 'warning', 'icon': 'undo'},
+            'return_approved': {'text': 'Return Approved', 'color': 'info', 'icon': 'check'},
+            'returned': {'text': 'Returned', 'color': 'secondary', 'icon': 'box-open'},
+            'refunded': {'text': 'Refunded', 'color': 'dark', 'icon': 'money-bill-wave'},
+            'partially_cancelled': {'text': 'Partially Cancelled', 'color': 'orange', 'icon': 'exclamation-triangle'},
+            'partially_returned': {'text': 'Partially Returned', 'color': 'teal', 'icon': 'exchange-alt'},
+            'mixed_cancellation_return': {'text': 'Mixed Status', 'color': 'gray', 'icon': 'list'},
+        }
+        
+        display_status = self.display_status
+        return status_map.get(display_status, status_map['pending'])
+    
+    @property
+    def has_mixed_statuses(self):
+        """Check if order has items with different statuses"""
+        statuses = set(self.items.values_list('status', flat=True))
+        return len(statuses) > 1
 
 
 class RazorpayPayment(models.Model):
@@ -720,6 +924,7 @@ class OrderItem(models.Model):
         ('returned', 'Returned'),
     ]
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('Product', on_delete=models.SET_NULL, null=True)
     variant = models.ForeignKey('ProductVariant', on_delete=models.SET_NULL, null=True, blank=True)
@@ -757,7 +962,8 @@ class OrderCancellation(models.Model):
         ('full_order', 'Full Order'),
         ('single_item', 'Single Item'),
     ]
-    
+
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='cancellations',default=1)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, null=True, blank=True)
     cancellation_type = models.CharField(max_length=20, choices=CANCELLATION_TYPE_CHOICES, default='full_order')
@@ -782,12 +988,13 @@ class OrderCancellation(models.Model):
 
 class OrderReturn(models.Model):
     RETURN_STATUS_CHOICES = [
-        ('requested', 'Requested'),
-        ('approved', 'Approved'),
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved - Awaiting Return'),
         ('rejected', 'Rejected'),
-        ('completed', 'Completed'),
+        ('completed', 'Completed - Refunded'),
     ]
-    
+
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='returns')
     reason = models.TextField()
     additional_comments = models.TextField(blank=True)
@@ -795,13 +1002,26 @@ class OrderReturn(models.Model):
     images = models.ImageField(upload_to='returns/', null=True, blank=True,
                               help_text="Optional: Upload images showing product condition")
     
-    status = models.CharField(max_length=20, choices=RETURN_STATUS_CHOICES, default='requested')
+    status = models.CharField(max_length=20, choices=RETURN_STATUS_CHOICES, default='pending')
     refund_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     refund_status = models.CharField(max_length=20, default='pending',
                                      choices=[('pending', 'Pending'), ('processed', 'Processed')])
     
     requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     requested_at = models.DateTimeField(auto_now_add=True)
+    
+    # Admin review fields
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='reviewed_returns',
+        help_text="Admin who reviewed this return"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, help_text="Internal admin notes")
+    
     approved_at = models.DateTimeField(null=True, blank=True)
     rejected_at = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
@@ -812,11 +1032,40 @@ class OrderReturn(models.Model):
 
     def __str__(self):
         return f"Return Request - {self.order.order_id} ({self.status})"
+    
+    @property
+    def can_be_approved(self):
+        """Check if return can be approved"""
+        return self.status == 'pending'
+    
+    @property
+    def can_be_rejected(self):
+        """Check if return can be rejected"""
+        return self.status == 'pending'
+    
+    @property
+    def is_pending(self):
+        return self.status == 'pending'
+    
+    @property
+    def is_approved(self):
+        return self.status == 'approved'
+    
+    @property
+    def is_completed(self):
+        return self.status == 'completed'
+    
+    def __str__(self):
+        return f"Return Request #{self.id} - {self.order.order_id} ({self.get_status_display()})"
+
+    
+
 
 #|------------------WISHLIST----------------------|
 
 
 class Wishlist(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -830,6 +1079,7 @@ class Wishlist(models.Model):
 
 
 class WishlistItem(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     variant = models.ForeignKey('ProductVariant', on_delete=models.CASCADE, null=True, blank=True)
@@ -958,7 +1208,7 @@ class ProductOffer(models.Model):
         ('percentage', 'Percentage'),
         ('fixed', 'Fixed Amount'),
     ]
-    
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     name = models.CharField(max_length=200, help_text="Offer name (e.g., 'Summer Sale')")
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='product_offers')
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
@@ -1004,6 +1254,10 @@ class ProductOffer(models.Model):
             raise ValidationError("Max discount only applies to percentage offers.")
     
     @property
+    def discount_percentage(self):
+        return self.discount_value
+
+    @property
     def is_valid(self):
         """Check if offer is currently valid"""
         now = timezone.now()
@@ -1034,7 +1288,7 @@ class CategoryOffer(models.Model):
         ('percentage', 'Percentage'),
         ('fixed', 'Fixed Amount'),
     ]
-    
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     name = models.CharField(max_length=200, help_text="Offer name (e.g., 'Men's Watch Sale')")
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='category_offers')
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
@@ -1068,17 +1322,32 @@ class CategoryOffer(models.Model):
         return f"{self.name} - {self.category.name}"
     
     def clean(self):
-        """Validate offer dates and discount values"""
-        if self.end_date <= self.start_date:
-            raise ValidationError("End date must be after start date.")
+    # Validate discount_value
+        if self.discount_value is None:
+            raise ValidationError("Discount value is required.")
+    
+        if self.discount_value < 0:
+            raise ValidationError("Discount value cannot be negative.")
+    
+        if self.discount_type == 'percentage' and self.discount_value > 100:
+            raise ValidationError("Percentage discount cannot exceed 100%.")
+
+        # Validate dates
+        if self.end_date and self.start_date:
+            if self.end_date <= self.start_date:
+                raise ValidationError("End date must be after start date.")
         
-        if self.discount_type == 'percentage':
-            if self.discount_value > 100:
-                raise ValidationError("Percentage discount cannot exceed 100%.")
-        
+        if self.end_date < timezone.now():
+            raise ValidationError("End date cannot be in the past.")
+    
+        # Validate max_discount
         if self.discount_type == 'fixed' and self.max_discount:
             raise ValidationError("Max discount only applies to percentage offers.")
-    
+
+    @property
+    def discount_percentage(self):
+        return self.discount_value
+
     @property
     def is_valid(self):
         """Check if offer is currently valid"""
@@ -1128,7 +1397,6 @@ class ReferralCoupon(models.Model):
     
     def __str__(self):
         return f"{self.referrer.username} referred {self.referred_user.username}"
-
 
 
 

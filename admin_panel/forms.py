@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem, Coupon, CouponUsage 
+from products.models import Category, Product, ProductImage, ProductVariant, ProductVariantImage, Order, OrderItem, Coupon, CouponUsage, ProductOffer, CategoryOffer
 from django.utils import timezone 
 # ------------------------- 
 # Login Form (Superuser login with email + password)
@@ -205,14 +205,20 @@ class BulkVariantForm(forms.Form):
 # -------------------------
 # Order Status Update Form
 # -------------------------
+
 class OrderStatusForm(forms.Form):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
+        ('processing', 'Processing'),
         ('shipped', 'Shipped'),
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+        ('return_requested', 'Return Requested'),
+        ('return_approved', 'Return Approved'),
+        ('returned', 'Returned'),  # ✅ ADDED THIS
+        ('refunded', 'Refunded'),  # ✅ ADDED THIS
     ]
     
     status = forms.ChoiceField(
@@ -233,20 +239,59 @@ class OrderStatusForm(forms.Form):
         if current_status:
             self.fields['status'].initial = current_status
 
+# class OrderStatusForm(forms.Form):
+#     STATUS_CHOICES = [
+#         ('pending', 'Pending'),
+#         ('confirmed', 'Confirmed'),
+#         ('shipped', 'Shipped'),
+#         ('out_for_delivery', 'Out for Delivery'),
+#         ('delivered', 'Delivered'),
+#         ('cancelled', 'Cancelled'),
+#     ]
+    
+#     status = forms.ChoiceField(
+#         choices=STATUS_CHOICES,
+#         widget=forms.Select(attrs={'class': 'form-control'})
+#     )
+#     notes = forms.CharField(
+#         required=False,
+#         widget=forms.Textarea(attrs={
+#             'class': 'form-control',
+#             'rows': 3,
+#             'placeholder': 'Add notes about status change (optional)'
+#         })
+#     )
+    
+#     def __init__(self, *args, current_status=None, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         if current_status:
+#             self.fields['status'].initial = current_status
+
 # -------------------------
 # Order Search/Filter Form
 # -------------------------
 class OrderFilterForm(forms.Form):
-    STATUS_CHOICES = [('', 'All Statuses')] + [
+    STATUS_CHOICES = [
+        ('', 'All Statuses'),
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
+        ('processing', 'Processing'),
         ('shipped', 'Shipped'),
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+        ('return_requested', 'Return Requested'),  # ✅ ADDED
+        ('return_approved', 'Return Approved'),    # ✅ ADDED
+        ('returned', 'Returned'),                  # ✅ ADDED
+        ('refunded', 'Refunded'),                  # ✅ ADDED
     ]
     
-    PAYMENT_CHOICES = [('', 'All Payment Methods'), ('cod', 'Cash on Delivery'), ('online', 'Online Payment')]
+    PAYMENT_CHOICES = [
+        ('', 'All Payment Methods'), 
+        ('cod', 'Cash on Delivery'), 
+        ('razorpay', 'Online Payment'),
+        ('wallet', 'Wallet Payment'),  # ✅ ADDED
+    ]
     
     search = forms.CharField(
         required=False,
@@ -438,3 +483,312 @@ class CouponFilterForm(forms.Form):
         choices=STATUS_CHOICES,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+
+# ==================== ADD THESE NEW OFFER FORMS ====================
+
+class ProductOfferForm(forms.ModelForm):
+    """Form for creating/editing product offers"""
+    class Meta:
+        model = ProductOffer
+        fields = [
+            'name', 'product', 'discount_type', 'discount_value',
+            'max_discount', 'start_date', 'end_date', 'is_active'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Summer Sale - Rolex Watches'
+            }),
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'discount_type': forms.Select(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Enter discount value'
+            }),
+            'max_discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Max discount (optional for percentage)'
+            }),
+            'start_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'end_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'name': 'Descriptive name for the offer',
+            'discount_type': 'Choose percentage or fixed amount',
+            'discount_value': 'For percentage: enter 10 for 10%. For fixed: enter amount',
+            'max_discount': 'Maximum discount for percentage offers (optional)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active products
+        self.fields['product'].queryset = Product.objects.filter(is_active=True).order_by('name')
+        
+        # Set input format for datetime fields
+        self.fields['start_date'].input_formats = ['%Y-%m-%dT%H:%M']
+        self.fields['end_date'].input_formats = ['%Y-%m-%dT%H:%M']
+    
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get('discount_value')
+        discount_type = self.cleaned_data.get('discount_type')
+        
+        if discount_value is None or discount_value <= 0:
+            raise forms.ValidationError("Discount value must be greater than 0.")
+        
+        if discount_type == 'percentage' and discount_value > 100:
+            raise forms.ValidationError("Percentage discount cannot exceed 100%.")
+        
+        return discount_value
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        discount_type = cleaned_data.get('discount_type')
+        max_discount = cleaned_data.get('max_discount')
+        product = cleaned_data.get('product')
+        
+        # Validate dates
+        if start_date and end_date:
+            if end_date <= start_date:
+                raise forms.ValidationError("End date must be after start date.")
+            
+            # Allow past dates only when editing existing offers
+            if not self.instance.pk:
+                now = timezone.now()
+                if start_date < (now - timezone.timedelta(hours=1)):
+                    raise forms.ValidationError("Start date cannot be in the past.")
+        
+        # Validate max_discount
+        if discount_type == 'fixed' and max_discount:
+            raise forms.ValidationError("Max discount only applies to percentage offers.")
+        
+        # Check for overlapping offers
+        if product and start_date and end_date:
+            overlapping = ProductOffer.objects.filter(
+                product=product,
+                is_active=True,
+                start_date__lt=end_date,
+                end_date__gt=start_date
+            )
+            
+            if self.instance.pk:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            
+            if overlapping.exists():
+                raise forms.ValidationError(
+                    f"An active offer already exists for this product during the selected period."
+                )
+        
+        return cleaned_data
+
+
+class CategoryOfferForm(forms.ModelForm):
+    """Form for creating/editing category offers"""
+    class Meta:
+        model = CategoryOffer
+        fields = [
+            'name', 'category', 'discount_type', 'discount_value',
+            'max_discount', 'start_date', 'end_date', 'is_active'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Men\'s Watches Mega Sale'
+            }),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'discount_type': forms.Select(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Enter discount value'
+            }),
+            'max_discount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'Max discount (optional for percentage)'
+            }),
+            'start_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'end_date': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }, format='%Y-%m-%dT%H:%M'),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'name': 'Descriptive name for the category offer',
+            'discount_type': 'Choose percentage or fixed amount',
+            'discount_value': 'For percentage: enter 10 for 10%. For fixed: enter amount',
+            'max_discount': 'Maximum discount for percentage offers (optional)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active categories
+        self.fields['category'].queryset = Category.objects.filter(is_active=True).order_by('name')
+        
+        # Set input format for datetime fields
+        self.fields['start_date'].input_formats = ['%Y-%m-%dT%H:%M']
+        self.fields['end_date'].input_formats = ['%Y-%m-%dT%H:%M']
+    
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get('discount_value')
+        discount_type = self.cleaned_data.get('discount_type')
+        
+        if discount_value is None or discount_value <= 0:
+            raise forms.ValidationError("Discount value must be greater than 0.")
+        
+        if discount_type == 'percentage' and discount_value > 100:
+            raise forms.ValidationError("Percentage discount cannot exceed 100%.")
+        
+        return discount_value
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        discount_type = cleaned_data.get('discount_type')
+        max_discount = cleaned_data.get('max_discount')
+        category = cleaned_data.get('category')
+        
+        # Validate dates
+        if start_date and end_date:
+            if end_date <= start_date:
+                raise forms.ValidationError("End date must be after start date.")
+            
+            # Allow past dates only when editing
+            if not self.instance.pk:
+                now = timezone.now()
+                if start_date < (now - timezone.timedelta(hours=1)):
+                    raise forms.ValidationError("Start date cannot be in the past.")
+        
+        # Validate max_discount
+        if discount_type == 'fixed' and max_discount:
+            raise forms.ValidationError("Max discount only applies to percentage offers.")
+        
+        # Check for overlapping offers
+        if category and start_date and end_date:
+            overlapping = CategoryOffer.objects.filter(
+                category=category,
+                is_active=True,
+                start_date__lt=end_date,
+                end_date__gt=start_date
+            )
+            
+            if self.instance.pk:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            
+            if overlapping.exists():
+                raise forms.ValidationError(
+                    f"An active offer already exists for this category during the selected period."
+                )
+        
+        return cleaned_data
+
+
+class OfferFilterForm(forms.Form):
+    """Filter form for offers"""
+    DISCOUNT_TYPE_CHOICES = [
+        ('', 'All Types'),
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('', 'All Status'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('expired', 'Expired'),
+        ('upcoming', 'Upcoming'),
+    ]
+    
+    search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search by offer name...'
+        })
+    )
+    
+    discount_type = forms.ChoiceField(
+        required=False,
+        choices=DISCOUNT_TYPE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    status = forms.ChoiceField(
+        required=False,
+        choices=STATUS_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+class SalesReportFilterForm(forms.Form):
+    """Form for filtering sales reports"""
+    PERIOD_CHOICES = [
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+        ('custom', 'Custom Range'),
+    ]
+    
+    period = forms.ChoiceField(
+        choices=PERIOD_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'period-select'}),
+        initial='monthly',
+        required=False
+    )
+    
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'id': 'start-date'
+        })
+    )
+    
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'id': 'end-date'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        period = cleaned_data.get('period')
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        # Validate custom date range
+        if period == 'custom':
+            if not start_date or not end_date:
+                raise forms.ValidationError("Both start and end dates are required for custom range.")
+            
+            if start_date > end_date:
+                raise forms.ValidationError("Start date must be before end date.")
+            
+            # Check if date range is not too large (e.g., max 1 year)
+            if (end_date - start_date).days > 365:
+                raise forms.ValidationError("Date range cannot exceed 1 year.")
+        
+        return cleaned_data
