@@ -10,7 +10,10 @@ from decimal import Decimal
 from datetime import date
 
 
+
+
 # ------------------ CATEGORY ------------------
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
@@ -21,6 +24,53 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        """
+        Normalize category name to title case before saving.
+        This ensures: 'men' -> 'Men', 'MEN' -> 'Men', 'mEn' -> 'Men'
+        """
+        if self.name:
+            self.name = self.name.strip().title()
+        super().save(*args, **kwargs)
+    
+    def clean(self):
+        """
+        Validate that no duplicate category exists (case-insensitive).
+        This prevents creating 'Men' if 'men' already exists.
+        """
+        from django.core.exceptions import ValidationError
+        
+        if not self.name:
+            raise ValidationError("Category name is required.")
+        
+        # Normalize the name
+        normalized_name = self.name.strip().title()
+        
+        # Check for case-insensitive duplicates
+        existing = Category.objects.filter(
+            name__iexact=normalized_name
+        )
+        
+        # Exclude current instance when editing
+        if self.pk:
+            existing = existing.exclude(pk=self.pk)
+        
+        if existing.exists():
+            raise ValidationError({
+                'name': f"Category '{normalized_name}' already exists (case-insensitive match)."
+            })
+
+# class Category(models.Model):
+#     name = models.CharField(max_length=100, unique=True)
+#     is_active = models.BooleanField(default=True)
+#     created_at = models.DateTimeField(default=timezone.now)
+
+#     class Meta:
+#         ordering = ['-created_at']
+
+#     def __str__(self):
+#         return self.name
 
 
 # ------------------ BRAND ------------------

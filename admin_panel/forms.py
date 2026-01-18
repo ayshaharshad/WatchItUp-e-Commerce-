@@ -239,33 +239,6 @@ class OrderStatusForm(forms.Form):
         if current_status:
             self.fields['status'].initial = current_status
 
-# class OrderStatusForm(forms.Form):
-#     STATUS_CHOICES = [
-#         ('pending', 'Pending'),
-#         ('confirmed', 'Confirmed'),
-#         ('shipped', 'Shipped'),
-#         ('out_for_delivery', 'Out for Delivery'),
-#         ('delivered', 'Delivered'),
-#         ('cancelled', 'Cancelled'),
-#     ]
-    
-#     status = forms.ChoiceField(
-#         choices=STATUS_CHOICES,
-#         widget=forms.Select(attrs={'class': 'form-control'})
-#     )
-#     notes = forms.CharField(
-#         required=False,
-#         widget=forms.Textarea(attrs={
-#             'class': 'form-control',
-#             'rows': 3,
-#             'placeholder': 'Add notes about status change (optional)'
-#         })
-#     )
-    
-#     def __init__(self, *args, current_status=None, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         if current_status:
-#             self.fields['status'].initial = current_status
 
 # -------------------------
 # Order Search/Filter Form

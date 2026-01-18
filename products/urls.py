@@ -59,6 +59,8 @@ urlpatterns = [
     
     # Get order items data (AJAX helper)
     path('order/<str:order_id>/items-data/', views.get_order_items_data, name='get_order_items_data'),
+    # Invoice download
+    path('order/invoice/<str:order_id>/', views.download_invoice, name='download_invoice'),
 
     
     # ====== WISHLIST ======

@@ -6,28 +6,65 @@ from django.core.validators import RegexValidator
 import string
 import random
 from decimal import Decimal
+from .validators import (
+    UsernameValidator, 
+    AlphabeticValidator, 
+    PhoneNumberValidator
+)
+
+
 
 class CustomUser(AbstractUser):
+    """
+    Custom user model with enhanced validation
+    """
+    
+    # Override username field with custom validator
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[UsernameValidator()],
+        error_messages={
+            'unique': "A user with that username already exists.",
+        },
+        help_text='Required. 3-30 characters. Letters, numbers, and underscore only.'
+    )
+    
+    # Override first_name with validation
+    first_name = models.CharField(
+        max_length=150,
+        blank=True,
+        validators=[AlphabeticValidator()],
+        help_text='Alphabetic characters only.'
+    )
+    
+    # Override last_name with validation
+    last_name = models.CharField(
+        max_length=150,
+        blank=True,
+        validators=[AlphabeticValidator()],
+        help_text='Alphabetic characters only.'
+    )
+    
     email = models.EmailField(unique=True)
     is_email_verified = models.BooleanField(default=False)
+    
     profile_picture = models.ImageField(
         upload_to='profile_pics/',
         blank=True,
-        null=True
+        null=True,
+        help_text='Profile picture (max 5MB)'
     )
     
-    # Add phone number field
-    phone_regex = RegexValidator(
-        regex=r'^\+?1?\d{9,15}$',
-        message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
-    )
+    # Phone number with Indian format validation
     phone = models.CharField(
-        validators=[phone_regex],
-        max_length=17,
+        validators=[PhoneNumberValidator()],
+        max_length=10,
         blank=True,
         null=True,
-        help_text="Phone number (optional)"
+        help_text="10-digit Indian mobile number (e.g., 9876543210)"
     )
+    
     referral_code = models.CharField(
         max_length=10, 
         unique=True, 
@@ -35,6 +72,7 @@ class CustomUser(AbstractUser):
         null=True,
         help_text="Unique referral code for this user"
     )
+    
     referred_by = models.ForeignKey(
         'self', 
         on_delete=models.SET_NULL, 
@@ -43,6 +81,7 @@ class CustomUser(AbstractUser):
         related_name='referrals',
         help_text="User who referred this user"
     )
+    
     referral_count = models.PositiveIntegerField(
         default=0,
         help_text="Number of successful referrals"
@@ -54,18 +93,39 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+        ordering = ['-date_joined']
+
     def __str__(self):
         return self.email
 
-    def delete(self, *args, **kwargs):
-        if self.profile_picture and self.profile_picture.path:
-            try:
-                os.remove(self.profile_picture.path)
-            except (ValueError, FileNotFoundError):
-                pass
-        super().delete(*args, **kwargs)
+    def clean(self):
+        """Model-level validation"""
+        super().clean()
+        
+        # Clean and validate username
+        if self.username:
+            self.username = self.username.strip()
+        
+        # Clean and validate names
+        if self.first_name:
+            self.first_name = self.first_name.strip().title()
+        
+        if self.last_name:
+            self.last_name = self.last_name.strip().title()
+        
+        # Clean phone number
+        if self.phone:
+            import re
+            self.phone = re.sub(r'[\s\-\(\)]', '', self.phone)
 
     def save(self, *args, **kwargs):
+        """Override save to run validation"""
+        # Run full_clean before saving
+        self.full_clean()
+        
         # Generate referral code on user creation
         if not self.referral_code:
             self.referral_code = self.generate_referral_code()
@@ -76,6 +136,15 @@ class CustomUser(AbstractUser):
         # Create wallet for new users
         if is_new:
             Wallet.objects.get_or_create(user=self)
+
+    def delete(self, *args, **kwargs):
+        """Override delete to handle profile picture cleanup"""
+        if self.profile_picture and self.profile_picture.path:
+            try:
+                os.remove(self.profile_picture.path)
+            except (ValueError, FileNotFoundError):
+                pass
+        super().delete(*args, **kwargs)
     
     @staticmethod
     def generate_referral_code():
@@ -87,10 +156,18 @@ class CustomUser(AbstractUser):
     
     def get_referral_link(self):
         """Get full referral signup link"""
-        from django.urls import reverse
-        from django.contrib.sites.shortcuts import get_current_site
-        # You can customize this to include your domain
         return f"/signup/?ref={self.referral_code}"
+    
+    @property
+    def full_name(self):
+        """Get user's full name"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        elif self.last_name:
+            return self.last_name
+        return self.username
     
     @property
     def total_referrals(self):
@@ -113,6 +190,113 @@ class CustomUser(AbstractUser):
             return self.wallet.balance
         except Wallet.DoesNotExist:
             return Decimal('0.00')
+        
+# class CustomUser(AbstractUser):
+#     email = models.EmailField(unique=True)
+#     is_email_verified = models.BooleanField(default=False)
+#     profile_picture = models.ImageField(
+#         upload_to='profile_pics/',
+#         blank=True,
+#         null=True
+#     )
+    
+#     # Add phone number field
+#     phone_regex = RegexValidator(
+#         regex=r'^\+?1?\d{9,15}$',
+#         message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+#     )
+#     phone = models.CharField(
+#         validators=[phone_regex],
+#         max_length=17,
+#         blank=True,
+#         null=True,
+#         help_text="Phone number (optional)"
+#     )
+#     referral_code = models.CharField(
+#         max_length=10, 
+#         unique=True, 
+#         blank=True, 
+#         null=True,
+#         help_text="Unique referral code for this user"
+#     )
+#     referred_by = models.ForeignKey(
+#         'self', 
+#         on_delete=models.SET_NULL, 
+#         null=True, 
+#         blank=True,
+#         related_name='referrals',
+#         help_text="User who referred this user"
+#     )
+#     referral_count = models.PositiveIntegerField(
+#         default=0,
+#         help_text="Number of successful referrals"
+#     )
+    
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = ['username']
+
+#     def __str__(self):
+#         return self.email
+
+#     def delete(self, *args, **kwargs):
+#         if self.profile_picture and self.profile_picture.path:
+#             try:
+#                 os.remove(self.profile_picture.path)
+#             except (ValueError, FileNotFoundError):
+#                 pass
+#         super().delete(*args, **kwargs)
+
+#     def save(self, *args, **kwargs):
+#         # Generate referral code on user creation
+#         if not self.referral_code:
+#             self.referral_code = self.generate_referral_code()
+        
+#         is_new = self.pk is None
+#         super().save(*args, **kwargs)
+        
+#         # Create wallet for new users
+#         if is_new:
+#             Wallet.objects.get_or_create(user=self)
+    
+#     @staticmethod
+#     def generate_referral_code():
+#         """Generate a unique 8-character referral code"""
+#         while True:
+#             code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+#             if not CustomUser.objects.filter(referral_code=code).exists():
+#                 return code
+    
+#     def get_referral_link(self):
+#         """Get full referral signup link"""
+#         from django.urls import reverse
+#         from django.contrib.sites.shortcuts import get_current_site
+#         # You can customize this to include your domain
+#         return f"/signup/?ref={self.referral_code}"
+    
+#     @property
+#     def total_referrals(self):
+#         """Get total number of users referred"""
+#         return self.referrals.filter(is_active=True).count()
+    
+#     @property
+#     def pending_referral_coupons(self):
+#         """Get unused referral coupons"""
+#         from products.models import ReferralCoupon
+#         return ReferralCoupon.objects.filter(
+#             referrer=self,
+#             is_used=False
+#         ).count()
+    
+#     @property
+#     def wallet_balance(self):
+#         """Get user's wallet balance"""
+#         try:
+#             return self.wallet.balance
+#         except Wallet.DoesNotExist:
+#             return Decimal('0.00')
 
 
 class Wallet(models.Model):

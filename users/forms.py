@@ -5,11 +5,37 @@ from django.core.validators import RegexValidator
 from django.db.models import Q
 import logging
 from .models import Address
+from .validators import (
+    AlphabeticValidator, 
+    UsernameValidator, 
+    PhoneNumberValidator,
+    username_regex_validator,
+    phone_regex_validator,
+    name_regex_validator
+)
+import re
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class CustomUserCreationForm(UserCreationForm):
+    # Add custom username validator
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Username (letters, numbers, @/./+/-/_ only)'
+        }),
+        validators=[
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',
+                message='Username can only contain letters, numbers, and @/./+/-/_ characters.',
+                code='invalid_username'
+            )
+        ],
+        help_text=''
+    )
+    
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -36,11 +62,7 @@ class CustomUserCreationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Update field attributes
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'Username (letters, numbers, @/./+/-/_ only)'
-        })
+        # Update password field attributes
         self.fields['password1'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Password (min 8 characters)'
@@ -51,14 +73,50 @@ class CustomUserCreationForm(UserCreationForm):
         })
         
         # Clear default help texts for cleaner UI
-        self.fields['username'].help_text = ""
         self.fields['password1'].help_text = ""
+        self.fields['password2'].help_text = ""
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
+        
+        # Check if username exists
         if User.objects.filter(username=username).exists():
             logger.warning(f"Signup attempted with duplicate username: {username}")
             raise forms.ValidationError("This username is already taken.")
+        
+        # Validate minimum length
+        if len(username) < 3:
+            raise forms.ValidationError("Username must be at least 3 characters long.")
+        
+        # Validate maximum length
+        if len(username) > 30:
+            raise forms.ValidationError("Username must be at most 30 characters long.")
+        
+        # Check if username contains at least one alphanumeric character
+        if not re.search(r'[a-zA-Z0-9]', username):
+            raise forms.ValidationError("Username must contain at least one letter or number.")
+        
+        # Check if username is only special characters
+        if re.match(r'^[^a-zA-Z0-9]+$', username):
+            raise forms.ValidationError("Username cannot contain only special characters.")
+        
+        # Check if username starts or ends with special characters
+        if username[0] in ['_', '.', '@', '+', '-'] or username[-1] in ['_', '.', '@', '+', '-']:
+            raise forms.ValidationError("Username cannot start or end with special characters.")
+        
+        # Check for consecutive special characters
+        if re.search(r'[._@+\-]{2,}', username):
+            raise forms.ValidationError("Username cannot contain consecutive special characters.")
+        
+        # Reserved usernames
+        reserved_usernames = [
+            'admin', 'root', 'administrator', 'moderator', 'mod', 
+            'support', 'help', 'user', 'guest', 'test', 'system',
+            'api', 'www', 'mail', 'ftp', 'blog', 'shop'
+        ]
+        if username.lower() in reserved_usernames:
+            raise forms.ValidationError("This username is reserved and cannot be used.")
+        
         return username
 
     def clean_email(self):
@@ -68,25 +126,18 @@ class CustomUserCreationForm(UserCreationForm):
             logger.warning(f"Signup attempted with duplicate email: {email}")
             raise forms.ValidationError("This email is already registered.")
         return email_lower
-
-    def clean_password1(self):
-        password = self.cleaned_data.get('password1')
-        if not password:
-            raise forms.ValidationError("Password is required.")
+    
+    def clean_password2(self):
+        """
+        Validate that password2 matches password1
+        """
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
         
-        if len(password) < 8:
-            raise forms.ValidationError("Password must be at least 8 characters long.")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("The two password fields didn't match.")
         
-        if not any(char.isdigit() for char in password):
-            raise forms.ValidationError("Password must contain at least one digit.")
-        
-        if not any(char.isupper() for char in password):
-            raise forms.ValidationError("Password must contain at least one uppercase letter.")
-        
-        if not any(char.islower() for char in password):
-            raise forms.ValidationError("Password must contain at least one lowercase letter.")
-            
-        return password
+        return password2
     
     def clean_referral_code(self):
         """Validate referral code"""
@@ -95,7 +146,6 @@ class CustomUserCreationForm(UserCreationForm):
         if code:
             try:
                 referrer = User.objects.get(referral_code=code, is_active=True)
-                # Store referrer in form for later use
                 self.referrer = referrer
             except User.DoesNotExist:
                 raise forms.ValidationError("Invalid referral code.")
@@ -267,23 +317,307 @@ class ResetPasswordForm(forms.Form):
         return cleaned_data
     
 
+# class UserProfileForm(forms.ModelForm):
+#     class Meta:
+#         model = User
+#         fields = ['username', 'first_name', 'last_name', 'phone', 'profile_picture']
+#         widgets = {
+#             'username': forms.TextInput(attrs={'class': 'form-control'}),
+#             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
+#             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
+#             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+1234567890'}),
+#             'profile_picture': forms.FileInput(attrs={'class': 'form-control'})
+#         }
+
+#     def clean_username(self):
+#         username = self.cleaned_data.get('username')
+#         if User.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
+#             raise forms.ValidationError("This username is already taken.")
+#         return username
+
+
 class UserProfileForm(forms.ModelForm):
+    """
+    Enhanced user profile form with comprehensive validation
+    """
+    
+    # Override fields with custom validators and widgets
+    username = forms.CharField(
+        max_length=30,
+        min_length=3,
+        required=True,
+        validators=[UsernameValidator()],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Username (letters, numbers, underscore only)',
+            'pattern': '[a-zA-Z0-9_]{3,30}',
+            'title': 'Username can only contain letters, numbers, and underscore'
+        }),
+        help_text='3-30 characters. Letters, numbers, and underscore only.'
+    )
+    
+    first_name = forms.CharField(
+        max_length=150,
+        required=False,
+        validators=[AlphabeticValidator()],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'First Name',
+            'pattern': '[a-zA-Z\s]+',
+            'title': 'Only alphabetic characters allowed'
+        }),
+        help_text='Alphabetic characters only.'
+    )
+    
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        validators=[AlphabeticValidator()],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Last Name',
+            'pattern': '[a-zA-Z\s]+',
+            'title': 'Only alphabetic characters allowed'
+        }),
+        help_text='Alphabetic characters only.'
+    )
+    
+    phone = forms.CharField(
+        max_length=10,
+        min_length=10,
+        required=False,
+        validators=[PhoneNumberValidator()],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '9876543210',
+            'pattern': '[6-9][0-9]{9}',
+            'inputmode': 'numeric',
+            'maxlength': '10',
+            'title': '10-digit phone number starting with 6, 7, 8, or 9'
+        }),
+        help_text='10-digit Indian mobile number (e.g., 9876543210)'
+    )
+    
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'phone', 'profile_picture']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+1234567890'}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'})
+            'profile_picture': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            })
         }
-
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Make all fields optional except username
+        self.fields['first_name'].required = False
+        self.fields['last_name'].required = False
+        self.fields['phone'].required = False
+        self.fields['profile_picture'].required = False
+    
     def clean_username(self):
-        username = self.cleaned_data.get('username')
+        """
+        Comprehensive username validation
+        """
+        username = self.cleaned_data.get('username', '').strip()
+        
+        if not username:
+            raise forms.ValidationError("Username is required.")
+        
+        # Length validation
+        if len(username) < 3:
+            raise forms.ValidationError("Username must be at least 3 characters long.")
+        
+        if len(username) > 30:
+            raise forms.ValidationError("Username must not exceed 30 characters.")
+        
+        # Format validation - only letters, numbers, underscore
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            raise forms.ValidationError(
+                "Username can only contain letters, numbers, and underscore (_)."
+            )
+        
+        # Cannot start or end with underscore
+        if username.startswith('_') or username.endswith('_'):
+            raise forms.ValidationError("Username cannot start or end with underscore.")
+        
+        # No consecutive underscores
+        if '__' in username:
+            raise forms.ValidationError("Username cannot contain consecutive underscores.")
+        
+        # Cannot be only numbers
+        if username.isdigit():
+            raise forms.ValidationError("Username cannot contain only numbers.")
+        
+        # Check if username exists (exclude current user)
         if User.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("This username is already taken.")
+        
+        # Reserved usernames
+        reserved = [
+            'admin', 'root', 'administrator', 'moderator', 'support',
+            'help', 'user', 'guest', 'test', 'system', 'null', 'undefined'
+        ]
+        if username.lower() in reserved:
+            raise forms.ValidationError("This username is reserved and cannot be used.")
+        
         return username
+    
+    def clean_first_name(self):
+        """
+        Validate first name - alphabetic characters only
+        """
+        first_name = self.cleaned_data.get('first_name', '').strip()
+        
+        if not first_name:
+            return first_name  # Optional field
+        
+        # Length validation
+        if len(first_name) > 150:
+            raise forms.ValidationError("First name is too long (max 150 characters).")
+        
+        if len(first_name) < 2:
+            raise forms.ValidationError("First name must be at least 2 characters long.")
+        
+        # Only alphabetic characters and spaces
+        if not re.match(r'^[a-zA-Z\s]+$', first_name):
+            raise forms.ValidationError(
+                "First name can only contain alphabetic characters and spaces."
+            )
+        
+        # No leading/trailing spaces
+        if first_name != first_name.strip():
+            raise forms.ValidationError("First name cannot have leading or trailing spaces.")
+        
+        # No consecutive spaces
+        if '  ' in first_name:
+            raise forms.ValidationError("First name cannot contain consecutive spaces.")
+        
+        # Capitalize first letter of each word
+        first_name = first_name.title()
+        
+        return first_name
+    
+    def clean_last_name(self):
+        """
+        Validate last name - alphabetic characters only
+        """
+        last_name = self.cleaned_data.get('last_name', '').strip()
+        
+        if not last_name:
+            return last_name  # Optional field
+        
+        # Length validation
+        if len(last_name) > 150:
+            raise forms.ValidationError("Last name is too long (max 150 characters).")
+        
+        if len(last_name) < 2:
+            raise forms.ValidationError("Last name must be at least 2 characters long.")
+        
+        # Only alphabetic characters and spaces
+        if not re.match(r'^[a-zA-Z\s]+$', last_name):
+            raise forms.ValidationError(
+                "Last name can only contain alphabetic characters and spaces."
+            )
+        
+        # No leading/trailing spaces
+        if last_name != last_name.strip():
+            raise forms.ValidationError("Last name cannot have leading or trailing spaces.")
+        
+        # No consecutive spaces
+        if '  ' in last_name:
+            raise forms.ValidationError("Last name cannot contain consecutive spaces.")
+        
+        # Capitalize first letter of each word
+        last_name = last_name.title()
+        
+        return last_name
+    
+    def clean_phone(self):
+        """
+        Validate Indian phone number - exactly 10 digits
+        """
+        phone = self.cleaned_data.get('phone', '').strip()
+        
+        if not phone:
+            return ''  # Optional field
+        
+        # Remove any spaces, dashes, or parentheses
+        phone_cleaned = re.sub(r'[\s\-\(\)]', '', phone)
+        
+        # Must be exactly 10 digits
+        if not phone_cleaned.isdigit():
+            raise forms.ValidationError("Phone number must contain only digits.")
+        
+        if len(phone_cleaned) != 10:
+            raise forms.ValidationError("Phone number must be exactly 10 digits.")
+        
+        # Indian mobile numbers start with 6, 7, 8, or 9
+        if phone_cleaned[0] not in ['6', '7', '8', '9']:
+            raise forms.ValidationError(
+                "Phone number must start with 6, 7, 8, or 9."
+            )
+        
+        # Check for patterns like 9999999999
+        if len(set(phone_cleaned)) == 1:
+            raise forms.ValidationError("Please enter a valid phone number.")
+        
+        # Check for sequential patterns (optional strict check)
+        # Uncomment if you want to prevent 1234567890
+        # if phone_cleaned in ['0123456789', '1234567890']:
+        #     raise forms.ValidationError("Please enter a valid phone number.")
+        
+        return phone_cleaned
+    
+    def clean_profile_picture(self):
+        """
+        Validate profile picture upload
+        """
+        picture = self.cleaned_data.get('profile_picture')
+        
+        if picture:
+            # Check file size (max 5MB)
+            if picture.size > 5 * 1024 * 1024:
+                raise forms.ValidationError("Image file size must not exceed 5MB.")
+            
+            # Check file extension
+            valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            import os
+            ext = os.path.splitext(picture.name)[1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(
+                    f"Invalid file type. Allowed: {', '.join(valid_extensions)}"
+                )
+            
+            # Validate image format
+            try:
+                from PIL import Image
+                img = Image.open(picture)
+                img.verify()
+            except Exception:
+                raise forms.ValidationError("Invalid image file. Please upload a valid image.")
+        
+        return picture
+    
+    def clean(self):
+        """
+        Form-level validation
+        """
+        cleaned_data = super().clean()
+        
+        # Additional cross-field validation can go here
+        first_name = cleaned_data.get('first_name', '')
+        last_name = cleaned_data.get('last_name', '')
+        
+        # If both names are provided, ensure they're not identical
+        if first_name and last_name and first_name.lower() == last_name.lower():
+            raise forms.ValidationError(
+                "First name and last name cannot be identical."
+            )
+        
+        return cleaned_data
 
 class EmailChangeForm(forms.Form):
     new_email = forms.EmailField(

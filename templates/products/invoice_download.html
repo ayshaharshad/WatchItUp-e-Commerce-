@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - {{ order.order_id }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+        }
+        
+        /* Header Section */
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4a5568;
+            margin-bottom: 30px;
+        }
+        
+        .company-info {
+            flex: 1;
+        }
+        
+        .company-info h1 {
+            font-size: 28px;
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .company-info p {
+            margin: 2px 0;
+            color: #718096;
+            font-size: 11px;
+        }
+        
+        .invoice-title {
+            text-align: right;
+        }
+        
+        .invoice-title h2 {
+            font-size: 24px;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title p {
+            margin: 3px 0;
+            font-size: 11px;
+        }
+        
+        .invoice-title .order-id {
+            font-weight: bold;
+            color: #4299e1;
+            font-size: 13px;
+        }
+        
+        /* Info Section */
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        
+        .info-block {
+            flex: 1;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .info-block h3 {
+            font-size: 13px;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        
+        .info-block p {
+            margin: 5px 0;
+            font-size: 11px;
+        }
+        
+        .info-block strong {
+            color: #2d3748;
+        }
+        
+        /* Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .items-table thead {
+            background: #4a5568;
+            color: white;
+        }
+        
+        .items-table th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .items-table th:last-child,
+        .items-table td:last-child {
+            text-align: right;
+        }
+        
+        .items-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .items-table tbody tr:hover {
+            background: #f7fafc;
+        }
+        
+        .items-table td {
+            padding: 10px 8px;
+            font-size: 11px;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .item-variant {
+            color: #718096;
+            font-size: 10px;
+            font-style: italic;
+        }
+        
+        /* Summary Section */
+        .invoice-summary {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .summary-table {
+            width: 350px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            font-size: 11px;
+        }
+        
+        .summary-row.subtotal {
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .summary-row.total {
+            background: #4a5568;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        .summary-row.discount {
+            color: #48bb78;
+            font-weight: 600;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-refunded {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .status-pending {
+            background: #fef5e7;
+            color: #7d5d07;
+        }
+        
+        /* Footer */
+        .invoice-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .invoice-footer p {
+            margin: 5px 0;
+            font-size: 10px;
+            color: #718096;
+        }
+        
+        .invoice-footer .thank-you {
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        /* Notes Section */
+        .invoice-notes {
+            margin-top: 30px;
+            padding: 15px;
+            background: #fff5f5;
+            border-left: 4px solid #fc8181;
+            border-radius: 5px;
+        }
+        
+        .invoice-notes h4 {
+            font-size: 12px;
+            color: #c53030;
+            margin-bottom: 8px;
+        }
+        
+        .invoice-notes p {
+            font-size: 10px;
+            color: #742a2a;
+        }
+        
+        /* Page Break */
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="company-info">
+                <h1>{{ company_name }}</h1>
+                <p>{{ company_address }}</p>
+                <p>Email: {{ company_email }}</p>
+                <p>Phone: {{ company_phone }}</p>
+                <p>Website: {{ company_website }}</p>
+            </div>
+            <div class="invoice-title">
+                <h2>INVOICE</h2>
+                <p class="order-id">Order ID: {{ order.order_id }}</p>
+                <p>Date: {{ order.created_at|date:"F d, Y" }}</p>
+                <p>
+                    <span class="status-badge status-{{ order.payment_status }}">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Customer & Order Info -->
+        <div class="invoice-info">
+            <div class="info-block">
+                <h3>Bill To</h3>
+                <p><strong>{{ order.shipping_full_name }}</strong></p>
+                <p>{{ order.shipping_line1 }}</p>
+                {% if order.shipping_line2 %}
+                <p>{{ order.shipping_line2 }}</p>
+                {% endif %}
+                <p>{{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_postal_code }}</p>
+                <p>{{ order.shipping_country }}</p>
+                <p><strong>Phone:</strong> {{ order.shipping_phone }}</p>
+            </div>
+            
+            <div class="info-block">
+                <h3>Order Details</h3>
+                <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+                <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y h:i A" }}</p>
+                <p><strong>Payment Method:</strong> 
+                    {% if order.payment_method == 'razorpay' %}
+                        Online Payment
+                    {% elif order.payment_method == 'wallet' %}
+                        Wallet
+                    {% else %}
+                        Cash on Delivery
+                    {% endif %}
+                </p>
+                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                {% if order.delivered_at %}
+                <p><strong>Delivered:</strong> {{ order.delivered_at|date:"F d, Y" }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">#</th>
+                    <th style="width: 40%;">Item Description</th>
+                    <th style="width: 15%;">Unit Price</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 20%;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in active_items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <div class="item-name">{{ item.product_name }}</div>
+                        {% if item.variant_name %}
+                        <div class="item-variant">Color: {{ item.variant_name }}</div>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ item.price }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td><strong>₹{{ item.item_total }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Summary -->
+        <div class="invoice-summary">
+            <div class="summary-table">
+                <div class="summary-row subtotal">
+                    <span>Subtotal:</span>
+                    <span>₹{{ order.subtotal }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (18%):</span>
+                    <span>₹{{ order.tax }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping:</span>
+                    <span>
+                        {% if order.shipping_charge == 0 %}
+                            FREE
+                        {% else %}
+                            ₹{{ order.shipping_charge }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% if order.discount > 0 %}
+                <div class="summary-row discount">
+                    <span>Discount:</span>
+                    <span>-₹{{ order.discount }}</span>
+                </div>
+                {% endif %}
+                <div class="summary-row total">
+                    <span>TOTAL:</span>
+                    <span>₹{{ order.total }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes (if any) -->
+        {% if order.notes %}
+        <div class="invoice-notes">
+            <h4>Order Notes</h4>
+            <p>{{ order.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="invoice-footer">
+            <p class="thank-you">Thank you for your purchase!</p>
+            <p>This is a computer-generated invoice and does not require a signature.</p>
+            <p>For any queries, please contact us at {{ company_email }} or call {{ company_phone }}</p>
+            <p style="margin-top: 10px; font-size: 9px;">© 2024 {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

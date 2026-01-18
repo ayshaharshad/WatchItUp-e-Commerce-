@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
+from django import forms 
+from django.core.exceptions import ValidationError
+
 from .models import (
     Category, Brand, Product, ProductImage, ProductReview, Coupon, CouponUsage,
     ProductVariant, ProductVariantImage, Cart, CartItem, 
@@ -9,12 +12,66 @@ from .models import (
 )
 
 # ------------------ CATEGORY ------------------
+class CategoryAdminForm(forms.ModelForm):
+    """
+    Custom form for Category admin with case-insensitive validation.
+    """
+    class Meta:
+        model = Category
+        fields = '__all__'
+    
+    def clean_name(self):
+        """
+        Validate and normalize category name.
+        Prevents duplicate categories like 'Men', 'men', 'MEN'.
+        """
+        name = self.cleaned_data.get('name', '').strip()
+        
+        if not name:
+            raise ValidationError("Category name cannot be empty.")
+        
+        # Normalize to title case
+        name = name.title()
+        
+        # Check for case-insensitive duplicates
+        existing = Category.objects.filter(name__iexact=name)
+        
+        # Exclude current instance if editing (not creating new)
+        if self.instance and self.instance.pk:
+            existing = existing.exclude(pk=self.instance.pk)
+        
+        if existing.exists():
+            existing_cat = existing.first()
+            raise ValidationError(
+                f"Category '{name}' already exists (ID: {existing_cat.id}). "
+                f"Cannot create duplicate categories."
+            )
+        
+        return name
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
+    form = CategoryAdminForm  # ✅ Use custom form with validation
     list_display = ('name', 'is_active', 'created_at')
     list_filter = ('is_active', 'created_at')
     search_fields = ('name',)
     list_editable = ('is_active',)
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Additional validation before saving through admin.
+        """
+        # Trigger full_clean to run model's clean() method
+        obj.full_clean()
+        super().save_model(request, obj, form, change)
+
+# @admin.register(Category)
+# class CategoryAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'is_active', 'created_at')
+#     list_filter = ('is_active', 'created_at')
+#     search_fields = ('name',)
+#     list_editable = ('is_active',)
 
 # ------------------ BRAND ------------------
 @admin.register(Brand)

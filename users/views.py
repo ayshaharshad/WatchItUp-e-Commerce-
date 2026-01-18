@@ -98,7 +98,6 @@ def signup_view(request):
     if request.user.is_authenticated:
         return redirect('products:home')
     
-    
     ref_code = request.GET.get('ref', '').strip().upper()
         
     if request.method == "POST":
@@ -137,11 +136,6 @@ def signup_view(request):
             except Exception as e:
                 logger.error(f"Signup error: {str(e)}")
                 messages.error(request, "An error occurred during signup. Please try again.")
-        else:
-            # Form has validation errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field.title()}: {error}")
     else:
         # Pre-fill referral code if present in URL
         initial_data = {}
@@ -483,26 +477,74 @@ def profile_view(request):
 @login_required
 @transaction.atomic
 def edit_profile_view(request):
-    """Edit user profile information"""
+    """
+    Enhanced edit user profile with comprehensive validation
+    """
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
+        
         if form.is_valid():
-            # Handle profile picture deletion if needed
-            if 'delete_picture' in request.POST and request.user.profile_picture:
-                request.user.profile_picture.delete()
-                request.user.profile_picture = None
+            try:
+                # Handle profile picture deletion if requested
+                if 'delete_picture' in request.POST and request.user.profile_picture:
+                    # Delete the old picture file
+                    old_picture = request.user.profile_picture
+                    request.user.profile_picture = None
+                    request.user.save()
+                    
+                    # Delete file from storage
+                    if old_picture:
+                        try:
+                            old_picture.delete(save=False)
+                        except Exception as e:
+                            logger.warning(f"Failed to delete old profile picture: {e}")
                 
-            form.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('users:profile')
+                # Save the form
+                user = form.save(commit=False)
+                
+                # Additional server-side checks (belt and suspenders approach)
+                if user.username:
+                    user.username = user.username.strip()
+                if user.first_name:
+                    user.first_name = user.first_name.strip().title()
+                if user.last_name:
+                    user.last_name = user.last_name.strip().title()
+                if user.phone:
+                    user.phone = user.phone.strip()
+                
+                user.save()
+                
+                messages.success(
+                    request, 
+                    '<i class="fas fa-check-circle me-2"></i>Profile updated successfully!',
+                    extra_tags='safe'
+                )
+                return redirect('users:profile')
+                
+            except Exception as e:
+                logger.error(f"Error updating profile for user {request.user.id}: {str(e)}")
+                messages.error(
+                    request,
+                    '<i class="fas fa-exclamation-triangle me-2"></i>An error occurred while updating your profile. Please try again.',
+                    extra_tags='safe'
+                )
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field.title()}: {error}")
+            # Form has validation errors
+            # Django messages will show field-specific errors from the template
+            messages.error(
+                request,
+                '<i class="fas fa-exclamation-triangle me-2"></i>Please correct the errors below.',
+                extra_tags='safe'
+            )
     else:
         form = UserProfileForm(instance=request.user)
     
-    return render(request, 'users/profile/edit_profile.html', {'form': form})
+    context = {
+        'form': form,
+        'user': request.user
+    }
+    return render(request, 'users/profile/edit_profile.html', context)
+
 
 # ------------------ EMAIL CHANGE VIEWS ------------------
 
@@ -754,37 +796,6 @@ def add_address_view(request):
         'next': next_url  # Pass to template
     })
 
-# @login_required
-# def add_address_view(request):
-#     """Add new address with optional redirect to checkout"""
-#     if request.method == 'POST':
-#         form = AddressForm(request.POST)
-#         if form.is_valid():
-#             address = form.save(commit=False)
-#             address.user = request.user
-#             address.save()
-#             messages.success(request, 'Address added successfully!')
-            
-#             # FIXED: Check if coming from checkout
-#             next_url = request.POST.get('next') or request.GET.get('next')
-#             if next_url == 'checkout':
-#                 return redirect('products:checkout_view')
-            
-#             return redirect('users:profile')
-#         else:
-#             for field, errors in form.errors.items():
-#                 for error in errors:
-#                     messages.error(request, error)
-#     else:
-#         form = AddressForm()
-    
-#     # FIXED: Get the next parameter to pass to template
-#     next_url = request.GET.get('next', '')
-    
-#     return render(request, 'users/addresses/add_address.html', {
-#         'form': form,
-#         'next': next_url
-#     })
 
 
 @login_required
