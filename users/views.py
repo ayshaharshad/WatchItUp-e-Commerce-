@@ -11,12 +11,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
 from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import transaction
 from datetime import timedelta
 from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Wallet, WalletTransaction
 from django.views.decorators.http import require_http_methods
+from decimal import Decimal
 
 
 
@@ -31,41 +33,6 @@ logger = logging.getLogger(__name__)
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-def send_otp_email(email, otp, purpose='verification'):
-    """Send OTP email with proper error handling"""
-    try:
-        subject_map = {
-            'signup': 'Welcome to Watchitup - Verify Your Email',
-            'reset': 'Watchitup - Password Reset OTP'
-        }
-        
-        subject = subject_map.get(purpose, 'Watchitup - OTP Verification')
-        message = f"""
-        Hello!
-        
-        Your OTP for Watchitup is: {otp}
-        
-        This OTP will expire in 5 minutes.
-        
-        If you didn't request this, please ignore this email.
-        
-        Best regards,
-        Watchitup Team
-        """
-        
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False
-        )
-        logger.info(f"OTP email sent successfully to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
-        return False
-
 def clear_otp_session(request):
     """Clear OTP-related session data"""
     keys_to_remove = ['otp', 'otp_user', 'otp_timestamp', 'otp_verified']
@@ -73,13 +40,16 @@ def clear_otp_session(request):
         request.session.pop(key, None)
 
 def is_otp_valid(request):
-    """Check if OTP is still valid (within time limit)"""
     timestamp = request.session.get('otp_timestamp')
     if not timestamp:
         return False
-    
+
     otp_age = timezone.now().timestamp() - timestamp
-    return otp_age <= getattr(settings, 'OTP_EXPIRY_TIME', 300)
+    if otp_age > getattr(settings, 'OTP_EXPIRY_TIME', 300):
+        clear_otp_session(request)
+        return False
+
+    return True
 
 # ------------------ ROOT REDIRECT ------------------
 def root_redirect_view(request):
@@ -88,36 +58,52 @@ def root_redirect_view(request):
     return redirect('users:login')
 
 # ------------------ SIGNUP ------------------
+
 @never_cache
 @transaction.atomic
 def signup_view(request):
-    
-    # Clear old messages at the start
+    """
+    Properly handle referral codes
+    - Referral code in form is the REFERRER's code
+    - New user gets their OWN unique referral code automatically
+    """
+
+    # ✅ FIX 1: Clear old messages
     list(messages.get_messages(request))
+
+    # ✅ FIX 2: Clear stale referral + OTP session data
+    for key in ['referrer_id', 'referral_code_entered', 'otp', 'otp_user', 'otp_timestamp']:
+        request.session.pop(key, None)
 
     if request.user.is_authenticated:
         return redirect('products:home')
-    
+
+    # Get referral code from URL
     ref_code = request.GET.get('ref', '').strip().upper()
-        
+
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
+
         if form.is_valid():
             try:
-                # Create user but don't activate yet
+                # Create user but keep inactive until OTP verification
                 user = form.save(commit=False)
                 user.is_active = False
                 user.is_email_verified = False
-                user.save()
+                user.save()  # Generates user's OWN referral code
 
-                # Handle referral
-                referral_code = form.cleaned_data.get('referral_code')
-                if referral_code and hasattr(form, 'referrer'):
-                    user.referred_by = form.referrer
-                
-                user.save()
+                # ✅ FIX 3: Safely store referrer info in session
+                referral_code_entered = form.cleaned_data.get('referral_code', '').strip().upper()
 
-                # Generate and store OTP
+                if referral_code_entered and getattr(form, 'referrer', None):
+                    request.session['referrer_id'] = form.referrer.id
+                    request.session['referral_code_entered'] = referral_code_entered
+
+                    logger.info(
+                        f"Signup: {user.email} referred by {form.referrer.email}"
+                    )
+
+                # Generate OTP
                 otp = generate_otp()
                 request.session['otp'] = otp
                 request.session['otp_user'] = user.id
@@ -126,52 +112,81 @@ def signup_view(request):
 
                 # Send OTP email
                 if send_otp_email(user.email, otp, 'signup'):
-                    messages.success(request, f"Account created! Please check your email ({user.email}) for the OTP.")
+                    messages.success(
+                        request,
+                        f"Account created! Please check your email ({user.email}) for the OTP."
+                    )
                     return redirect('users:verify_otp', purpose='signup')
-                else:
-                    # If email fails, delete the user and show error
-                    user.delete()
-                    messages.error(request, "Failed to send verification email. Please try again.")
-                    
+
+                # ❌ If email fails
+                user.delete()
+                messages.error(request, "Failed to send verification email. Please try again.")
+
             except Exception as e:
-                logger.error(f"Signup error: {str(e)}")
-                messages.error(request, "An error occurred during signup. Please try again.")
+                logger.exception("Signup failed")
+                messages.error(request, "An unexpected error occurred. Please try again.")
+
+        else:
+            # Show validation errors cleanly
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+
     else:
-        # Pre-fill referral code if present in URL
+        # Pre-fill referral code from URL
         initial_data = {}
         if ref_code:
             initial_data['referral_code'] = ref_code
-        
+
         form = CustomUserCreationForm(initial=initial_data)
-    
-    return render(request, 'users/signup.html', {'form': form, 'ref_code': ref_code})
+
+    return render(request, 'users/signup.html', {
+        'form': form,
+        'ref_code': ref_code
+    })
 
 
-def process_referral_signup(user):
+@transaction.atomic
+def process_referral_signup(user, referrer_id=None):
     """
-    Process referral after successful signup.
-    Call this function in verify_otp_view after user is activated.
+    Process referral after successful signup and OTP verification.
     """
     from products.models import Coupon, ReferralCoupon
-    from datetime import timedelta
     
-    if not user.referred_by:
+    if not referrer_id:
         return
     
     try:
-        # Create referral coupon for referrer
-        referrer = user.referred_by
-        
+        referrer = CustomUser.objects.get(id=referrer_id, is_active=True)
+    except CustomUser.DoesNotExist:
+        logger.error(f"Referrer with ID {referrer_id} not found")
+        return
+    
+    # Check if user already has a referrer (prevent duplicates)
+    if user.referred_by:
+        logger.info(f"User {user.id} already has a referrer")
+        return
+    
+    # Assign referred_by relationship
+    user.referred_by = referrer
+    user.save()
+    
+    try:
         # Generate unique coupon code
         coupon_code = f"REF{referrer.referral_code[:4]}{user.id}"
+        
+        # Check if coupon already exists
+        if Coupon.objects.filter(code=coupon_code).exists():
+            logger.warning(f"Coupon {coupon_code} already exists")
+            return
         
         # Create coupon (10% discount, valid for 30 days)
         coupon = Coupon.objects.create(
             code=coupon_code,
             discount_type='percentage',
-            discount_value=Decimal('10'),  # 10% discount
-            minimum_amount=Decimal('500'),  # Minimum order ₹500
-            max_discount=Decimal('200'),  # Max ₹200 discount
+            discount_value=Decimal('10'),
+            minimum_amount=Decimal('500'),
+            max_discount=Decimal('200'),
             valid_from=timezone.now(),
             valid_to=timezone.now() + timedelta(days=30),
             is_active=True,
@@ -190,10 +205,20 @@ def process_referral_signup(user):
         referrer.referral_count += 1
         referrer.save()
         
+        # Add wallet reward to referrer (₹50)
+        referrer_wallet, _ = Wallet.objects.get_or_create(user=referrer)
+        referrer_wallet.add_money(
+            amount=Decimal('50'),
+            transaction_type='credit_referral',
+            description=f'Referral reward for referring {user.username}',
+            reference_id=f'REF_{user.id}'
+        )
+        
         logger.info(f"Referral processed: {referrer.username} referred {user.username}")
         
     except Exception as e:
         logger.error(f"Error processing referral: {str(e)}")
+
 
 # ------------------ LOGIN ------------------
 @never_cache
@@ -251,75 +276,75 @@ def logout_view(request):
     return redirect('users:login')
 
 
-
 @never_cache
+@ensure_csrf_cookie
 def verify_otp_view(request, purpose):
 
-    if not request.session.get('otp') or not request.session.get('otp_user'):
-        messages.error(request, "No OTP verification in progress. Please start over.")
-        if purpose == 'signup':
-            return redirect('users:signup')
-        else:
-            return redirect('users:forgot_password')
-    
-    if not is_otp_valid(request):
-        messages.error(request, "OTP has expired. Please request a new one.")
-        return redirect('users:resend_otp', purpose=purpose)
-    
+    otp = request.session.get('otp')
+    otp_user_id = request.session.get('otp_user')
+
+    # 🔒 Hard guard: session missing
+    if not otp or not otp_user_id:
+        messages.error(request, "OTP session expired. Please try again.")
+        return redirect('users:signup' if purpose == 'signup' else 'users:forgot_password')
+
     if request.method == "POST":
         form = OTPVerificationForm(request.POST)
-        if form.is_valid():
-            entered_otp = form.cleaned_data['otp']
-            stored_otp = request.session.get('otp')
-            
-            if entered_otp == stored_otp:
-                try:
-                    user = get_object_or_404(CustomUser, id=request.session['otp_user'])
-                    
-                    if purpose == 'signup':
-                        user.is_active = True
-                        user.is_email_verified = True
-                        user.save()
 
-                        process_referral_signup(user)
-                        
-                        clear_otp_session(request)
-                        # FIXED: 
-                        login(request, user, backend='users.backends.EmailOrUsernameModelBackend')
-                        
-                        # Show success message with referral info
-                        if user.referred_by:
-                            messages.success(
-                                request, 
-                                f"Welcome {user.username}! You were referred by {user.referred_by.username}. "
-                                f"They've received a special coupon as a thank you!"
-                            )
-                        else:
-                            messages.success(request, f"Welcome to Watchitup, {user.username}!")
-                        return redirect('products:home')
-                        
-                    elif purpose == 'reset':
-                        request.session['otp_verified'] = True
-                        messages.success(request, "OTP verified. You can now reset your password.")
-                        return redirect('users:reset_password')
-                        
+        if form.is_valid():
+            entered_otp = str(form.cleaned_data['otp'])
+            stored_otp = str(request.session.get('otp'))
+
+            # ⏳ Validate expiry AFTER submit
+            if not is_otp_valid(request):
+                clear_otp_session(request)
+                messages.error(request, "OTP has expired. Please request a new one.")
+                return redirect('users:resend_otp', purpose=purpose)
+
+            # 🔐 OTP comparison
+            if entered_otp != stored_otp:
+                messages.error(request, "Invalid OTP. Please try again.")
+            else:
+                try:
+                    user = CustomUser.objects.get(id=otp_user_id)
                 except CustomUser.DoesNotExist:
                     clear_otp_session(request)
-                    messages.error(request, "User not found. Please try again.")
-                    return redirect('users:signup' if purpose == 'signup' else 'users:forgot_password')
-            else:
-                messages.error(request, "Invalid OTP. Please check and try again.")
+                    messages.error(request, "User not found. Please start again.")
+                    return redirect('users:signup')
+
+                if purpose == 'signup':
+                    user.is_active = True
+                    user.is_email_verified = True
+                    user.save()
+
+                    # 🎁 Referral handling
+                    referrer_id = request.session.get('referrer_id')
+                    if referrer_id:
+                        process_referral_signup(user, referrer_id)
+
+                    clear_otp_session(request)
+
+                    login(request, user, backend='users.backends.EmailOrUsernameModelBackend')
+
+                    messages.success(request, f"Welcome to Watchitup, {user.username}!")
+                    return redirect('products:home')
+
+                elif purpose == 'reset':
+                    request.session['otp_verified'] = True
+                    messages.success(request, "OTP verified. You can reset your password.")
+                    return redirect('users:reset_password')
         else:
-            for error in form.errors.get('otp', []):
-                messages.error(request, error)
+            messages.error(request, "Please enter a valid OTP.")
+
     else:
         form = OTPVerificationForm()
-    
-    # Calculate remaining time for template
+
+    # ⏱ Timer calculation (safe)
     timestamp = request.session.get('otp_timestamp', 0)
     current_time = timezone.now().timestamp()
-    time_remaining = max(0, int(getattr(settings, 'OTP_EXPIRY_TIME', 300) - (current_time - timestamp)))
-    
+    expiry = getattr(settings, 'OTP_EXPIRY_TIME', 300)
+    time_remaining = max(0, int(expiry - (current_time - timestamp)))
+
     context = {
         'form': form,
         'purpose': purpose,
@@ -327,39 +352,64 @@ def verify_otp_view(request, purpose):
     }
     return render(request, 'users/verify_otp.html', context)
 
+
+
 # ------------------ RESEND OTP ------------------
+@never_cache
 @require_POST
 def resend_otp_view(request, purpose):
-    if not request.session.get('otp_user'):
-        return JsonResponse({'success': False, 'message': 'No active OTP session'})
-    
+
+    otp_user_id = request.session.get('otp_user')
+
+    if not otp_user_id:
+        return JsonResponse({
+            'success': False,
+            'message': 'No active OTP session. Please start again.'
+        })
+
     try:
-        user = get_object_or_404(CustomUser, id=request.session['otp_user'])
-        otp = generate_otp()
-        
-        # Update session with new OTP
+        user = CustomUser.objects.get(id=otp_user_id)
+
+        # 🔥 CLEAR OLD OTP DATA COMPLETELY
+        for key in ['otp', 'otp_timestamp']:
+            request.session.pop(key, None)
+
+        # 🔐 GENERATE NEW OTP (STRING ONLY)
+        otp = str(generate_otp())
+
         request.session['otp'] = otp
+        request.session['otp_user'] = user.id
         request.session['otp_timestamp'] = timezone.now().timestamp()
-        
-        # Send email
+        request.session.set_expiry(600)  # 10 minutes
+
         email_purpose = 'signup' if purpose == 'signup' else 'reset'
+
         if send_otp_email(user.email, otp, email_purpose):
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': f'New OTP sent to {user.email}'
             })
-        else:
-            return JsonResponse({
-                'success': False, 
-                'message': 'Failed to send email. Please try again.'
-            })
-            
-    except Exception as e:
-        logger.error(f"Resend OTP error: {str(e)}")
+
         return JsonResponse({
-            'success': False, 
-            'message': 'An error occurred. Please try again.'
+            'success': False,
+            'message': 'Failed to send OTP email.'
         })
+
+    except CustomUser.DoesNotExist:
+        # 🧹 CLEAN BROKEN SESSION
+        request.session.flush()
+        return JsonResponse({
+            'success': False,
+            'message': 'User session expired. Please sign up again.'
+        })
+
+    except Exception as e:
+        logger.exception("Resend OTP failed")
+        return JsonResponse({
+            'success': False,
+            'message': 'Something went wrong. Please try again.'
+        })
+
 
 # Non-AJAX fallback
 def resend_otp_fallback(request, purpose):

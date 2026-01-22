@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice - {{ order.order_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
+        }
+        
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title {
+            font-size: 18px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .info-section {
+            margin-bottom: 25px;
+        }
+        
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .info-column {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 10px;
+        }
+        
+        .info-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .totals-section {
+            margin-top: 20px;
+            float: right;
+            width: 300px;
+        }
+        
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .totals-label {
+            font-weight: normal;
+            color: #666;
+        }
+        
+        .totals-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .grand-total {
+            border-top: 2px solid #007bff;
+            margin-top: 10px;
+            padding-top: 10px;
+            font-size: 16px;
+        }
+        
+        .grand-total .totals-label {
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .grand-total .totals-value {
+            font-size: 18px;
+            color: #007bff;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 11px;
+            clear: both;
+        }
+        
+        .payment-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .badge-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+        
+        .badge-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-name">{{ company_name }}</div>
+        <div>{{ company_address }}</div>
+        <div class="invoice-title">TAX INVOICE</div>
+    </div>
+
+    <!-- Invoice Info Grid -->
+    <div class="info-grid">
+        <div class="info-column">
+            <div class="info-box">
+                <div class="info-label">Invoice To:</div>
+                <div class="info-value">
+                    <strong>{{ order.shipping_full_name }}</strong><br>
+                    {{ order.shipping_line1 }}<br>
+                    {% if order.shipping_line2 and order.shipping_line2|length > 0 and order.shipping_line2|upper != 'N/A' %}
+                        {{ order.shipping_line2 }}<br>
+                    {% endif %}
+                    {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}<br>
+                    Phone: {{ order.shipping_phone }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-column">
+            <div class="info-box">
+                <div class="info-label">Invoice Details:</div>
+                <div class="info-value">
+                    <strong>Order ID:</strong> {{ order.order_id }}<br>
+                    <strong>Invoice Date:</strong> {{ order.created_at|date:"d M, Y" }}<br>
+                    <strong>Payment Method:</strong> 
+                    {% if order.payment_method == 'razorpay' %}
+                        Online Payment
+                    {% elif order.payment_method == 'wallet' %}
+                        Wallet Payment
+                    {% else %}
+                        Cash on Delivery
+                    {% endif %}<br>
+                    <strong>Payment Status:</strong>
+                    <span class="payment-badge 
+                        {% if order.payment_status == 'completed' %}badge-success
+                        {% elif order.payment_status == 'pending' %}badge-warning
+                        {% else %}badge-info{% endif %}">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items Table -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 40%;">Product</th>
+                <th style="width: 15%;" class="text-center">Quantity</th>
+                <th style="width: 20%;" class="text-right">Unit Price</th>
+                <th style="width: 20%;" class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <strong>{{ item.product_name }}</strong>
+                    {% if item.variant_name %}
+                        <br><small style="color: #666;">{{ item.variant_name }}</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ item.quantity }}</td>
+                <td class="text-right">₹{{ item.price }}</td>
+                <td class="text-right"><strong>₹{{ item.item_total }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals Section -->
+    <div class="totals-section">
+        <div class="totals-row">
+            <span class="totals-label">Subtotal:</span>
+            <span class="totals-value">₹{{ order.subtotal }}</span>
+        </div>
+        
+        {% if order.discount > 0 %}
+        <div class="totals-row" style="color: #28a745;">
+            <span class="totals-label">Discount:</span>
+            <span class="totals-value">- ₹{{ order.discount }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="totals-row">
+            <span class="totals-label">Tax (18%):</span>
+            <span class="totals-value">₹{{ order.tax }}</span>
+        </div>
+        
+        <div class="totals-row">
+            <span class="totals-label">Shipping:</span>
+            <span class="totals-value">₹{{ order.shipping_charge }}</span>
+        </div>
+        
+        <div class="totals-row grand-total">
+            <span class="totals-label">Grand Total:</span>
+            <span class="totals-value">₹{{ order.total }}</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Thank you for your purchase!</strong></p>
+        <p>This is a computer-generated invoice and does not require a signature.</p>
+        <p>For any queries, please contact us at support@watchitup.com</p>
+    </div>
+</body>
+</html>

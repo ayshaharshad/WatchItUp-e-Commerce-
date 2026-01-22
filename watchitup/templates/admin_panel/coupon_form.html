@@ -1,0 +1,246 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tags me-2"></i>{{ title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Coupon Code -->
+                        <div class="mb-3">
+                            <label for="{{ form.code.id_for_label }}" class="form-label">
+                                Coupon Code <span class="text-danger">*</span>
+                            </label>
+                            {{ form.code }}
+                            <small class="form-text text-muted">{{ form.code.help_text }}</small>
+                            {% if form.code.errors %}
+                            <div class="text-danger">{{ form.code.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Discount Type and Value -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.discount_type.id_for_label }}" class="form-label">
+                                    Discount Type <span class="text-danger">*</span>
+                                </label>
+                                {{ form.discount_type }}
+                                <small class="form-text text-muted">{{ form.discount_type.help_text }}</small>
+                                {% if form.discount_type.errors %}
+                                <div class="text-danger">{{ form.discount_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.discount_value.id_for_label }}" class="form-label">
+                                    Discount Value <span class="text-danger">*</span>
+                                </label>
+                                {{ form.discount_value }}
+                                <small class="form-text text-muted">{{ form.discount_value.help_text }}</small>
+                                {% if form.discount_value.errors %}
+                                <div class="text-danger">{{ form.discount_value.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Minimum Amount and Max Discount -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.minimum_amount.id_for_label }}" class="form-label">
+                                    Minimum Order Amount
+                                </label>
+                                {{ form.minimum_amount }}
+                                <small class="form-text text-muted">{{ form.minimum_amount.help_text }}</small>
+                                {% if form.minimum_amount.errors %}
+                                <div class="text-danger">{{ form.minimum_amount.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3" id="maxDiscountField">
+                                <label for="{{ form.max_discount.id_for_label }}" class="form-label">
+                                    Maximum Discount (for % coupons)
+                                </label>
+                                {{ form.max_discount }}
+                                <small class="form-text text-muted">{{ form.max_discount.help_text }}</small>
+                                {% if form.max_discount.errors %}
+                                <div class="text-danger">{{ form.max_discount.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Validity Period -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.valid_from.id_for_label }}" class="form-label">
+                                    Valid From <span class="text-danger">*</span>
+                                </label>
+                                {{ form.valid_from }}
+                                {% if form.valid_from.errors %}
+                                <div class="text-danger">{{ form.valid_from.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.valid_to.id_for_label }}" class="form-label">
+                                    Valid To <span class="text-danger">*</span>
+                                </label>
+                                {{ form.valid_to }}
+                                {% if form.valid_to.errors %}
+                                <div class="text-danger">{{ form.valid_to.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Usage Limits -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.usage_limit.id_for_label }}" class="form-label">
+                                    Total Usage Limit
+                                </label>
+                                {{ form.usage_limit }}
+                                <small class="form-text text-muted">{{ form.usage_limit.help_text }}</small>
+                                {% if form.usage_limit.errors %}
+                                <div class="text-danger">{{ form.usage_limit.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.usage_per_user.id_for_label }}" class="form-label">
+                                    Usage Per User <span class="text-danger">*</span>
+                                </label>
+                                {{ form.usage_per_user }}
+                                <small class="form-text text-muted">{{ form.usage_per_user.help_text }}</small>
+                                {% if form.usage_per_user.errors %}
+                                <div class="text-danger">{{ form.usage_per_user.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    Active (users can use this coupon)
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                            <div class="text-danger">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'admin_panel:coupon_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ button_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="couponPreview" class="alert alert-light border">
+                        <h4 class="mb-2">
+                            <span id="previewCode" class="text-primary">COUPON_CODE</span>
+                        </h4>
+                        <p id="previewDiscount" class="mb-1 text-success fw-bold">
+                            Get discount on your purchase
+                        </p>
+                        <small id="previewDetails" class="text-muted">
+                            Minimum order: ₹0 | Valid until: --
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.getElementById('id_code');
+    const discountTypeSelect = document.getElementById('id_discount_type');
+    const discountValueInput = document.getElementById('id_discount_value');
+    const minAmountInput = document.getElementById('id_minimum_amount');
+    const maxDiscountInput = document.getElementById('id_max_discount');
+    const validToInput = document.getElementById('id_valid_to');
+    const maxDiscountField = document.getElementById('maxDiscountField');
+
+    // Auto-uppercase coupon code
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            updatePreview();
+        });
+    }
+
+    // Toggle max discount field visibility
+    function toggleMaxDiscountField() {
+        if (discountTypeSelect.value === 'percentage') {
+            maxDiscountField.style.display = 'block';
+        } else {
+            maxDiscountField.style.display = 'none';
+            maxDiscountInput.value = '';
+        }
+        updatePreview();
+    }
+
+    if (discountTypeSelect) {
+        discountTypeSelect.addEventListener('change', toggleMaxDiscountField);
+        toggleMaxDiscountField(); // Initial check
+    }
+
+    // Update preview
+    function updatePreview() {
+        const code = codeInput?.value || 'COUPON_CODE';
+        const discountType = discountTypeSelect?.value || 'percentage';
+        const discountValue = discountValueInput?.value || '0';
+        const minAmount = minAmountInput?.value || '0';
+        const validTo = validToInput?.value || '--';
+
+        document.getElementById('previewCode').textContent = code;
+
+        let discountText = '';
+        if (discountType === 'percentage') {
+            discountText = `Get ${discountValue}% OFF on your purchase`;
+            if (maxDiscountInput?.value) {
+                discountText += ` (Max: ₹${maxDiscountInput.value})`;
+            }
+        } else {
+            discountText = `Get ₹${discountValue} OFF on your purchase`;
+        }
+        document.getElementById('previewDiscount').textContent = discountText;
+
+        const validToDate = validTo ? new Date(validTo).toLocaleDateString() : '--';
+        document.getElementById('previewDetails').textContent = 
+            `Minimum order: ₹${minAmount} | Valid until: ${validToDate}`;
+    }
+
+    // Attach listeners
+    [discountTypeSelect, discountValueInput, minAmountInput, maxDiscountInput, validToInput].forEach(el => {
+        if (el) el.addEventListener('input', updatePreview);
+    });
+
+    // Initial preview
+    updatePreview();
+});
+</script>
+{% endblock %}

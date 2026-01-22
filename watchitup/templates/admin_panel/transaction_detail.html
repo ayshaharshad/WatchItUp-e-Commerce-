@@ -1,0 +1,288 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Transaction #{{ transaction.id }} - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'admin_panel:wallet_transactions' %}">Wallet Transactions</a></li>
+            <li class="breadcrumb-item active">Transaction #{{ transaction.id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Transaction Details</h2>
+            <p class="text-muted mb-0">Transaction ID: #{{ transaction.id }}</p>
+        </div>
+        <div>
+            <a href="{% url 'admin_panel:wallet_transactions' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Transactions
+            </a>
+            <a href="{% url 'admin_panel:user_wallet_detail' transaction.wallet.user.id %}" class="btn btn-primary">
+                <i class="fas fa-wallet"></i> View User Wallet
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Transaction Information -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Transaction Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Transaction ID:</dt>
+                                <dd class="col-sm-7"><strong>#{{ transaction.id }}</strong></dd>
+
+                                <dt class="col-sm-5">Transaction Date:</dt>
+                                <dd class="col-sm-7">
+                                    {{ transaction.created_at|date:"F d, Y" }}<br>
+                                    <small class="text-muted">{{ transaction.created_at|time:"h:i A" }}</small>
+                                </dd>
+
+                                <dt class="col-sm-5">Transaction Type:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge {% if transaction.amount > 0 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                                        {{ transaction.get_transaction_type_display }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-5">Amount:</dt>
+                                <dd class="col-sm-7">
+                                    <h4 class="mb-0 {% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {% if transaction.amount > 0 %}+{% endif %}₹{{ transaction.amount|floatformat:2 }}
+                                    </h4>
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Previous Balance:</dt>
+                                <dd class="col-sm-7">₹{{ previous_balance|floatformat:2 }}</dd>
+
+                                <dt class="col-sm-5">Balance After:</dt>
+                                <dd class="col-sm-7"><strong>₹{{ transaction.balance_after|floatformat:2 }}</strong></dd>
+
+                                <dt class="col-sm-5">Reference ID:</dt>
+                                <dd class="col-sm-7">
+                                    {% if transaction.reference_id %}
+                                        <code>{{ transaction.reference_id }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </dd>
+
+                                <dt class="col-sm-5">Description:</dt>
+                                <dd class="col-sm-7">
+                                    <small>{{ transaction.description }}</small>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- ✅ SOURCE OF TRANSACTION: Related Order Section -->
+                    {% if related_order %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading"><i class="fas fa-link"></i> Source of Transaction: Related Order</h6>
+                        <p class="mb-2">This transaction is related to Order: <strong>{{ related_order.order_id }}</strong></p>
+                        <p class="mb-2">Order Status: <span class="badge bg-secondary">{{ related_order.get_status_display }}</span></p>
+                        <p class="mb-2">Order Amount: <strong>₹{{ related_order.total|floatformat:2 }}</strong></p>
+                        <!-- ✅ BUTTON TO NAVIGATE TO ORDER DETAIL PAGE -->
+                        <a href="{% url 'admin_panel:order_detail' related_order.order_id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-shopping-cart"></i> View Order Details
+                        </a>
+                    </div>
+                    {% elif 'return' in transaction.description|lower or 'refund' in transaction.description|lower %}
+                    <hr>
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="fas fa-undo"></i> Source of Transaction: Return/Refund</h6>
+                        <p class="mb-0">This transaction appears to be related to a product return or order cancellation.</p>
+                        {% if transaction.reference_id and 'ORD' in transaction.reference_id %}
+                        <!-- ✅ BUTTON TO NAVIGATE TO ORDER DETAIL PAGE FOR RETURN/CANCEL -->
+                        <a href="{% url 'admin_panel:order_detail' transaction.reference_id %}" class="btn btn-sm btn-warning mt-2">
+                            <i class="fas fa-shopping-cart"></i> View Related Order
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% elif 'cancel' in transaction.description|lower %}
+                    <hr>
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading"><i class="fas fa-times-circle"></i> Source of Transaction: Order Cancellation</h6>
+                        <p class="mb-0">This transaction is related to an order cancellation.</p>
+                        {% if transaction.reference_id and 'ORD' in transaction.reference_id %}
+                        <!-- ✅ BUTTON TO NAVIGATE TO ORDER DETAIL PAGE FOR CANCELLATION -->
+                        <a href="{% url 'admin_panel:order_detail' transaction.reference_id %}" class="btn btn-sm btn-danger mt-2">
+                            <i class="fas fa-shopping-cart"></i> View Cancelled Order
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Transactions from Same User -->
+            {% if recent_transactions %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Transactions from Same User</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Balance After</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for txn in recent_transactions %}
+                                <tr>
+                                    <td>#{{ txn.id }}</td>
+                                    <td>
+                                        <small>{{ txn.created_at|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if txn.amount > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ txn.get_transaction_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong class="{% if txn.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {% if txn.amount > 0 %}+{% endif %}₹{{ txn.amount|floatformat:2 }}
+                                        </strong>
+                                    </td>
+                                    <td>₹{{ txn.balance_after|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'admin_panel:transaction_detail' txn.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ✅ USER DETAILS Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> User Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if transaction.wallet.user.profile_picture %}
+                        <img src="{{ transaction.wallet.user.profile_picture.url }}" 
+                             alt="{{ transaction.wallet.user.username }}" 
+                             class="rounded-circle" 
+                             style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px;">
+                            <i class="fas fa-user fa-2x text-white"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <h5 class="text-center">{{ transaction.wallet.user.username }}</h5>
+                    <p class="text-center text-muted">{{ transaction.wallet.user.email }}</p>
+
+                    <hr>
+
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">User ID:</dt>
+                        <dd class="col-sm-6">#{{ transaction.wallet.user.id }}</dd>
+
+                        <dt class="col-sm-6">Status:</dt>
+                        <dd class="col-sm-6">
+                            {% if transaction.wallet.user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Blocked</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-6">Joined:</dt>
+                        <dd class="col-sm-6">
+                            <small>{{ transaction.wallet.user.date_joined|date:"M d, Y" }}</small>
+                        </dd>
+
+                        <dt class="col-sm-6">Current Balance:</dt>
+                        <dd class="col-sm-6">
+                            <strong class="text-success">₹{{ transaction.wallet.balance|floatformat:2 }}</strong>
+                        </dd>
+                    </dl>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'admin_panel:user_wallet_detail' transaction.wallet.user.id %}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-wallet"></i> View Full Wallet
+                        </a>
+                        <a href="{% url 'admin_panel:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-users"></i> View All Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Flow Visualization -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> Transaction Flow</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="text-center mb-3">
+                            <small class="text-muted">Previous Balance</small>
+                            <h5>₹{{ previous_balance|floatformat:2 }}</h5>
+                        </div>
+
+                        <div class="mb-3">
+                            <i class="fas fa-arrow-down fa-2x {% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}"></i>
+                        </div>
+
+                        <div class="text-center mb-3">
+                            <small class="text-muted">Transaction Amount</small>
+                            <h4 class="{% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if transaction.amount > 0 %}+{% endif %}₹{{ transaction.amount|floatformat:2 }}
+                            </h4>
+                        </div>
+
+                        <div class="mb-3">
+                            <i class="fas fa-arrow-down fa-2x text-primary"></i>
+                        </div>
+
+                        <div class="text-center">
+                            <small class="text-muted">New Balance</small>
+                            <h5 class="text-primary">₹{{ transaction.balance_after|floatformat:2 }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

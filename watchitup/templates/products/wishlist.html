@@ -1,0 +1,570 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}My Wishlist{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <p class="bread"><span><a href="{% url 'products:home' %}">Home</a></span> / <span>Wishlist</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="colorlib-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>My Wishlist</h2>
+                    {% if wishlist.total_items > 0 %}
+                    <form method="post" action="{% url 'products:clear_wishlist' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                onclick="return confirm('Clear all items from wishlist?')">
+                            <i class="icon-trash"></i> Clear Wishlist
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if wishlist.total_items == 0 %}
+                    <!-- Empty Wishlist -->
+                    <div class="row">
+                        <div class="col-md-12 text-center py-5">
+                            <i class="icon-heart" style="font-size: 80px; color: #ccc;"></i>
+                            <h4 class="mt-4">Your wishlist is empty</h4>
+                            <p class="text-muted">Save your favorite items here!</p>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-primary mt-3">
+                                <i class="icon-search"></i> Browse Products
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Wishlist Items -->
+                    <div class="row">
+                        {% for item in wishlist_items %}
+                        <div class="col-md-4 col-sm-6 mb-4">
+                            <div class="product-entry border h-100">
+                                <a href="{% url 'products:product_detail' uuid=item.product.uuid %}" class="prod-img">
+                                    {% if item.variant %}
+                                        {% if item.variant.primary_variant_image %}
+                                            <img src="{{ item.variant.primary_variant_image.image.url }}" 
+                                                 class="img-fluid" 
+                                                 alt="{{ item.product.name }}">
+                                        {% elif item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.product.primary_general_image %}
+                                            <img src="{{ item.product.primary_general_image.image.url }}" 
+                                                 class="img-fluid" 
+                                                 alt="{{ item.product.name }}">
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    <!-- Availability Badge -->
+                                    {% if not item.is_available %}
+                                    <div class="badge-unavailable">Unavailable</div>
+                                    {% elif item.variant %}
+                                        {% if not item.variant.is_in_stock %}
+                                        <div class="badge-out-of-stock">Out of Stock</div>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if item.product.stock <= 0 %}
+                                        <div class="badge-out-of-stock">Out of Stock</div>
+                                        {% endif %}
+                                    {% endif %}
+                                </a>
+                                
+                                <!-- Product Details -->
+                                <div class="desc p-3">
+                                    <h3 class="product-name">
+                                        <a href="{% url 'products:product_detail' uuid=item.product.uuid %}">
+                                            {{ item.product.name }}
+                                        </a>
+                                    </h3>
+                                    
+                                    {% if item.product.brand %}
+                                    <p class="brand-name text-muted mb-2">
+                                        <small>{{ item.product.brand.name }}</small>
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <!-- Variant Info -->
+                                    {% if item.variant %}
+                                    <p class="variant-info mb-2">
+                                        <small>
+                                            <strong>Color:</strong> {{ item.variant.get_color_display }}
+                                            <span class="color-dot" 
+                                                  style="display: inline-block; width: 12px; height: 12px; 
+                                                         border-radius: 50%; background: {{ item.variant.color_hex }}; 
+                                                         border: 1px solid #ddd; margin-left: 5px;"></span>
+                                        </small>
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <!-- Price -->
+                                    <div class="price-section mb-3">
+                                        {% if item.variant %}
+                                            {% if item.variant.original_price and item.variant.discount_percentage > 0 %}
+                                                <span class="price text-success font-weight-bold">₹{{ item.variant.price }}</span>
+                                                <span class="price-dc text-muted">
+                                                    <s>₹{{ item.variant.original_price }}</s>
+                                                </span>
+                                                <span class="badge badge-danger ml-2">
+                                                    {{ item.variant.discount_percentage }}% OFF
+                                                </span>
+                                            {% else %}
+                                                <span class="price text-success font-weight-bold">₹{{ item.variant.price }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="price text-success font-weight-bold">₹{{ item.product.base_price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Added Date -->
+                                    <p class="text-muted mb-3">
+                                        <small><i class="icon-clock"></i> Added {{ item.added_at|date:"M d, Y" }}</small>
+                                    </p>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="btn-group-vertical w-100">
+                                        {% if item.is_available %}
+                                            <!-- ✅ CRITICAL FIX: Use item.uuid -->
+                                            <form method="post" action="{% url 'products:move_to_cart_from_wishlist' item_uuid=item.uuid %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-primary btn-block mb-2">
+                                                    <i class="icon-shopping-cart"></i> Move to Cart
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-secondary btn-block mb-2" disabled>
+                                                <i class="icon-ban"></i> Currently Unavailable
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <!-- ✅ CRITICAL FIX: Use item.uuid -->
+                                        <form method="post" action="{% url 'products:remove_from_wishlist' item_uuid=item.uuid %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-block">
+                                                <i class="icon-trash"></i> Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">
+                                <i class="icon-search"></i> Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.product-entry {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.product-entry:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+}
+
+.prod-img {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    height: 250px;
+}
+
+.prod-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.prod-img:hover img {
+    transform: scale(1.1);
+}
+
+.badge-unavailable, .badge-out-of-stock {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 2;
+}
+
+.badge-out-of-stock {
+    background: rgba(255, 193, 7, 0.9);
+    color: #333;
+}
+
+.product-name {
+    font-size: 16px;
+    margin-bottom: 10px;
+    height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-name a {
+    color: #333;
+    text-decoration: none;
+}
+
+.product-name a:hover {
+    color: #88c8bc;
+}
+
+.price-section {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.price {
+    font-size: 20px;
+}
+
+.price-dc {
+    font-size: 14px;
+}
+
+.color-dot {
+    vertical-align: middle;
+}
+
+.btn-group-vertical .btn {
+    border-radius: 4px !important;
+}
+
+.variant-info {
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .prod-img {
+        height: 200px;
+    }
+}
+</style>
+{% endblock %}
+
+
+{% comment %} {% extends 'products/base.html' %}
+{% load static %}
+
+{% block title %}My Wishlist{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <p class="bread"><span><a href="{% url 'products:home' %}">Home</a></span> / <span>Wishlist</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="colorlib-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>My Wishlist</h2>
+                    {% if wishlist.total_items > 0 %}
+                    <form method="post" action="{% url 'products:clear_wishlist' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                onclick="return confirm('Clear all items from wishlist?')">
+                            <i class="icon-trash"></i> Clear Wishlist
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if wishlist.total_items == 0 %}
+                    <!-- Empty Wishlist -->
+                    <div class="row">
+                        <div class="col-md-12 text-center py-5">
+                            <i class="icon-heart" style="font-size: 80px; color: #ccc;"></i>
+                            <h4 class="mt-4">Your wishlist is empty</h4>
+                            <p class="text-muted">Save your favorite items here!</p>
+                            <a href="{% url 'products:product_list' %}" class="btn btn-primary mt-3">
+                                <i class="icon-search"></i> Browse Products
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Wishlist Items -->
+                    <div class="row">
+                        {% for item in wishlist_items %}
+                        <div class="col-md-4 col-sm-6 mb-4">
+                            <div class="product-entry border h-100">
+                                <!-- ✅ FIXED: Use uuid instead of pk -->
+                                <a href="{% url 'products:product_detail' uuid=item.product.uuid %}" class="prod-img">
+                                    {% if item.variant.primary_variant_image %}
+                                        <img src="{{ item.variant.primary_variant_image.image.url }}" 
+                                             class="img-fluid" 
+                                             alt="{{ item.product.name }}">
+                                    {% elif item.product.primary_general_image %}
+                                        <img src="{{ item.product.primary_general_image.image.url }}" 
+                                             class="img-fluid" 
+                                             alt="{{ item.product.name }}">
+                                    {% else %}
+                                        <img src="{% static 'products/images/no-image.jpg' %}" 
+                                             class="img-fluid" 
+                                             alt="No image">
+                                    {% endif %}
+                                    
+                                    <!-- Availability Badge -->
+                                    {% if not item.is_available %}
+                                    <div class="badge-unavailable">Unavailable</div>
+                                    {% elif not item.variant.is_in_stock %}
+                                    <div class="badge-out-of-stock">Out of Stock</div>
+                                    {% endif %}
+                                </a>
+                                
+                                <!-- Product Details -->
+                                <div class="desc p-3">
+                                    <h3 class="product-name">
+                                        <!-- ✅ FIXED: Use uuid instead of pk -->
+                                        <a href="{% url 'products:product_detail' uuid=item.product.uuid %}">
+                                            {{ item.product.name }}
+                                        </a>
+                                    </h3>
+                                    
+                                    {% if item.product.brand %}
+                                    <p class="brand-name text-muted mb-2">
+                                        <small>{{ item.product.brand.name }}</small>
+                                    </p>
+                                    {% endif %}
+                                    
+                                    <!-- Variant Info -->
+                                    <p class="variant-info mb-2">
+                                        <small>
+                                            <strong>Color:</strong> {{ item.variant.get_color_display }}
+                                            <span class="color-dot" 
+                                                  style="display: inline-block; width: 12px; height: 12px; 
+                                                         border-radius: 50%; background: {{ item.variant.color_hex }}; 
+                                                         border: 1px solid #ddd; margin-left: 5px;"></span>
+                                        </small>
+                                    </p>
+                                    
+                                    <!-- Price -->
+                                    <div class="price-section mb-3">
+                                        {% if item.variant.original_price and item.variant.discount_percentage > 0 %}
+                                            <span class="price text-success font-weight-bold">₹{{ item.variant.price }}</span>
+                                            <span class="price-dc text-muted">
+                                                <s>₹{{ item.variant.original_price }}</s>
+                                            </span>
+                                            <span class="badge badge-danger ml-2">
+                                                {{ item.variant.discount_percentage }}% OFF
+                                            </span>
+                                        {% else %}
+                                            <span class="price text-success font-weight-bold">₹{{ item.variant.price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Added Date -->
+                                    <p class="text-muted mb-3">
+                                        <small><i class="icon-clock"></i> Added {{ item.added_at|date:"M d, Y" }}</small>
+                                    </p>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="btn-group-vertical w-100">
+                                        {% if item.is_available %}
+                                            <!-- ✅ FIXED: Use uuid in URL parameter -->
+                                            <form method="post" action="{% url 'products:move_to_cart_from_wishlist' item_uuid=item.uuid %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-primary btn-block mb-2">
+                                                    <i class="icon-shopping-cart"></i> Move to Cart
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-secondary btn-block mb-2" disabled>
+                                                <i class="icon-ban"></i> Currently Unavailable
+                                            </button>
+                                        {% endif %}
+                                        
+                                        <!-- ✅ FIXED: Use uuid in URL parameter -->
+                                        <form method="post" action="{% url 'products:remove_from_wishlist' item_uuid=item.uuid %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger btn-block">
+                                                <i class="icon-trash"></i> Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary">
+                                <i class="icon-search"></i> Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.product-entry {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.product-entry:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+}
+
+.prod-img {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    height: 250px;
+}
+
+.prod-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.prod-img:hover img {
+    transform: scale(1.1);
+}
+
+.badge-unavailable, .badge-out-of-stock {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 2;
+}
+
+.badge-out-of-stock {
+    background: rgba(255, 193, 7, 0.9);
+    color: #333;
+}
+
+.product-name {
+    font-size: 16px;
+    margin-bottom: 10px;
+    height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.product-name a {
+    color: #333;
+    text-decoration: none;
+}
+
+.product-name a:hover {
+    color: #88c8bc;
+}
+
+.price-section {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.price {
+    font-size: 20px;
+}
+
+.price-dc {
+    font-size: 14px;
+}
+
+.color-dot {
+    vertical-align: middle;
+}
+
+.btn-group-vertical .btn {
+    border-radius: 4px !important;
+}
+
+.variant-info {
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .prod-img {
+        height: 200px;
+    }
+}
+</style>
+{% endblock %} {% endcomment %}

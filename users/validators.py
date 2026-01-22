@@ -54,7 +54,7 @@ class UsernameValidator:
             return
         
         # Only allow letters, numbers, and underscore
-        if not re.match(r'^[a-zA-Z0-9_]+$', value):
+        if not re.match(r"^[a-zA-Z0-9@.+_-]+$", value):
             raise ValidationError(
                 'Username can only contain letters, numbers, and underscore (_).',
                 code='invalid_username'
@@ -166,7 +166,7 @@ class PhoneNumberValidator:
 
 # Regex validators for form fields
 username_regex_validator = RegexValidator(
-    regex=r'^[a-zA-Z0-9_]+$',
+    regex=r'^[a-zA-Z0-9@.+_-]+$',
     message='Username can only contain letters, numbers, and underscore (_).',
     code='invalid_username'
 )

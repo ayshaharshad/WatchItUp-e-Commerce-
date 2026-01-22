@@ -1,0 +1,368 @@
+{% extends "users/profile/base.html" %}
+
+{% block page_title %}Edit Profile{% endblock %}
+{% block page_icon %}fas fa-user-edit{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item active">Edit Profile</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'users:profile' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-arrow-left me-1"></i>Back
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Display non-field errors (form-level errors) -->
+{% if form.non_field_errors %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {% for error in form.non_field_errors %}
+        <div>{{ error }}</div>
+    {% endfor %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    
+    <!-- Profile Picture -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <i class="fas fa-image me-2"></i>Profile Picture
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" id="preview" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #e5e7eb;">
+                    {% else %}
+                        <div id="preview" class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; border: 3px solid #e5e7eb;">
+                            <i class="fas fa-user fa-2x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    {{ form.profile_picture }}
+                    
+                    <!-- Field-specific errors -->
+                    {% if form.profile_picture.errors %}
+                        <div class="text-danger small mt-2">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            {% for error in form.profile_picture.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Help text -->
+                    <small class="form-text text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Max size: 5MB. Formats: JPG, PNG, GIF, WEBP. Recommended: 300x300px
+                    </small>
+                    
+                    {% if user.profile_picture %}
+                        <div class="form-check mt-2">
+                            <input type="checkbox" name="delete_picture" id="delete_picture" class="form-check-input">
+                            <label class="form-check-label" for="delete_picture">
+                                <i class="fas fa-trash me-1"></i>Remove current picture
+                            </label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <i class="fas fa-user me-2"></i>Personal Information
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Username -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_username" class="form-label">
+                        Username <span class="text-danger">*</span>
+                        <i class="fas fa-question-circle ms-1" data-bs-toggle="tooltip" title="3-30 characters. Letters, numbers, and underscore only"></i>
+                    </label>
+                    {{ form.username }}
+                    
+                    <!-- Field errors -->
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            {% for error in form.username.errors %}
+                                {{ error }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="form-text text-muted">
+                            {{ form.username.help_text }}
+                        </small>
+                    {% endif %}
+                </div>
+                
+                <!-- Email (read-only) -->
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">
+                        Email Address
+                        <i class="fas fa-lock ms-1 text-muted" data-bs-toggle="tooltip" title="Email cannot be changed here"></i>
+                    </label>
+                    <input type="email" class="form-control bg-light" value="{{ user.email }}" disabled>
+                    <small class="form-text text-muted">
+                        To change email, <a href="{% url 'users:change_email' %}" class="text-primary">click here</a>
+                    </small>
+                </div>
+                
+                <!-- First Name -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_first_name" class="form-label">
+                        First Name
+                        <i class="fas fa-question-circle ms-1" data-bs-toggle="tooltip" title="Alphabetic characters only"></i>
+                    </label>
+                    {{ form.first_name }}
+                    
+                    <!-- Field errors -->
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            {% for error in form.first_name.errors %}
+                                {{ error }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="form-text text-muted">
+                            {{ form.first_name.help_text }}
+                        </small>
+                    {% endif %}
+                </div>
+                
+                <!-- Last Name -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_last_name" class="form-label">
+                        Last Name
+                        <i class="fas fa-question-circle ms-1" data-bs-toggle="tooltip" title="Alphabetic characters only"></i>
+                    </label>
+                    {{ form.last_name }}
+                    
+                    <!-- Field errors -->
+                    {% if form.last_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            {% for error in form.last_name.errors %}
+                                {{ error }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="form-text text-muted">
+                            {{ form.last_name.help_text }}
+                        </small>
+                    {% endif %}
+                </div>
+                
+                <!-- Phone Number -->
+                <div class="col-md-6 mb-3">
+                    <label for="id_phone" class="form-label">
+                        Phone Number
+                        <i class="fas fa-question-circle ms-1" data-bs-toggle="tooltip" title="10-digit Indian mobile number"></i>
+                    </label>
+                    {{ form.phone }}
+                    
+                    <!-- Field errors -->
+                    {% if form.phone.errors %}
+                        <div class="invalid-feedback d-block">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            {% for error in form.phone.errors %}
+                                {{ error }}{% if not forloop.last %}<br>{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <small class="form-text text-muted">
+                            {{ form.phone.help_text }}
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center">
+        <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Cancel
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Save Changes
+        </button>
+    </div>
+</form>
+
+<!-- Validation Tips Card -->
+<div class="card mt-4 border-info">
+    <div class="card-header bg-info text-white">
+        <i class="fas fa-lightbulb me-2"></i>Validation Tips
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-user me-2 text-primary"></i>Username</h6>
+                <ul class="small mb-3">
+                    <li>3-30 characters required</li>
+                    <li>Only letters, numbers, underscore (_)</li>
+                    <li>Cannot start/end with underscore</li>
+                    <li>No consecutive underscores</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-signature me-2 text-success"></i>Name Fields</h6>
+                <ul class="small mb-3">
+                    <li>Only alphabetic characters and spaces</li>
+                    <li>Minimum 2 characters</li>
+                    <li>Automatically capitalized</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-phone me-2 text-warning"></i>Phone Number</h6>
+                <ul class="small mb-0">
+                    <li>Exactly 10 digits</li>
+                    <li>Must start with 6, 7, 8, or 9</li>
+                    <li>Example: 9876543210</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-image me-2 text-danger"></i>Profile Picture</h6>
+                <ul class="small mb-0">
+                    <li>Max 5MB file size</li>
+                    <li>JPG, PNG, GIF, or WEBP format</li>
+                    <li>Recommended: 300x300px</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Profile picture preview
+document.getElementById('id_profile_picture').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Check file size
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must not exceed 5MB');
+            this.value = '';
+            return;
+        }
+        
+        // Check file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP');
+            this.value = '';
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('preview');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                preview.innerHTML = '<img src="' + e.target.result + '" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Real-time validation feedback
+document.getElementById('id_username').addEventListener('input', function(e) {
+    const value = e.target.value;
+    const pattern = /^[a-zA-Z0-9_]+$/;
+    
+    if (value && !pattern.test(value)) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+document.getElementById('id_first_name').addEventListener('input', function(e) {
+    const value = e.target.value;
+    const pattern = /^[a-zA-Z\s]*$/;
+    
+    if (value && !pattern.test(value)) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+document.getElementById('id_last_name').addEventListener('input', function(e) {
+    const value = e.target.value;
+    const pattern = /^[a-zA-Z\s]*$/;
+    
+    if (value && !pattern.test(value)) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+document.getElementById('id_phone').addEventListener('input', function(e) {
+    // Only allow digits
+    this.value = this.value.replace(/\D/g, '');
+    
+    // Limit to 10 digits
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+    
+    // Validate pattern
+    const pattern = /^[6-9]\d{9}$/;
+    if (this.value && (this.value.length === 10 && !pattern.test(this.value))) {
+        this.classList.add('is-invalid');
+    } else {
+        this.classList.remove('is-invalid');
+    }
+});
+
+// Form submission validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    let isValid = true;
+    const requiredFields = ['id_username'];
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        alert('Please fill in all required fields correctly.');
+    }
+});
+</script>
+{% endblock %}
+
+
+
+
+

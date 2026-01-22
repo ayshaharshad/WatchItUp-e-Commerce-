@@ -8223,3 +8223,20 @@ Traceback (most recent call last):
     raise ValidationError(errors)
 django.core.exceptions.ValidationError: {'username': ['Username can only contain letters, numbers, and underscore (_).']}
 ERROR 2026-01-16 17:03:21,639 basehttp 32572 26896 "POST /login/ HTTP/1.1" 500 106875
+ERROR 2026-01-21 19:13:09,718 log 42072 36620 Internal Server Error: /verify-otp/signup/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\utils\decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\users\views.py", line 423, in verify_otp_view
+    if not is_otp_valid(request):
+           ^^^^^^^^^^^^
+NameError: name 'is_otp_valid' is not defined
+ERROR 2026-01-21 19:13:09,741 basehttp 42072 36620 "GET /verify-otp/signup/ HTTP/1.1" 500 93777

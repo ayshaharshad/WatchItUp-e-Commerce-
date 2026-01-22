@@ -1,0 +1,167 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Return Requests - Admin Panel{% endblock %}
+
+{% block page_title %}Return Requests Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Total Requests</h6>
+                    <h3>{{ total_requests }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6>Pending</h6>
+                    <h3>{{ pending_requests }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Approved</h6>
+                    <h3>{{ approved_requests }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6>Rejected</h6>
+                    <h3>{{ rejected_requests }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" name="search" class="form-control" placeholder="Search by Order ID, User..." value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                    <a href="{% url 'admin_panel:return_request_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Requests Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Return Requests</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Requested At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for return_request in return_requests %}
+                        <tr>
+                            <td>#{{ return_request.id }}</td>
+                            <td>
+                                <a href="{% url 'admin_panel:order_detail' return_request.order.order_id %}">
+                                    {{ return_request.order.order_id }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ return_request.order.user.username }}<br>
+                                <small class="text-muted">{{ return_request.order.user.email }}</small>
+                            </td>
+                            <td>₹{{ return_request.refund_amount|floatformat:2 }}</td>
+                            <td>
+                                {% if return_request.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif return_request.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif return_request.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif return_request.status == 'completed' %}
+                                    <span class="badge bg-info">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ return_request.requested_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'admin_panel:return_request_detail' return_request.pk %}" 
+                                   class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No return requests found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if return_requests.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if return_requests.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ return_requests.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in return_requests.paginator.page_range %}
+                    <li class="page-item {% if return_requests.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+
+                    {% if return_requests.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ return_requests.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Next
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

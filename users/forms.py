@@ -7,7 +7,6 @@ import logging
 from .models import Address
 from .validators import (
     AlphabeticValidator, 
-    UsernameValidator, 
     PhoneNumberValidator,
     username_regex_validator,
     phone_regex_validator,
@@ -18,8 +17,9 @@ import re
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+
+
 class CustomUserCreationForm(UserCreationForm):
-    # Add custom username validator
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
@@ -44,6 +44,8 @@ class CustomUserCreationForm(UserCreationForm):
             'autofocus': True
         })
     )
+    
+    # This is for entering the REFERRER's code (who invited you)
     referral_code = forms.CharField(
         max_length=10,
         required=False,
@@ -57,12 +59,11 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2', 'referral_code')
+        fields = ('username', 'email', 'password1', 'password2')  
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Update password field attributes
         self.fields['password1'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Password (min 8 characters)'
@@ -72,7 +73,6 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Confirm Password'
         })
         
-        # Clear default help texts for cleaner UI
         self.fields['password1'].help_text = ""
         self.fields['password2'].help_text = ""
 
@@ -95,18 +95,6 @@ class CustomUserCreationForm(UserCreationForm):
         # Check if username contains at least one alphanumeric character
         if not re.search(r'[a-zA-Z0-9]', username):
             raise forms.ValidationError("Username must contain at least one letter or number.")
-        
-        # Check if username is only special characters
-        if re.match(r'^[^a-zA-Z0-9]+$', username):
-            raise forms.ValidationError("Username cannot contain only special characters.")
-        
-        # Check if username starts or ends with special characters
-        if username[0] in ['_', '.', '@', '+', '-'] or username[-1] in ['_', '.', '@', '+', '-']:
-            raise forms.ValidationError("Username cannot start or end with special characters.")
-        
-        # Check for consecutive special characters
-        if re.search(r'[._@+\-]{2,}', username):
-            raise forms.ValidationError("Username cannot contain consecutive special characters.")
         
         # Reserved usernames
         reserved_usernames = [
@@ -140,19 +128,181 @@ class CustomUserCreationForm(UserCreationForm):
         return password2
     
     def clean_referral_code(self):
-        """Validate referral code"""
+        """
+        FIXED: Validate referral code (the code of the person who referred this user)
+        This should NOT be assigned to the new user - it's used to find who referred them
+        """
         code = self.cleaned_data.get('referral_code', '').strip().upper()
         
         if code:
+            # Try to find the user who owns this referral code (the referrer)
             try:
                 referrer = User.objects.get(referral_code=code, is_active=True)
+                # Store the referrer object for later use in the view
                 self.referrer = referrer
+                logger.info(f"Valid referral code {code} from user {referrer.email}")
             except User.DoesNotExist:
+                logger.warning(f"Invalid referral code attempted: {code}")
                 raise forms.ValidationError("Invalid referral code.")
         else:
+            # No referral code provided - that's fine
             self.referrer = None
         
+        # IMPORTANT: Return the code, NOT assign it to the new user
+        # The new user will get their OWN unique code generated automatically
         return code
+
+    def save(self, commit=True):
+        """
+        Save the user but DON'T assign the referral code to them
+        The referral code entered is for finding who referred them
+        They'll get their own unique code automatically
+        """
+        user = super().save(commit=False)
+        
+        # The user will get their own referral code in the model's save() method
+        # We don't touch it here
+        
+        if commit:
+            user.save()
+        
+        return user
+
+# class CustomUserCreationForm(UserCreationForm):
+#     # Add custom username validator
+#     username = forms.CharField(
+#         max_length=150,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': 'Username (letters, numbers, @/./+/-/_ only)'
+#         }),
+#         validators=[
+#             RegexValidator(
+#                 regex=r'^[\w.@+-]+$',
+#                 message='Username can only contain letters, numbers, and @/./+/-/_ characters.',
+#                 code='invalid_username'
+#             )
+#         ],
+#         help_text=''
+#     )
+    
+#     email = forms.EmailField(
+#         required=True,
+#         widget=forms.EmailInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': 'Email Address',
+#             'autofocus': True
+#         })
+#     )
+#     referral_code = forms.CharField(
+#         max_length=10,
+#         required=False,
+#         widget=forms.TextInput(attrs={
+#             'class': 'form-control',
+#             'placeholder': 'Enter referral code (optional)',
+#             'style': 'text-transform: uppercase;'
+#         }),
+#         help_text='Have a referral code? Enter it here to give your friend a reward!'
+#     )
+
+#     class Meta:
+#         model = User
+#         fields = ('username', 'email', 'password1', 'password2', 'referral_code')
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+        
+#         # Update password field attributes
+#         self.fields['password1'].widget.attrs.update({
+#             'class': 'form-control',
+#             'placeholder': 'Password (min 8 characters)'
+#         })
+#         self.fields['password2'].widget.attrs.update({
+#             'class': 'form-control',
+#             'placeholder': 'Confirm Password'
+#         })
+        
+#         # Clear default help texts for cleaner UI
+#         self.fields['password1'].help_text = ""
+#         self.fields['password2'].help_text = ""
+
+#     def clean_username(self):
+#         username = self.cleaned_data.get('username')
+        
+#         # Check if username exists
+#         if User.objects.filter(username=username).exists():
+#             logger.warning(f"Signup attempted with duplicate username: {username}")
+#             raise forms.ValidationError("This username is already taken.")
+        
+#         # Validate minimum length
+#         if len(username) < 3:
+#             raise forms.ValidationError("Username must be at least 3 characters long.")
+        
+#         # Validate maximum length
+#         if len(username) > 30:
+#             raise forms.ValidationError("Username must be at most 30 characters long.")
+        
+#         # Check if username contains at least one alphanumeric character
+#         if not re.search(r'[a-zA-Z0-9]', username):
+#             raise forms.ValidationError("Username must contain at least one letter or number.")
+        
+#         # Check if username is only special characters
+#         if re.match(r'^[^a-zA-Z0-9]+$', username):
+#             raise forms.ValidationError("Username cannot contain only special characters.")
+        
+#         # Check if username starts or ends with special characters
+#         if username[0] in ['_', '.', '@', '+', '-'] or username[-1] in ['_', '.', '@', '+', '-']:
+#             raise forms.ValidationError("Username cannot start or end with special characters.")
+        
+#         # Check for consecutive special characters
+#         if re.search(r'[._@+\-]{2,}', username):
+#             raise forms.ValidationError("Username cannot contain consecutive special characters.")
+        
+#         # Reserved usernames
+#         reserved_usernames = [
+#             'admin', 'root', 'administrator', 'moderator', 'mod', 
+#             'support', 'help', 'user', 'guest', 'test', 'system',
+#             'api', 'www', 'mail', 'ftp', 'blog', 'shop'
+#         ]
+#         if username.lower() in reserved_usernames:
+#             raise forms.ValidationError("This username is reserved and cannot be used.")
+        
+#         return username
+
+#     def clean_email(self):
+#         email = self.cleaned_data.get('email')
+#         email_lower = email.lower()
+#         if User.objects.filter(email=email_lower).exists():
+#             logger.warning(f"Signup attempted with duplicate email: {email}")
+#             raise forms.ValidationError("This email is already registered.")
+#         return email_lower
+    
+#     def clean_password2(self):
+#         """
+#         Validate that password2 matches password1
+#         """
+#         password1 = self.cleaned_data.get("password1")
+#         password2 = self.cleaned_data.get("password2")
+        
+#         if password1 and password2 and password1 != password2:
+#             raise forms.ValidationError("The two password fields didn't match.")
+        
+#         return password2
+    
+#     def clean_referral_code(self):
+#         """Validate referral code"""
+#         code = self.cleaned_data.get('referral_code', '').strip().upper()
+        
+#         if code:
+#             try:
+#                 referrer = User.objects.get(referral_code=code, is_active=True)
+#                 self.referrer = referrer
+#             except User.DoesNotExist:
+#                 raise forms.ValidationError("Invalid referral code.")
+#         else:
+#             self.referrer = None
+        
+#         return code
 
 class CustomAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
@@ -346,14 +496,14 @@ class UserProfileForm(forms.ModelForm):
         max_length=30,
         min_length=3,
         required=True,
-        validators=[UsernameValidator()],
+        validators=[],  # rely on clean_username only
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Username (letters, numbers, underscore only)',
-            'pattern': '[a-zA-Z0-9_]{3,30}',
-            'title': 'Username can only contain letters, numbers, and underscore'
+            'placeholder': 'Username (letters, numbers, @/./+/-/_ only)',
+            'pattern': '[a-zA-Z0-9@.+_-]{3,30}',
+            'title': 'Letters, numbers, and @ . + - _ only'
         }),
-        help_text='3-30 characters. Letters, numbers, and underscore only.'
+        help_text='3–30 characters. Letters, numbers, and @ . + - _ only.'
     )
     
     first_name = forms.CharField(
@@ -434,18 +584,18 @@ class UserProfileForm(forms.ModelForm):
             raise forms.ValidationError("Username must not exceed 30 characters.")
         
         # Format validation - only letters, numbers, underscore
-        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        if not re.match(r'^[a-zA-Z0-9@.+_-]+$', username):
             raise forms.ValidationError(
-                "Username can only contain letters, numbers, and underscore (_)."
-            )
+        "Username can only contain letters, numbers, and @ . + - _."
+    )
         
         # Cannot start or end with underscore
-        if username.startswith('_') or username.endswith('_'):
-            raise forms.ValidationError("Username cannot start or end with underscore.")
+        # if username.startswith('_') or username.endswith('_'):
+        #     raise forms.ValidationError("Username cannot start or end with underscore.")
         
         # No consecutive underscores
-        if '__' in username:
-            raise forms.ValidationError("Username cannot contain consecutive underscores.")
+        # if '__' in username:
+        #     raise forms.ValidationError("Username cannot contain consecutive underscores.")
         
         # Cannot be only numbers
         if username.isdigit():
