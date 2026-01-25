@@ -61,16 +61,6 @@ class Category(models.Model):
                 'name': f"Category '{normalized_name}' already exists (case-insensitive match)."
             })
 
-# class Category(models.Model):
-#     name = models.CharField(max_length=100, unique=True)
-#     is_active = models.BooleanField(default=True)
-#     created_at = models.DateTimeField(default=timezone.now)
-
-#     class Meta:
-#         ordering = ['-created_at']
-
-#     def __str__(self):
-#         return self.name
 
 
 # ------------------ BRAND ------------------

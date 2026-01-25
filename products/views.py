@@ -38,99 +38,133 @@ def home(request):
 
 
 def product_list(request):
-    """Product listing with search, filter, sort and pagination - FIXED SORTING"""
-    products = Product.objects.filter(is_active=True).select_related('category', 'brand').prefetch_related('variants__images')
-    
-    # Get filter parameters
+    """
+    Product listing with search, filter, sort and pagination
+    Supports:
+    - search
+    - category filter
+    - color filter
+    - price filter (base + variants)
+    - sorting
+    """
+
+    # -------------------------------------------------
+    # 1️⃣ Base queryset
+    # -------------------------------------------------
+    products = (
+        Product.objects
+        .filter(is_active=True)
+        .select_related('category', 'brand')
+        .prefetch_related('variants__images')
+    )
+
+    # -------------------------------------------------
+    # 2️⃣ Annotate EFFECTIVE PRICE (used everywhere)
+    # -------------------------------------------------
+    products = products.annotate(
+        effective_price=Coalesce(
+            Min('variants__price', filter=Q(variants__is_active=True)),
+            'base_price'
+        )
+    )
+
+    # -------------------------------------------------
+    # 3️⃣ Read query params
+    # -------------------------------------------------
     search_query = request.GET.get('q', '')
     category_filter = request.GET.get('category', '')
     color_filter = request.GET.get('color', '')
     min_price = request.GET.get('min_price', '')
     max_price = request.GET.get('max_price', '')
     sort_by = request.GET.get('sort', '')
-    
-    # Search functionality
+
+    # -------------------------------------------------
+    # 4️⃣ Search
+    # -------------------------------------------------
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(brand__name__icontains=search_query)
         )
-    
-    # Category filter
+
+    # -------------------------------------------------
+    # 5️⃣ Category filter
+    # -------------------------------------------------
     if category_filter:
         products = products.filter(category__name=category_filter)
-    
-    # Color filter
+
+    # -------------------------------------------------
+    # 6️⃣ Color filter (variants)
+    # -------------------------------------------------
     if color_filter:
-        products = products.filter(variants__color=color_filter, variants__is_active=True)
-    
-    # Price range filter
+        products = products.filter(
+            variants__color=color_filter,
+            variants__is_active=True
+        )
+
+    # -------------------------------------------------
+    # 7️⃣ Price range filter (SAFE & CORRECT)
+    # -------------------------------------------------
     if min_price:
         try:
-            min_price_decimal = Decimal(min_price)
             products = products.filter(
-                Q(variants__price__gte=min_price_decimal, variants__is_active=True) |
-                Q(base_price__gte=min_price_decimal, variants__isnull=True)
+                effective_price__gte=Decimal(min_price)
             )
-        except:
+        except Exception:
             min_price = ''
-    
+
     if max_price:
         try:
-            max_price_decimal = Decimal(max_price)
             products = products.filter(
-                Q(variants__price__lte=max_price_decimal, variants__is_active=True) |
-                Q(base_price__lte=max_price_decimal, variants__isnull=True)
+                effective_price__lte=Decimal(max_price)
             )
-        except:
+        except Exception:
             max_price = ''
-    
-    # ✅ FIXED SORTING - Handles both variant and non-variant products
+
+    # -------------------------------------------------
+    # 8️⃣ Sorting (reuse effective_price)
+    # -------------------------------------------------
+    sort_by = request.GET.get('sort')
+
     if sort_by == 'price_low':
-        # Annotate with min price, using base_price as fallback
-        products = products.annotate(
-            min_variant_price=Min('variants__price', filter=Q(variants__is_active=True)),
-            effective_min_price=Coalesce('min_variant_price', 'base_price')
-        ).order_by('effective_min_price')
-        
+        products = products.order_by('base_price')
     elif sort_by == 'price_high':
-        # Annotate with max price, using base_price as fallback
-        products = products.annotate(
-            max_variant_price=Max('variants__price', filter=Q(variants__is_active=True)),
-            effective_max_price=Coalesce('max_variant_price', 'base_price')
-        ).order_by('-effective_max_price')
-        
+        products = products.order_by('-base_price')
     elif sort_by == 'name_asc':
         products = products.order_by('name')
-        
     elif sort_by == 'name_desc':
         products = products.order_by('-name')
-        
+
     else:
-        # Default: newest first
         products = products.order_by('-created_at')
-    
-    # Remove duplicates (important after filtering by variants)
+
+    # -------------------------------------------------
+    # 9️⃣ Remove duplicates (variants JOIN safety)
+    # -------------------------------------------------
     products = products.distinct()
-    
-    # Pagination
+
+    # -------------------------------------------------
+    # 🔟 Pagination
+    # -------------------------------------------------
     paginator = Paginator(products, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # Get active categories for filter
+
+    # -------------------------------------------------
+    # 1️⃣1️⃣ Sidebar data
+    # -------------------------------------------------
     categories = Category.objects.filter(is_active=True)
-    
-    # Get available colors for filter
     available_colors = ProductVariant.COLOR_CHOICES
-    
-    # Build query string for pagination links
+
+    # Preserve filters across pagination
     query_params = request.GET.copy()
-    if 'page' in query_params:
-        del query_params['page']
+    query_params.pop('page', None)
     query_string = query_params.urlencode()
-    
+
+    # -------------------------------------------------
+    # 1️⃣2️⃣ Context
+    # -------------------------------------------------
     context = {
         'page_obj': page_obj,
         'products': page_obj.object_list,
@@ -145,8 +179,128 @@ def product_list(request):
         'query_string': query_string,
         'total_products': paginator.count,
     }
-    
+
     return render(request, 'products/product_list.html', context)
+
+# def product_list(request):
+#     """Product listing with search, filter, sort and pagination - FIXED SORTING"""
+#     products = Product.objects.filter(is_active=True).select_related('category', 'brand').prefetch_related('variants__images')
+#     products = products.annotate(
+#     effective_price=Coalesce(
+#         Min('variants__price', filter=Q(variants__is_active=True)),
+#         'base_price'
+#     )
+# )
+#     # Get filter parameters
+#     search_query = request.GET.get('q', '')
+#     category_filter = request.GET.get('category', '')
+#     color_filter = request.GET.get('color', '')
+#     min_price = request.GET.get('min_price', '')
+#     max_price = request.GET.get('max_price', '')
+#     sort_by = request.GET.get('sort', '')
+    
+#     # Search functionality
+#     if search_query:
+#         products = products.filter(
+#             Q(name__icontains=search_query) |
+#             Q(description__icontains=search_query) |
+#             Q(brand__name__icontains=search_query)
+#         )
+    
+#     # Category filter
+#     if category_filter:
+#         products = products.filter(category__name=category_filter)
+    
+#     # Color filter
+#     if color_filter:
+#         products = products.filter(variants__color=color_filter, variants__is_active=True)
+    
+
+    
+#     # Price range filter
+   
+
+#     if min_price:
+#         try:
+#             min_price_decimal = Decimal(min_price)
+#             products = products.filter(
+#                 Q(variants__price__gte=min_price_decimal, variants__is_active=True) |
+#                 Q(base_price__gte=min_price_decimal, variants__isnull=True)
+#             )
+#         except:
+#             min_price = ''
+    
+#     if max_price:
+#         try:
+#             max_price_decimal = Decimal(max_price)
+#             products = products.filter(
+#                 Q(variants__price__lte=max_price_decimal, variants__is_active=True) |
+#                 Q(base_price__lte=max_price_decimal, variants__isnull=True)
+#             )
+#         except:
+#             max_price = ''
+    
+#     # ✅ FIXED SORTING - Handles both variant and non-variant products
+#     if sort_by == 'price_low':
+#         # Annotate with min price, using base_price as fallback
+#         products = products.annotate(
+#             min_variant_price=Min('variants__price', filter=Q(variants__is_active=True)),
+#             effective_min_price=Coalesce('min_variant_price', 'base_price')
+#         ).order_by('effective_min_price')
+        
+#     elif sort_by == 'price_high':
+#         # Annotate with max price, using base_price as fallback
+#         products = products.annotate(
+#             max_variant_price=Max('variants__price', filter=Q(variants__is_active=True)),
+#             effective_max_price=Coalesce('max_variant_price', 'base_price')
+#         ).order_by('-effective_max_price')
+        
+#     elif sort_by == 'name_asc':
+#         products = products.order_by('name')
+        
+#     elif sort_by == 'name_desc':
+#         products = products.order_by('-name')
+        
+#     else:
+#         # Default: newest first
+#         products = products.order_by('-created_at')
+    
+#     # Remove duplicates (important after filtering by variants)
+#     products = products.distinct()
+    
+#     # Pagination
+#     paginator = Paginator(products, 12)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+    
+#     # Get active categories for filter
+#     categories = Category.objects.filter(is_active=True)
+    
+#     # Get available colors for filter
+#     available_colors = ProductVariant.COLOR_CHOICES
+    
+#     # Build query string for pagination links
+#     query_params = request.GET.copy()
+#     if 'page' in query_params:
+#         del query_params['page']
+#     query_string = query_params.urlencode()
+    
+#     context = {
+#         'page_obj': page_obj,
+#         'products': page_obj.object_list,
+#         'categories': categories,
+#         'available_colors': available_colors,
+#         'search_query': search_query,
+#         'category_filter': category_filter,
+#         'color_filter': color_filter,
+#         'min_price': min_price,
+#         'max_price': max_price,
+#         'sort_by': sort_by,
+#         'query_string': query_string,
+#         'total_products': paginator.count,
+#     }
+    
+#     return render(request, 'products/product_list.html', context)
 
 
 
@@ -361,9 +515,7 @@ def women_products(request):
 
 def product_detail(request, uuid):
     """
-    ✅ FIXED: Clean separation between general product and variant data
-    - General section: Shows product name, description, brand, category, general images
-    - Variant section: Shows ONLY after user selects a color
+    Product detail view with optimized Related Products feature
     """
     try:
         product = get_object_or_404(Product, uuid=uuid)
@@ -388,24 +540,20 @@ def product_detail(request, uuid):
     # Get best offer
     best_offer = product.get_best_offer()
     
-    # ====================================
-    # ✅ GENERAL PRODUCT DATA ONLY
-    # ====================================
+    # General product data
     general_data = {
         'name': product.name,
         'description': product.description,
         'brand': product.brand.name if product.brand else None,
         'category': product.category.name,
-        'base_price': product.base_price,  # Keep for reference, not displayed
+        'base_price': product.base_price,
         'has_variants': has_variants,
         'is_in_stock': product.is_in_stock,
         'average_rating': product.average_rating,
         'review_count': product.review_count,
     }
     
-    # ====================================
-    # ✅ VARIANT OPTIONS (Just color choices, no details yet)
-    # ====================================
+    # Variant options
     variant_options = []
     for variant in variants:
         variant_options.append({
@@ -413,16 +561,13 @@ def product_detail(request, uuid):
             'color': variant.color,
             'color_display': variant.get_color_display(),
             'color_hex': variant.color_hex,
-            'is_in_stock': variant.is_in_stock,  # To disable out-of-stock options
+            'is_in_stock': variant.is_in_stock,
         })
     
-    # ====================================
-    # ✅ IMAGE DATA (General images only initially)
-    # ====================================
+    # Image data
     general_images = product.images.all()
     all_images = []
     
-    # Add general product images
     for img in general_images:
         all_images.append({
             'url': img.image.url,
@@ -433,7 +578,6 @@ def product_detail(request, uuid):
             'color_hex': '',
         })
     
-    # Add variant images (for carousel switching when variant selected)
     for variant in variants:
         for img in variant.images.all():
             all_images.append({
@@ -445,23 +589,46 @@ def product_detail(request, uuid):
                 'color_hex': variant.color_hex,
             })
     
-    # ====================================
-    # ✅ REVIEWS
-    # ====================================
+    # Reviews
     reviews = ProductReview.objects.filter(
         product=product, is_active=True
     ).select_related('user').order_by('-created_at')
     
-    # ====================================
-    # ✅ RELATED PRODUCTS
-    # ====================================
+    # ========================================
+    # ✅ OPTIMIZED RELATED PRODUCTS
+    # ========================================
     related_products = Product.objects.filter(
-        category=product.category, is_active=True, category__is_active=True
-    ).exclude(pk=product.pk)[:4]
+        category=product.category,  # Same category
+        is_active=True,  # Only active products
+        category__is_active=True  # Category must be active
+    ).exclude(
+        pk=product.pk  # Exclude current product
+    ).prefetch_related(
+        'images',  # Prefetch images for performance
+        'variants'  # Prefetch variants
+    ).order_by(
+        '-created_at'  # Most recent first
+    )[:4]  # Limit to 4 products
     
-    # ====================================
-    # ✅ COUPONS
-    # ====================================
+    # Add additional data to related products
+    for related in related_products:
+        # Get primary image
+        related.primary_image = related.images.first()
+        
+        # Get best offer if available
+        related.best_offer = related.get_best_offer()
+        
+        # Calculate offer price if offer exists
+        if related.best_offer:
+            if related.has_variants:
+                base_price = related.min_price
+            else:
+                base_price = related.base_price
+            
+            related.offer_price = related.best_offer.get_discounted_price(base_price)
+            related.discount_percentage = related.best_offer.discount_percentage
+    
+    # Coupons
     available_coupons = Coupon.objects.filter(
         is_active=True,
         valid_from__lte=timezone.now(),
@@ -470,9 +637,7 @@ def product_detail(request, uuid):
         Q(usage_limit__isnull=True) | Q(usage_limit__gt=F('used_count'))
     )[:3]
     
-    # ====================================
-    # ✅ RATING DISTRIBUTION
-    # ====================================
+    # Rating distribution
     rating_distribution = {}
     total_reviews = reviews.count()
     for i in range(1, 6):
@@ -484,12 +649,12 @@ def product_detail(request, uuid):
         'product': product,
         'general_data': general_data,
         'variants': variants,
-        'variant_options': variant_options,  # ✅ Just color choices
+        'variant_options': variant_options,
         'has_variants': has_variants,
         'best_offer': best_offer,
         'all_images': all_images,
         'general_images': general_images,
-        'related_products': related_products,
+        'related_products': related_products,  # ✅ Related products
         'reviews': reviews,
         'available_coupons': available_coupons,
         'rating_distribution': rating_distribution,
@@ -497,6 +662,147 @@ def product_detail(request, uuid):
     }
     
     return render(request, 'products/product_detail.html', context)
+
+
+
+# def product_detail(request, uuid):
+#     """
+#     ✅ FIXED: Clean separation between general product and variant data
+#     - General section: Shows product name, description, brand, category, general images
+#     - Variant section: Shows ONLY after user selects a color
+#     """
+#     try:
+#         product = get_object_or_404(Product, uuid=uuid)
+        
+#         # Check product availability
+#         if not product.is_active or not product.category.is_active:
+#             messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+#             return redirect('products:product_list')
+        
+#         if product.brand and not product.brand.is_active:
+#             messages.error(request, f"Sorry, '{product.name}' is currently unavailable.")
+#             return redirect('products:product_list')
+            
+#     except Http404:
+#         messages.error(request, "Product not found.")
+#         return redirect('products:product_list')
+    
+#     # Get active variants
+#     variants = product.variants.filter(is_active=True).prefetch_related('images').order_by('color')
+#     has_variants = variants.exists()
+    
+#     # Get best offer
+#     best_offer = product.get_best_offer()
+    
+#     # ====================================
+#     # ✅ GENERAL PRODUCT DATA ONLY
+#     # ====================================
+#     general_data = {
+#         'name': product.name,
+#         'description': product.description,
+#         'brand': product.brand.name if product.brand else None,
+#         'category': product.category.name,
+#         'base_price': product.base_price,  # Keep for reference, not displayed
+#         'has_variants': has_variants,
+#         'is_in_stock': product.is_in_stock,
+#         'average_rating': product.average_rating,
+#         'review_count': product.review_count,
+#     }
+    
+#     # ====================================
+#     # ✅ VARIANT OPTIONS (Just color choices, no details yet)
+#     # ====================================
+#     variant_options = []
+#     for variant in variants:
+#         variant_options.append({
+#             'id': variant.id,
+#             'color': variant.color,
+#             'color_display': variant.get_color_display(),
+#             'color_hex': variant.color_hex,
+#             'is_in_stock': variant.is_in_stock,  # To disable out-of-stock options
+#         })
+    
+#     # ====================================
+#     # ✅ IMAGE DATA (General images only initially)
+#     # ====================================
+#     general_images = product.images.all()
+#     all_images = []
+    
+#     # Add general product images
+#     for img in general_images:
+#         all_images.append({
+#             'url': img.image.url,
+#             'zoom_image': img.zoom_image.url if img.zoom_image else img.image.url,
+#             'type': 'general',
+#             'variant_color': '',
+#             'variant_name': 'Product Overview',
+#             'color_hex': '',
+#         })
+    
+#     # Add variant images (for carousel switching when variant selected)
+#     for variant in variants:
+#         for img in variant.images.all():
+#             all_images.append({
+#                 'url': img.image.url,
+#                 'zoom_image': img.zoom_image.url if img.zoom_image else img.image.url,
+#                 'type': 'variant',
+#                 'variant_color': variant.color,
+#                 'variant_name': variant.get_color_display(),
+#                 'color_hex': variant.color_hex,
+#             })
+    
+#     # ====================================
+#     # ✅ REVIEWS
+#     # ====================================
+#     reviews = ProductReview.objects.filter(
+#         product=product, is_active=True
+#     ).select_related('user').order_by('-created_at')
+    
+#     # ====================================
+#     # ✅ RELATED PRODUCTS
+#     # ====================================
+#     related_products = Product.objects.filter(
+#         category=product.category, is_active=True, category__is_active=True
+#     ).exclude(pk=product.pk)[:4]
+    
+#     # ====================================
+#     # ✅ COUPONS
+#     # ====================================
+#     available_coupons = Coupon.objects.filter(
+#         is_active=True,
+#         valid_from__lte=timezone.now(),
+#         valid_to__gte=timezone.now()
+#     ).filter(
+#         Q(usage_limit__isnull=True) | Q(usage_limit__gt=F('used_count'))
+#     )[:3]
+    
+#     # ====================================
+#     # ✅ RATING DISTRIBUTION
+#     # ====================================
+#     rating_distribution = {}
+#     total_reviews = reviews.count()
+#     for i in range(1, 6):
+#         count = reviews.filter(rating=i).count()
+#         percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
+#         rating_distribution[i] = {'count': count, 'percentage': round(percentage, 1)}
+    
+#     context = {
+#         'product': product,
+#         'general_data': general_data,
+#         'variants': variants,
+#         'variant_options': variant_options,  # ✅ Just color choices
+#         'has_variants': has_variants,
+#         'best_offer': best_offer,
+#         'all_images': all_images,
+#         'general_images': general_images,
+#         'related_products': related_products,
+#         'reviews': reviews,
+#         'available_coupons': available_coupons,
+#         'rating_distribution': rating_distribution,
+#         'breadcrumb_category': product.category.name,
+#     }
+    
+#     return render(request, 'products/product_detail.html', context)
 
 
 # |---------Variant----------|
