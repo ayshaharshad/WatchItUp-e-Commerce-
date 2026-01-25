@@ -123,7 +123,9 @@
                             <div class="alert alert-info text-center">
                                 <h4>No {{ category_title|lower }} found</h4>
                                 <p>Try adjusting your search or filter criteria.</p>
-                                <a href="{% url request.resolver_match.url_name %}" class="btn btn-primary">View All {{ category_title }}</a>
+                                <a href="{{ request.path }}" class="btn btn-primary">
+                                    View All {{ category_title }}
+                                </a>
                             </div>
                         </div>
                     {% endif %}
