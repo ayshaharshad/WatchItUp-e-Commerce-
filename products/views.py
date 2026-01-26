@@ -733,6 +733,286 @@ def remove_coupon(request):
             'success': False,
             'message': 'Cart not found.'
         })
+    
+#----Rating & Reviews---------#
+
+
+@login_required
+@require_POST
+def add_review(request, order_item_id):
+    """
+    Add a new review for a product via order item.
+    Only allows reviews for delivered orders.
+    """
+    try:
+        # Get the order item and validate ownership
+        order_item = get_object_or_404(
+            OrderItem,
+            id=order_item_id,
+            order__user=request.user,  # ✅ Security: User owns this order
+            status='active'  # ✅ Only active items can be reviewed
+        )
+        
+        # ✅ CRITICAL: Validate order is delivered
+        if order_item.order.status != 'delivered':
+            return JsonResponse({
+                'success': False,
+                'message': 'You can only review products from delivered orders.'
+            }, status=403)
+        
+        # ✅ Check if user already reviewed this product
+        existing_review = ProductReview.objects.filter(
+            product=order_item.product,
+            user=request.user
+        ).first()
+        
+        if existing_review:
+            return JsonResponse({
+                'success': False,
+                'message': 'You have already reviewed this product. You can edit your existing review.'
+            }, status=400)
+        
+        # Get form data
+        rating = request.POST.get('rating')
+        title = request.POST.get('title', '').strip()
+        review_text = request.POST.get('review_text', '').strip()
+        
+        # Validate required fields
+        if not rating or not title:
+            return JsonResponse({
+                'success': False,
+                'message': 'Rating and title are required.'
+            }, status=400)
+        
+        # Validate rating value
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid rating value. Must be between 1 and 5.'
+            }, status=400)
+        
+        # Validate title length
+        if len(title) > 255:
+            return JsonResponse({
+                'success': False,
+                'message': 'Title must be 255 characters or less.'
+            }, status=400)
+        
+        # ✅ Create review with verified purchase flag
+        review = ProductReview.objects.create(
+            product=order_item.product,
+            variant=order_item.variant,  # Track which variant was reviewed
+            user=request.user,
+            rating=rating,
+            title=title,
+            review_text=review_text,
+            is_verified_purchase=True  # ✅ Auto-set as verified
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Review submitted successfully! Thank you for your feedback.',
+            'review_id': review.id,
+            'average_rating': order_item.product.average_rating,
+            'review_count': order_item.product.review_count
+        })
+        
+    except OrderItem.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Order item not found or you do not have permission to review it.'
+        }, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'Failed to submit review. Please try again.'
+        }, status=500)
+
+
+@login_required
+@require_POST
+def edit_review(request, review_id):
+    """
+    Edit an existing review.
+    Only the review owner can edit.
+    """
+    try:
+        # ✅ Security: Get review owned by current user
+        review = get_object_or_404(
+            ProductReview,
+            id=review_id,
+            user=request.user  # ✅ Ownership validation
+        )
+        
+        # Get form data
+        rating = request.POST.get('rating')
+        title = request.POST.get('title', '').strip()
+        review_text = request.POST.get('review_text', '').strip()
+        
+        # Validate required fields
+        if not rating or not title:
+            return JsonResponse({
+                'success': False,
+                'message': 'Rating and title are required.'
+            }, status=400)
+        
+        # Validate rating value
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid rating value. Must be between 1 and 5.'
+            }, status=400)
+        
+        # Validate title length
+        if len(title) > 255:
+            return JsonResponse({
+                'success': False,
+                'message': 'Title must be 255 characters or less.'
+            }, status=400)
+        
+        # Update review
+        review.rating = rating
+        review.title = title
+        review.review_text = review_text
+        review.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Review updated successfully!',
+            'average_rating': review.product.average_rating,
+            'review_count': review.product.review_count
+        })
+        
+    except ProductReview.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review not found or you do not have permission to edit it.'
+        }, status=403)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'Failed to update review. Please try again.'
+        }, status=500)
+
+
+@login_required
+@require_POST
+def delete_review(request, review_id):
+    """
+    Delete a review.
+    Only the review owner can delete.
+    """
+    try:
+        # ✅ Security: Get review owned by current user
+        review = get_object_or_404(
+            ProductReview,
+            id=review_id,
+            user=request.user  # ✅ Ownership validation
+        )
+        
+        product = review.product
+        review.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Review deleted successfully.',
+            'average_rating': product.average_rating,
+            'review_count': product.review_count
+        })
+        
+    except ProductReview.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review not found or you do not have permission to delete it.'
+        }, status=403)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'Failed to delete review. Please try again.'
+        }, status=500)
+
+
+@login_required
+@require_GET
+def check_item_review_status(request, order_item_id):
+    """
+    Check if user can review a specific order item.
+    Returns review status for the item.
+    """
+    try:
+        # Get the order item and validate ownership
+        order_item = get_object_or_404(
+            OrderItem,
+            id=order_item_id,
+            order__user=request.user,
+            status='active'
+        )
+        
+        # Check if already reviewed
+        existing_review = ProductReview.objects.filter(
+            product=order_item.product,
+            user=request.user
+        ).first()
+        
+        if existing_review:
+            return JsonResponse({
+                'can_review': False,
+                'has_review': True,
+                'review_id': existing_review.id,
+                'review': {
+                    'rating': existing_review.rating,
+                    'title': existing_review.title,
+                    'review_text': existing_review.review_text,
+                    'created_at': existing_review.created_at.isoformat()
+                },
+                'message': 'You have already reviewed this product.'
+            })
+        
+        # Check if order is delivered
+        if order_item.order.status != 'delivered':
+            return JsonResponse({
+                'can_review': False,
+                'has_review': False,
+                'message': f'Order must be delivered before you can review. Current status: {order_item.order.get_status_display()}'
+            })
+        
+        return JsonResponse({
+            'can_review': True,
+            'has_review': False,
+            'message': 'You can review this product.',
+            'product_name': order_item.product_name,
+            'variant_name': order_item.variant_name
+        })
+        
+    except OrderItem.DoesNotExist:
+        return JsonResponse({
+            'can_review': False,
+            'has_review': False,
+            'message': 'Order item not found.'
+        }, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'can_review': False,
+            'has_review': False,
+            'message': 'Error checking review status.'
+        }, status=500)
+
 
 # ================== CART VIEWS ==================
 

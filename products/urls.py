@@ -70,4 +70,11 @@ urlpatterns = [
     path('wishlist/clear/', views.clear_wishlist, name='clear_wishlist'),
     path('wishlist/move-to-cart/<uuid:item_uuid>/', views.move_to_cart_from_wishlist, name='move_to_cart_from_wishlist'),
     path('wishlist/check/<uuid:uuid>/', views.check_wishlist_status, name='check_wishlist_status'),
+
+    #------Reviews and Ratings-----#
+    path('review/add/<int:order_item_id>/', views.add_review, name='add_review'),
+    path('review/edit/<int:review_id>/', views.edit_review, name='edit_review'),
+    path('review/delete/<int:review_id>/', views.delete_review, name='delete_review'),
+    path('review/check-status/<int:order_item_id>/', views.check_item_review_status, name='check_item_review_status'),
+    
 ]

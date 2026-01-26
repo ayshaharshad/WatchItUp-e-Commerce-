@@ -750,129 +750,100 @@ def change_password_view(request):
 
 
 @login_required
-def addresses_view(request):
-    """Display all user addresses"""
-    addresses = Address.objects.filter(user=request.user)
-    context = {
-        'addresses': addresses
-    }
-    return render(request, 'users/addresses/addresses.html', context)
-
-@login_required
-@require_POST
-def set_default_address_view(request, address_id):
-    """Set an address as default"""
-    address = get_object_or_404(Address, id=address_id, user=request.user)
-    
-    # Remove default from all other addresses
-    Address.objects.filter(user=request.user).update(is_default=False)
-    
-    # Set this address as default
-    address.is_default = True
-    address.save()
-    
-    messages.success(request, f'"{address.full_name}" set as default address.')
-    return redirect('users:addresses')
-
-
-# Add this new view for AJAX address submission from checkout
-@login_required
-@require_POST
-def add_address_ajax_view(request):
-    """Add address via AJAX from checkout page"""
-    form = AddressForm(request.POST)
-    
-    if form.is_valid():
-        address = form.save(commit=False)
-        address.user = request.user
-        address.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Address added successfully!',
-            'address': {
-                'id': address.id,
-                'full_name': address.full_name,
-                'address_line1': address.address_line1,
-                'address_line2': address.address_line2,
-                'city': address.city,
-                'state': address.state,
-                'postal_code': address.postal_code,
-                'phone': address.phone,
-                'is_default': address.is_default,
-                'full_address': address.full_address
-            }
-        })
-    else:
-        # Return form errors
-        errors = {}
-        for field, error_list in form.errors.items():
-            errors[field] = [str(error) for error in error_list]
-        
-        return JsonResponse({
-            'success': False,
-            'errors': errors
-        })
-@login_required
 def add_address_view(request):
     """Add new address with optional redirect to checkout"""
     if request.method == 'POST':
         form = AddressForm(request.POST)
         if form.is_valid():
-            address = form.save(commit=False)
-            address.user = request.user
-            address.save()
-            messages.success(request, 'Address added successfully!')
-            
-            # ✅ FIX: Check if coming from checkout
-            next_url = request.POST.get('next') or request.GET.get('next')
-            if next_url == 'checkout':
-                # Redirect back to checkout view in products app
-                return redirect('products:checkout_view')  # ✅ FIXED: Use correct namespace
-            
-            return redirect('users:addresses')  # Default redirect to addresses page
+            try:
+                # Save address with user assigned
+                address = form.save(commit=False)
+                address.user = request.user
+                # The model's save() method will handle is_default logic automatically
+                address.save()
+                
+                messages.success(request, 'Address added successfully!')
+                
+                # Check if coming from checkout
+                next_url = request.POST.get('next') or request.GET.get('next')
+                if next_url == 'checkout':
+                    return redirect('products:checkout_view')
+                
+                return redirect('users:addresses')
+                
+            except Exception as e:
+                logger.error(f"Error adding address for user {request.user.id}: {str(e)}")
+                messages.error(request, 'An error occurred while adding the address. Please try again.')
         else:
+            # Show specific field errors
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, error)
+                    if field == '__all__':
+                        messages.error(request, f"{error}")
+                    else:
+                        field_label = form.fields[field].label or field
+                        messages.error(request, f"{field_label}: {error}")
     else:
         form = AddressForm()
     
-    # ✅ FIX: Get the next parameter to pass to template
+    # Get the next parameter to pass to template
     next_url = request.GET.get('next', '')
     
     return render(request, 'users/addresses/add_address.html', {
         'form': form,
-        'next': next_url  # Pass to template
+        'next': next_url
     })
-
 
 
 @login_required
 def edit_address_view(request, address_id):
-    """Edit existing address with optional redirect to checkout"""
+    """
+    COMPLETE FIX: Edit existing address with proper default handling
+    
+    The Address model's save() method automatically handles:
+    - Ensuring only one default address per user
+    - Setting first address as default
+    
+    This view just needs to save the form properly
+    """
     address = get_object_or_404(Address, id=address_id, user=request.user)
     
     if request.method == 'POST':
         form = AddressForm(request.POST, instance=address)
+        
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Address updated successfully!')
-            
-            # FIXED: Check if coming from checkout
-            next_url = request.POST.get('next') or request.GET.get('next')
-            if next_url == 'checkout':
-                return redirect('products:checkout_view')
-            
-            return redirect('users:profile')
+            try:
+                # Save the address
+                # The model's save() method will automatically handle default address logic
+                updated_address = form.save(commit=False)
+                updated_address.user = request.user  # Ensure user is set
+                updated_address.save()  # Model handles is_default logic
+                
+                messages.success(request, 'Address updated successfully!')
+                
+                # Check if coming from checkout
+                next_url = request.POST.get('next') or request.GET.get('next')
+                if next_url == 'checkout':
+                    return redirect('products:checkout_view')
+                
+                return redirect('users:addresses')
+                
+            except Exception as e:
+                logger.error(f"Error updating address {address_id}: {str(e)}")
+                messages.error(request, 'An error occurred while updating the address. Please try again.')
         else:
+            # Show specific field errors
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, error)
+                    if field == '__all__':
+                        messages.error(request, f"{error}")
+                    else:
+                        field_label = form.fields[field].label or field
+                        messages.error(request, f"{field_label}: {error}")
     else:
         form = AddressForm(instance=address)
     
-    # FIXED: Get the next parameter to pass to template
+    # Get the next parameter to pass to template
     next_url = request.GET.get('next', '')
     
     return render(request, 'users/addresses/edit_address.html', {
@@ -884,27 +855,292 @@ def edit_address_view(request, address_id):
 
 @login_required
 def delete_address_view(request, address_id):
-    """Delete address"""
+    """Delete address with checkout redirect support"""
     address = get_object_or_404(Address, id=address_id, user=request.user)
     
     if request.method == 'POST':
-        address.delete()
-        messages.success(request, 'Address deleted successfully!')
-        
-        # FIXED: Check if coming from checkout
-        next_url = request.POST.get('next') or request.GET.get('next')
-        if next_url == 'checkout':
-            return redirect('products:checkout_view')
-        
-        return redirect('users:profile')
+        try:
+            # Store if this was default before deletion
+            was_default = address.is_default
+            
+            address.delete()
+            
+            # If deleted address was default, set another address as default
+            if was_default:
+                first_address = Address.objects.filter(user=request.user).first()
+                if first_address:
+                    first_address.is_default = True
+                    first_address.save()
+            
+            messages.success(request, 'Address deleted successfully!')
+            
+            # Check if coming from checkout
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url == 'checkout':
+                return redirect('products:checkout_view')
+            
+            return redirect('users:addresses')
+            
+        except Exception as e:
+            logger.error(f"Error deleting address {address_id}: {str(e)}")
+            messages.error(request, 'An error occurred while deleting the address. Please try again.')
+            return redirect('users:addresses')
     
-    # FIXED: Pass next parameter to template for delete confirmation
+    # Pass next parameter to template for delete confirmation
     next_url = request.GET.get('next', '')
     
     return render(request, 'users/addresses/delete_address.html', {
         'address': address,
         'next': next_url
     })
+
+
+@login_required
+@require_POST
+def set_default_address_view(request, address_id):
+    """Set an address as default via AJAX or form POST"""
+    try:
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        
+        # Simply set this address as default
+        # The model's save() method will handle unsetting other defaults
+        address.is_default = True
+        address.save()
+        
+        # Check if AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'"{address.full_name}" set as default address.'
+            })
+        
+        messages.success(request, f'"{address.full_name}" set as default address.')
+        return redirect('users:addresses')
+        
+    except Exception as e:
+        logger.error(f"Error setting default address {address_id}: {str(e)}")
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to set default address.'
+            })
+        
+        messages.error(request, 'Failed to set default address.')
+        return redirect('users:addresses')
+
+
+@login_required
+@require_POST
+def add_address_ajax_view(request):
+    """Add address via AJAX from checkout page"""
+    form = AddressForm(request.POST)
+    
+    if form.is_valid():
+        try:
+            address = form.save(commit=False)
+            address.user = request.user
+            address.save()  # Model handles default logic
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Address added successfully!',
+                'address': {
+                    'id': address.id,
+                    'full_name': address.full_name,
+                    'address_line1': address.address_line1,
+                    'address_line2': address.address_line2,
+                    'city': address.city,
+                    'state': address.state,
+                    'postal_code': address.postal_code,
+                    'phone': address.phone,
+                    'is_default': address.is_default,
+                    'full_address': address.full_address
+                }
+            })
+        except Exception as e:
+            logger.error(f"Error adding address via AJAX: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'errors': {'__all__': ['An error occurred while saving the address.']}
+            })
+    else:
+        # Return form errors
+        errors = {}
+        for field, error_list in form.errors.items():
+            errors[field] = [str(error) for error in error_list]
+        
+        return JsonResponse({
+            'success': False,
+            'errors': errors
+        })
+
+
+@login_required
+def addresses_view(request):
+    """Display all user addresses"""
+    addresses = Address.objects.filter(user=request.user)
+    context = {
+        'addresses': addresses
+    }
+    return render(request, 'users/addresses/addresses.html', context)
+
+# @login_required
+# def addresses_view(request):
+#     """Display all user addresses"""
+#     addresses = Address.objects.filter(user=request.user)
+#     context = {
+#         'addresses': addresses
+#     }
+#     return render(request, 'users/addresses/addresses.html', context)
+
+# @login_required
+# @require_POST
+# def set_default_address_view(request, address_id):
+#     """Set an address as default"""
+#     address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+#     # Remove default from all other addresses
+#     Address.objects.filter(user=request.user).update(is_default=False)
+    
+#     # Set this address as default
+#     address.is_default = True
+#     address.save()
+    
+#     messages.success(request, f'"{address.full_name}" set as default address.')
+#     return redirect('users:addresses')
+
+
+# # Add this new view for AJAX address submission from checkout
+# @login_required
+# @require_POST
+# def add_address_ajax_view(request):
+#     """Add address via AJAX from checkout page"""
+#     form = AddressForm(request.POST)
+    
+#     if form.is_valid():
+#         address = form.save(commit=False)
+#         address.user = request.user
+#         address.save()
+        
+#         return JsonResponse({
+#             'success': True,
+#             'message': 'Address added successfully!',
+#             'address': {
+#                 'id': address.id,
+#                 'full_name': address.full_name,
+#                 'address_line1': address.address_line1,
+#                 'address_line2': address.address_line2,
+#                 'city': address.city,
+#                 'state': address.state,
+#                 'postal_code': address.postal_code,
+#                 'phone': address.phone,
+#                 'is_default': address.is_default,
+#                 'full_address': address.full_address
+#             }
+#         })
+#     else:
+#         # Return form errors
+#         errors = {}
+#         for field, error_list in form.errors.items():
+#             errors[field] = [str(error) for error in error_list]
+        
+#         return JsonResponse({
+#             'success': False,
+#             'errors': errors
+#         })
+# @login_required
+# def add_address_view(request):
+#     """Add new address with optional redirect to checkout"""
+#     if request.method == 'POST':
+#         form = AddressForm(request.POST)
+#         if form.is_valid():
+#             address = form.save(commit=False)
+#             address.user = request.user
+#             address.save()
+#             messages.success(request, 'Address added successfully!')
+            
+#             # ✅ FIX: Check if coming from checkout
+#             next_url = request.POST.get('next') or request.GET.get('next')
+#             if next_url == 'checkout':
+#                 # Redirect back to checkout view in products app
+#                 return redirect('products:checkout_view')  # ✅ FIXED: Use correct namespace
+            
+#             return redirect('users:addresses')  # Default redirect to addresses page
+#         else:
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, error)
+#     else:
+#         form = AddressForm()
+    
+#     # ✅ FIX: Get the next parameter to pass to template
+#     next_url = request.GET.get('next', '')
+    
+#     return render(request, 'users/addresses/add_address.html', {
+#         'form': form,
+#         'next': next_url  # Pass to template
+#     })
+
+
+
+# @login_required
+# def edit_address_view(request, address_id):
+#     """Edit existing address with optional redirect to checkout"""
+#     address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+#     if request.method == 'POST':
+#         form = AddressForm(request.POST, instance=address)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, 'Address updated successfully!')
+            
+#             # FIXED: Check if coming from checkout
+#             next_url = request.POST.get('next') or request.GET.get('next')
+#             if next_url == 'checkout':
+#                 return redirect('products:checkout_view')
+            
+#             return redirect('users:profile')
+#         else:
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, error)
+#     else:
+#         form = AddressForm(instance=address)
+    
+#     # FIXED: Get the next parameter to pass to template
+#     next_url = request.GET.get('next', '')
+    
+#     return render(request, 'users/addresses/edit_address.html', {
+#         'form': form,
+#         'address': address,
+#         'next': next_url
+#     })
+
+
+# @login_required
+# def delete_address_view(request, address_id):
+#     """Delete address"""
+#     address = get_object_or_404(Address, id=address_id, user=request.user)
+    
+#     if request.method == 'POST':
+#         address.delete()
+#         messages.success(request, 'Address deleted successfully!')
+        
+#         # FIXED: Check if coming from checkout
+#         next_url = request.POST.get('next') or request.GET.get('next')
+#         if next_url == 'checkout':
+#             return redirect('products:checkout_view')
+        
+#         return redirect('users:profile')
+    
+#     # FIXED: Pass next parameter to template for delete confirmation
+#     next_url = request.GET.get('next', '')
+    
+#     return render(request, 'users/addresses/delete_address.html', {
+#         'address': address,
+#         'next': next_url
+#     })
 
 # ------------------ UTILITY FUNCTIONS ------------------
 

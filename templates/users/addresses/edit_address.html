@@ -1,6 +1,3 @@
-<!-- ========================================
-     5. edit_address.html
-     ======================================== -->
 {% extends "users/profile/base.html" %}
 
 {% block page_title %}Edit Address{% endblock %}
@@ -12,10 +9,10 @@
 {% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary btn-sm me-2">
+<a href="{% if next == 'checkout' %}{% url 'products:checkout_view' %}{% else %}{% url 'users:addresses' %}{% endif %}" class="btn btn-outline-secondary btn-sm me-2">
     <i class="fas fa-arrow-left me-1"></i>Back
 </a>
-<a href="{% url 'users:delete_address' address.id %}" class="btn btn-outline-danger btn-sm">
+<a href="{% url 'users:delete_address' address.id %}{% if next %}?next={{ next }}{% endif %}" class="btn btn-outline-danger btn-sm">
     <i class="fas fa-trash me-1"></i>Delete
 </a>
 {% endblock %}
@@ -30,6 +27,11 @@
 <form method="post">
     {% csrf_token %}
     
+    <!-- FIXED: Pass 'next' parameter for redirect after save -->
+    {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+    
     <div class="card">
         <div class="card-header"><i class="fas fa-user me-2"></i>Contact Information</div>
         <div class="card-body">
@@ -37,12 +39,24 @@
                 <div class="col-md-8 mb-3">
                     <label for="id_full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
                     {{ form.full_name }}
-                    {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+                    {% if form.full_name.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.full_name.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="id_phone" class="form-label">Phone Number</label>
+                    <label for="id_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
                     {{ form.phone }}
-                    {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors.0 }}</div>{% endif %}
+                    {% if form.phone.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.phone.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -52,37 +66,75 @@
         <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Address Details</div>
         <div class="card-body">
             <div class="mb-3">
-                <label for="id_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                {{ form.line1 }}
-                {% if form.line1.errors %}<div class="text-danger small">{{ form.line1.errors.0 }}</div>{% endif %}
+                <!-- FIXED: Changed from 'line1' to 'address_line1' to match model field -->
+                <label for="id_address_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
+                {{ form.address_line1 }}
+                {% if form.address_line1.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.address_line1.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
             <div class="mb-3">
-                <label for="id_line2" class="form-label">Address Line 2 (Optional)</label>
-                {{ form.line2 }}
-                {% if form.line2.errors %}<div class="text-danger small">{{ form.line2.errors.0 }}</div>{% endif %}
+                <!-- FIXED: Changed from 'line2' to 'address_line2' to match model field -->
+                <label for="id_address_line2" class="form-label">Address Line 2 (Optional)</label>
+                {{ form.address_line2 }}
+                {% if form.address_line2.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.address_line2.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                        </div>
+                {% endif %}
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="id_city" class="form-label">City <span class="text-danger">*</span></label>
                     {{ form.city }}
-                    {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                    {% if form.city.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.city.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="id_state" class="form-label">State/Province <span class="text-danger">*</span></label>
                     {{ form.state }}
-                    {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
+                    {% if form.state.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.state.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="id_postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
                     {{ form.postal_code }}
-                    {% if form.postal_code.errors %}<div class="text-danger small">{{ form.postal_code.errors.0 }}</div>{% endif %}
+                    {% if form.postal_code.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.postal_code.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="id_country" class="form-label">Country <span class="text-danger">*</span></label>
                     {{ form.country }}
-                    {% if form.country.errors %}<div class="text-danger small">{{ form.country.errors.0 }}</div>{% endif %}
+                    {% if form.country.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in form.country.errors %}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -92,13 +144,35 @@
         <div class="card-body">
             <div class="form-check">
                 {{ form.is_default }}
-                <label class="form-check-label" for="id_is_default">Set as default address</label>
+                <label class="form-check-label" for="id_is_default">
+                    <i class="fas fa-star text-warning me-1"></i>Set as default address
+                </label>
+                {% if form.is_default.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.is_default.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
+            <small class="text-muted d-block mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Your default address will be pre-selected during checkout.
+            </small>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between">
-        <a href="{% url 'users:addresses' %}" class="btn btn-outline-secondary">
+    <!-- Display non-field errors if any -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="{% if next == 'checkout' %}{% url 'products:checkout_view' %}{% else %}{% url 'users:addresses' %}{% endif %}" class="btn btn-outline-secondary">
             <i class="fas fa-times me-1"></i>Cancel
         </a>
         <button type="submit" class="btn btn-primary">
@@ -106,4 +180,46 @@
         </button>
     </div>
 </form>
+
+<!-- Optional: Add client-side validation feedback -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(e) {
+        // Basic client-side validation
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+});
+</script>
+
+<style>
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    
+    .form-check-input:checked {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+</style>
 {% endblock %}
+
+
+
+

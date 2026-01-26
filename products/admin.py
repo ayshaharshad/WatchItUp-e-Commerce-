@@ -8,7 +8,7 @@ from .models import (
     Category, Brand, Product, ProductImage, ProductReview, Coupon, CouponUsage,
     ProductVariant, ProductVariantImage, Cart, CartItem, 
     Order, OrderItem, OrderCancellation, OrderReturn, RazorpayPayment,
-    Wishlist, WishlistItem, Checkout, CheckoutItem, ProductOffer, CategoryOffer, ReferralCoupon
+    Wishlist, WishlistItem, Checkout, CheckoutItem, ProductOffer, CategoryOffer, ReferralCoupon ,ProductReview
 )
 
 # ------------------ CATEGORY ------------------
@@ -106,11 +106,11 @@ class ProductImageInline(admin.TabularInline):
 
 
 # ------------------ PRODUCT REVIEW INLINE ------------------
-class ProductReviewInline(admin.TabularInline):
-    model = ProductReview
-    extra = 0
-    fields = ('user', 'variant', 'rating', 'review_text', 'is_active', 'created_at')
-    readonly_fields = ('created_at',)
+# class ProductReviewInline(admin.TabularInline):
+#     model = ProductReview
+#     extra = 0
+#     fields = ('user', 'variant', 'rating', 'review_text', 'is_active', 'created_at')
+#     readonly_fields = ('created_at',)
 
 # ------------------ PRODUCT ------------------
 @admin.register(Product)
@@ -121,7 +121,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ('base_price', 'is_active')
     
     # ✅ CRITICAL: Correct order - ProductImageInline FIRST (general), then ProductVariantInline
-    inlines = [ProductImageInline, ProductVariantInline, ProductReviewInline]
+    inlines = [ProductImageInline, ProductVariantInline,]
     
     fieldsets = (
         ('Basic Information', {
@@ -191,13 +191,13 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_editable = ('is_primary',)
 
 # ------------------ PRODUCT REVIEW ------------------
-@admin.register(ProductReview)
-class ProductReviewAdmin(admin.ModelAdmin):
-    list_display = ('product', 'variant', 'user', 'rating', 'is_active', 'created_at')
-    list_filter = ('rating', 'is_active', 'created_at')
-    search_fields = ('product__name', 'user__username', 'review_text')
-    list_editable = ('is_active',)
-    readonly_fields = ('created_at',)
+# @admin.register(ProductReview)
+# class ProductReviewAdmin(admin.ModelAdmin):
+#     list_display = ('product', 'variant', 'user', 'rating', 'is_active', 'created_at')
+#     list_filter = ('rating', 'is_active', 'created_at')
+#     search_fields = ('product__name', 'user__username', 'review_text')
+#     list_editable = ('is_active',)
+#     readonly_fields = ('created_at',)
 
 # ------------------ COUPON USAGE INLINE ------------------
 class CouponUsageInline(admin.TabularInline):
@@ -249,6 +249,42 @@ class CouponUsageAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+    
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        'product', 'user', 'rating', 'title', 
+        'is_verified_purchase', 'is_active', 'created_at'
+    )
+    list_filter = ('rating', 'is_active', 'is_verified_purchase', 'created_at')
+    search_fields = ('product__name', 'user__username', 'user__email', 'title', 'review_text')
+    list_editable = ('is_active',)
+    readonly_fields = ('created_at', 'updated_at', 'is_verified_purchase')
+    
+    fieldsets = (
+        ('Review Details', {
+            'fields': ('product', 'user', 'rating', 'title', 'review_text')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'is_verified_purchase')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+    
+    actions = ['approve_reviews', 'reject_reviews']
+    
+    def approve_reviews(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} reviews approved.')
+    approve_reviews.short_description = 'Approve selected reviews'
+    
+    def reject_reviews(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} reviews rejected.')
+    reject_reviews.short_description = 'Reject selected reviews'
 
 # ------------------ CART ITEM INLINE ------------------
 class CartItemInline(admin.TabularInline):

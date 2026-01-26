@@ -444,17 +444,25 @@ class ProductReview(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         help_text="Rating from 1 to 5 stars"
     )
+    title = models.CharField(max_length=255, null=True, blank=True)
     review_text = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)  # For admin moderation
+    is_verified_purchase = models.BooleanField(default=False)  # NEW - Auto-set if user bought it
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)  # NEW - Track edits
     
     class Meta:
         ordering = ['-created_at']
-        unique_together = ('product', 'user')
+        unique_together = ('product', 'user')  # One review per user per product
     
     def __str__(self):
         variant_info = f" ({self.variant.get_color_display()})" if self.variant else ""
         return f"{self.user.username} - {self.product.name}{variant_info} ({self.rating} stars)"
+    
+    @property
+    def star_display(self):
+        """Return filled/empty stars for display"""
+        return '★' * self.rating + '☆' * (5 - self.rating)
 
 
 
