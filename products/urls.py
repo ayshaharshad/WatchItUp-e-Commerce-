@@ -70,6 +70,10 @@ urlpatterns = [
     path('wishlist/clear/', views.clear_wishlist, name='clear_wishlist'),
     path('wishlist/move-to-cart/<uuid:item_uuid>/', views.move_to_cart_from_wishlist, name='move_to_cart_from_wishlist'),
     path('wishlist/check/<uuid:uuid>/', views.check_wishlist_status, name='check_wishlist_status'),
+    # ✅ NEW: Toggle wishlist (add/remove in one endpoint)
+    path('wishlist/toggle/<uuid:uuid>/', views.toggle_wishlist, name='toggle_wishlist'),
+    # ✅ NEW: Bulk check wishlist status for product listing
+    path('wishlist/bulk-check/', views.bulk_check_wishlist_status, name='bulk_check_wishlist_status'),
 
     #------Reviews and Ratings-----#
     path('review/add/<int:order_item_id>/', views.add_review, name='add_review'),

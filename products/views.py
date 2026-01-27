@@ -3726,7 +3726,172 @@ def check_wishlist_status(request, uuid):
             'wishlist_count': 0,
             'error': str(e)
         })
+
+@login_required
+@require_POST
+def toggle_wishlist(request, uuid):
+    """
+    Toggle product in/out of wishlist (AJAX endpoint)
+    Handles products with and without variants intelligently
+    """
+    try:
+        product = get_object_or_404(Product, uuid=uuid)
+        
+        # Validate product availability
+        if not product.is_active or not product.category.is_active:
+            return JsonResponse({
+                'success': False,
+                'message': f"'{product.name}' is currently unavailable."
+            })
+        
+        # Get or create wishlist
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+        
+        # Get variant color from POST (optional)
+        variant_color = request.POST.get('variant_color', '').strip()
+        
+        # Get all active variants
+        active_variants = product.variants.filter(is_active=True)
+        has_variants = active_variants.exists()
+        
+        # Determine variant to use
+        variant_to_use = None
+        
+        if has_variants:
+            if variant_color:
+                # User selected specific variant
+                try:
+                    variant_to_use = active_variants.get(color=variant_color)
+                except ProductVariant.DoesNotExist:
+                    # Invalid variant color, use first available
+                    variant_to_use = active_variants.first()
+            else:
+                # No variant specified, use first available
+                variant_to_use = active_variants.first()
+        # else: variant_to_use remains None for products without variants
+        
+        # Check if item exists in wishlist
+        existing_item = WishlistItem.objects.filter(
+            wishlist=wishlist,
+            product=product,
+            variant=variant_to_use
+        ).first()
+        
+        if existing_item:
+            # REMOVE from wishlist
+            existing_item.delete()
+            
+            # Build message
+            if variant_to_use:
+                message = f"Removed '{product.name}' ({variant_to_use.get_color_display()}) from wishlist"
+            else:
+                message = f"Removed '{product.name}' from wishlist"
+            
+            return JsonResponse({
+                'success': True,
+                'action': 'removed',
+                'message': message,
+                'in_wishlist': False,
+                'wishlist_count': wishlist.total_items
+            })
+        else:
+            # ADD to wishlist
+            WishlistItem.objects.create(
+                wishlist=wishlist,
+                product=product,
+                variant=variant_to_use
+            )
+            
+            # Build message
+            if variant_to_use:
+                message = f"Added '{product.name}' ({variant_to_use.get_color_display()}) to wishlist"
+            else:
+                message = f"Added '{product.name}' to wishlist"
+            
+            return JsonResponse({
+                'success': True,
+                'action': 'added',
+                'message': message,
+                'in_wishlist': True,
+                'wishlist_count': wishlist.total_items
+            })
+        
+    except Product.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Product not found.'
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred. Please try again.'
+        })
+
+
+@require_GET
+def bulk_check_wishlist_status(request):
+    """
+    Check wishlist status for multiple products at once (AJAX)
+    Returns a dict of {product_uuid: in_wishlist_boolean}
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': True,
+            'wishlist_status': {},
+            'wishlist_count': 0
+        })
     
+    try:
+        # Get product UUIDs from query param
+        product_uuids = request.GET.getlist('uuids[]')
+        
+        if not product_uuids:
+            return JsonResponse({
+                'success': True,
+                'wishlist_status': {},
+                'wishlist_count': 0
+            })
+        
+        wishlist = Wishlist.objects.filter(user=request.user).first()
+        if not wishlist:
+            return JsonResponse({
+                'success': True,
+                'wishlist_status': {uuid: False for uuid in product_uuids},
+                'wishlist_count': 0
+            })
+        
+        # Get all wishlist items for these products
+        wishlist_items = WishlistItem.objects.filter(
+            wishlist=wishlist,
+            product__uuid__in=product_uuids
+        ).select_related('product', 'variant')
+        
+        # Build status dict
+        wishlist_status = {}
+        for uuid in product_uuids:
+            # Check if any wishlist item matches this product
+            # For products without variants, we check variant=None
+            # For products with variants, we check if ANY variant is wishlisted
+            has_item = wishlist_items.filter(product__uuid=uuid).exists()
+            wishlist_status[uuid] = has_item
+        
+        return JsonResponse({
+            'success': True,
+            'wishlist_status': wishlist_status,
+            'wishlist_count': wishlist.total_items
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'message': str(e),
+            'wishlist_status': {},
+            'wishlist_count': 0
+        })
 
 
 

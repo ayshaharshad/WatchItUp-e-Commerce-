@@ -78,6 +78,615 @@
                                 </div>
                                 <div class="form-group">
                                     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                                    <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm">Clear Price</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="col-lg-9 col-md-9">
+                <div class="row">
+                    <!-- Sort and Results Info -->
+                    <div class="col-md-12">
+                        <div class="shop-top d-flex justify-content-between align-items-center mb-4">
+                            <div class="shop-result">
+                                <p>Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_products }} results</p>
+                            </div>
+                            <div class="shop-sort">
+                                <form method="get" class="sort-form">
+                                    <input type="hidden" name="q" value="{{ search_query }}">
+                                    <input type="hidden" name="category" value="{{ category_filter }}">
+                                    <input type="hidden" name="min_price" value="{{ min_price }}">
+                                    <input type="hidden" name="max_price" value="{{ max_price }}">
+                                    
+                                    <select name="sort" class="form-control" onchange="this.form.submit()">
+                                        <option value="">Sort by</option>
+                                        <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                                        <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                                        <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name: A-Z</option>
+                                        <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name: Z-A</option>
+                                    </select>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products -->
+                    {% if products %}
+                        {% for product in products %}
+                        <div class="col-lg-4 col-md-6 mb-4 text-center">
+                            <div class="product-entry border position-relative">
+                                <!-- ✅ WISHLIST HEART BUTTON -->
+                                <button class="wishlist-btn" 
+                                        data-product-uuid="{{ product.uuid }}"
+                                        data-product-name="{{ product.name }}"
+                                        {% if not user.is_authenticated %}
+                                        data-requires-login="true"
+                                        {% endif %}
+                                        aria-label="Add to wishlist">
+                                    <svg class="heart-icon" viewBox="0 0 24 24" width="24" height="24">
+                                        <path class="heart-outline" d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                                        <path class="heart-filled" d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z" fill="currentColor" opacity="0"/>
+                                    </svg>
+                                </button>
+                                
+                                <a href="{% url 'products:product_detail' product.uuid %}" class="prod-img">
+                                    {% if product.images.first %}
+                                        <img src="{{ product.images.first.image.url }}" class="img-fluid" alt="{{ product.name }}">
+                                    {% else %}
+                                        <img src="{% static 'products/images/no-image.jpg' %}" class="img-fluid" alt="No Image">
+                                    {% endif %}
+                                </a>
+                                <div class="desc">
+                                    <h2><a href="{% url 'products:product_detail' product.uuid %}">{{ product.name }}</a></h2>
+                                    {% if product.brand %}
+                                        <span class="brand">{{ product.brand.name }}</span>
+                                    {% endif %}
+                                    
+                                    {% if product.has_variants %}
+                                        <span class="price">{{ product.price_range }}</span>
+                                    {% else %}
+                                        <span class="price">₹{{ product.base_price }}</span>
+                                    {% endif %}
+                                    
+                                    {% if not product.is_in_stock %}
+                                        <span class="badge badge-danger mt-2">Out of Stock</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-md-12">
+                            <div class="alert alert-info text-center">
+                                <h4>No products found</h4>
+                                <p>Try adjusting your search or filter criteria.</p>
+                                <a href="{{ request.path }}" class="btn btn-primary">View All Products</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="row">
+                    <div class="col text-center">
+                        <div class="block-27">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li><a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}">&lt;</a></li>
+                                    <li><a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Previous</a></li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="active"><span>{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li><a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li><a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Next</a></li>
+                                    <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}">&gt;</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ✅ WISHLIST HEART BUTTON STYLES */
+.wishlist-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.wishlist-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.wishlist-btn .heart-icon {
+    color: #dc3545;
+    transition: all 0.3s ease;
+}
+
+.wishlist-btn .heart-filled {
+    transition: opacity 0.3s ease;
+}
+
+.wishlist-btn.in-wishlist .heart-outline {
+    opacity: 0;
+}
+
+.wishlist-btn.in-wishlist .heart-filled {
+    opacity: 1;
+}
+
+.wishlist-btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.wishlist-btn.animate-heart {
+    animation: heartBeat 0.5s ease;
+}
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    50% { transform: scale(1.1); }
+    75% { transform: scale(1.25); }
+}
+
+.shop-top {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.sidebar-box {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-box h3 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 18px;
+}
+
+.categories li a.active {
+    color: #88c8bc;
+    font-weight: bold;
+}
+
+.price-form .form-group {
+    margin-bottom: 15px;
+}
+
+.price-form label {
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.product-entry {
+    transition: transform 0.3s ease;
+    position: relative;
+}
+
+.product-entry:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.brand {
+    display: block;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.badge {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 3px;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Toast notification styles */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.custom-toast {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.custom-toast.success {
+    border-left: 4px solid #28a745;
+}
+
+.custom-toast.error {
+    border-left: 4px solid #dc3545;
+}
+
+.custom-toast.info {
+    border-left: 4px solid #17a2b8;
+}
+
+.toast-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-icon.success { 
+    color: #28a745;
+}
+
+.toast-icon.success::before {
+    content: "✓";
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.toast-icon.error { 
+    color: #dc3545;
+}
+
+.toast-icon.error::before {
+    content: "✕";
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.toast-icon.info { 
+    color: #17a2b8;
+}
+
+.toast-icon.info::before {
+    content: "i";
+    font-size: 20px;
+    font-weight: bold;
+    font-style: italic;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+</style>
+
+<!-- ✅ WISHLIST FUNCTIONALITY JAVASCRIPT -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ===============================================
+    // CSRF TOKEN SETUP
+    // ===============================================
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    // ===============================================
+    // TOAST NOTIFICATION SYSTEM
+    // ===============================================
+    function showToast(message, type = 'success') {
+        // Create toast container if doesn't exist
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `custom-toast ${type}`;
+        
+        toast.innerHTML = `
+            <div class="toast-icon ${type}"></div>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close">&times;</button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Close button
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            toast.remove();
+        });
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            toast.style.animation = 'slideIn 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // ===============================================
+    // CHECK WISHLIST STATUS ON PAGE LOAD
+    // ===============================================
+    const isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    
+    if (isAuthenticated) {
+        const productUUIDs = [];
+        document.querySelectorAll('.wishlist-btn').forEach(btn => {
+            const uuid = btn.dataset.productUuid;
+            if (uuid) productUUIDs.push(uuid);
+        });
+        
+        if (productUUIDs.length > 0) {
+            // Build query string
+            const params = new URLSearchParams();
+            productUUIDs.forEach(uuid => params.append('uuids[]', uuid));
+            
+            fetch(`{% url 'products:bulk_check_wishlist_status' %}?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update heart icons based on status
+                        document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                            const uuid = btn.dataset.productUuid;
+                            if (data.wishlist_status[uuid]) {
+                                btn.classList.add('in-wishlist');
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Error checking wishlist:', error));
+        }
+    }
+    
+    // ===============================================
+    // WISHLIST TOGGLE CLICK HANDLER
+    // ===============================================
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Check if user is logged in
+            if (this.dataset.requiresLogin === 'true') {
+                showToast('Please log in to add items to wishlist', 'info');
+                setTimeout(() => {
+                    window.location.href = '{% url "users:login" %}?next=' + window.location.pathname;
+                }, 1500);
+                return;
+            }
+            
+            // Prevent multiple clicks
+            if (this.classList.contains('loading')) return;
+            
+            const productUuid = this.dataset.productUuid;
+            const productName = this.dataset.productName;
+            const isInWishlist = this.classList.contains('in-wishlist');
+            
+            // Add loading state
+            this.classList.add('loading');
+            
+            // Make AJAX request
+            fetch(`/products/wishlist/toggle/${productUuid}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.classList.remove('loading');
+                
+                if (data.success) {
+                    // Animate heart
+                    this.classList.add('animate-heart');
+                    setTimeout(() => this.classList.remove('animate-heart'), 500);
+                    
+                    // Toggle heart state
+                    if (data.action === 'added') {
+                        this.classList.add('in-wishlist');
+                    } else {
+                        this.classList.remove('in-wishlist');
+                    }
+                    
+                    // Show toast notification
+                    showToast(data.message, 'success');
+                    
+                    // Update wishlist count in header if exists
+                    const wishlistCountEl = document.querySelector('.wishlist-count');
+                    if (wishlistCountEl) {
+                        wishlistCountEl.textContent = data.wishlist_count;
+                    }
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                this.classList.remove('loading');
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+{% comment %} {% extends 'products/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="breadcrumbs">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <p class="bread"><span><a href="{% url 'products:home' %}">Home</a></span> / <span>Products</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="colorlib-shop">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3 col-md-3">
+                <div class="row">
+                    <!-- Search Form -->
+                    <div class="col-md-12">
+                        <div class="sidebar-box">
+                            <h3>Search Products</h3>
+                            <form method="get" class="search-form">
+                                <input type="hidden" name="category" value="{{ category_filter }}">
+                                <input type="hidden" name="min_price" value="{{ min_price }}">
+                                <input type="hidden" name="max_price" value="{{ max_price }}">
+                                <input type="hidden" name="sort" value="{{ sort_by }}">
+                                
+                                <div class="form-group">
+                                    <input type="text" name="q" class="form-control" placeholder="Search for products..." value="{{ search_query }}">
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                                    {% if search_query or category_filter or min_price or max_price %}
+                                        <a href="{{ request.path }}" class="btn btn-secondary btn-sm ml-2">Clear All</a>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="col-md-12">
+                        <div class="sidebar-box">
+                            <h3>Categories</h3>
+                            <ul class="categories">
+                                <li><a href="?q={{ search_query }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}">All Categories <span>({{ total_products }})</span></a></li>
+                                {% for category in categories %}
+                                    <li>
+                                        <a href="?q={{ search_query }}&category={{ category.name }}&min_price={{ min_price }}&max_price={{ max_price }}&sort={{ sort_by }}" 
+                                           {% if category_filter == category.name %}class="active"{% endif %}>
+                                            {{ category.name }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="col-md-12">
+                        <div class="sidebar-box">
+                            <h3>Price Range</h3>
+                            <form method="get" class="price-form">
+                                <input type="hidden" name="q" value="{{ search_query }}">
+                                <input type="hidden" name="category" value="{{ category_filter }}">
+                                <input type="hidden" name="sort" value="{{ sort_by }}">
+                                
+                                <div class="form-group">
+                                    <label>Min Price:</label>
+                                    <input type="number" name="min_price" class="form-control" placeholder="Min" value="{{ min_price }}" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <label>Max Price:</label>
+                                    <input type="number" name="max_price" class="form-control" placeholder="Max" value="{{ max_price }}" step="0.01">
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                                     <!-- ✅ Clear Price -->
                                 <a href="{{ request.path }}" class="btn btn-outline-secondary btn-sm">
                                     Clear Price
@@ -254,4 +863,4 @@
 
 
 
-
+ {% endcomment %}
