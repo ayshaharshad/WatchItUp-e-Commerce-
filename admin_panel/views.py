@@ -44,12 +44,8 @@ User = get_user_model()
 
 
 
-# ---------------- DECORATORS ----------------
+# ---------------- Custom DECORATORS ----------------
 def superuser_required(view_func):
-    """
-    Custom decorator that checks if user is authenticated AND is a superuser.
-    Redirects to admin login if not authenticated or not a superuser.
-    """
     decorated_view_func = login_required(login_url='admin_panel:admin_login')(view_func)
     return user_passes_test(
         lambda u: u.is_superuser,
