@@ -24,53 +24,33 @@ from .models import (
 )
 from users.models import Address, Wallet
 
-# Initialize Razorpay client
+# Initialize Razorpay client object
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 
-COD_MAX_AMOUNT = Decimal('1000.00')  # Maximum order amount allowed for COD
+COD_MAX_AMOUNT = Decimal('1000.00')  
 
 # |---------Products----------|
 
 def home(request):
-    """Home page view"""
     return render(request, 'products/home.html')
 
 
 def product_list(request):
-    """
-    Product listing with search, filter, sort and pagination
-    Supports:
-    - search
-    - category filter
-    - color filter
-    - price filter (base + variants)
-    - sorting
-    """
-
-    # -------------------------------------------------
-    # 1️⃣ Base queryset
-    # -------------------------------------------------
     products = (
         Product.objects
         .filter(is_active=True)
         .select_related('category', 'brand')
         .prefetch_related('variants__images')
     )
-
-    # -------------------------------------------------
-    # 2️⃣ Annotate EFFECTIVE PRICE (used everywhere)
-    # -------------------------------------------------
+    # Annotate EFFECTIVE PRICE 
     products = products.annotate(
         effective_price=Coalesce(
             Min('variants__price', filter=Q(variants__is_active=True)),
             'base_price'
         )
     )
-
-    # -------------------------------------------------
-    # 3️⃣ Read query params
-    # -------------------------------------------------
+    # Read query params
     search_query = request.GET.get('q', '')
     category_filter = request.GET.get('category', '')
     color_filter = request.GET.get('color', '')
@@ -78,34 +58,26 @@ def product_list(request):
     max_price = request.GET.get('max_price', '')
     sort_by = request.GET.get('sort', '')
 
-    # -------------------------------------------------
-    # 4️⃣ Search
-    # -------------------------------------------------
+    # Search
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(brand__name__icontains=search_query)
         )
-
-    # -------------------------------------------------
-    # 5️⃣ Category filter
-    # -------------------------------------------------
+    # Category filter
     if category_filter:
         products = products.filter(category__name=category_filter)
 
-    # -------------------------------------------------
-    # 6️⃣ Color filter (variants)
-    # -------------------------------------------------
+    # Color filter (variants)
+
     if color_filter:
         products = products.filter(
             variants__color=color_filter,
             variants__is_active=True
         )
 
-    # -------------------------------------------------
-    # 7️⃣ Price range filter (SAFE & CORRECT)
-    # -------------------------------------------------
+    # Price range filter (SAFE & CORRECT)
     if min_price:
         try:
             products = products.filter(
@@ -122,9 +94,7 @@ def product_list(request):
         except Exception:
             max_price = ''
 
-    # -------------------------------------------------
-    # 8️⃣ Sorting (reuse effective_price)
-    # -------------------------------------------------
+    # Sorting 
     sort_by = request.GET.get('sort')
 
     if sort_by == 'price_low':
@@ -139,21 +109,15 @@ def product_list(request):
     else:
         products = products.order_by('-created_at')
 
-    # -------------------------------------------------
-    # 9️⃣ Remove duplicates (variants JOIN safety)
-    # -------------------------------------------------
+    # Remove duplicates 
     products = products.distinct()
 
-    # -------------------------------------------------
-    # 🔟 Pagination
-    # -------------------------------------------------
+    # Pagination
     paginator = Paginator(products, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # -------------------------------------------------
-    # 1️⃣1️⃣ Sidebar data
-    # -------------------------------------------------
+    # Sidebar data
     categories = Category.objects.filter(is_active=True)
     available_colors = ProductVariant.COLOR_CHOICES
 
@@ -162,9 +126,7 @@ def product_list(request):
     query_params.pop('page', None)
     query_string = query_params.urlencode()
 
-    # -------------------------------------------------
-    # 1️⃣2️⃣ Context
-    # -------------------------------------------------
+    # Context
     context = {
         'page_obj': page_obj,
         'products': page_obj.object_list,
@@ -186,7 +148,6 @@ def product_list(request):
 # |---------Categories----------|
 
 def men_products(request):
-    """Men's products listing - FIXED SORTING"""
     products = Product.objects.filter(
         is_active=True, 
         category__name='Men'
@@ -232,7 +193,7 @@ def men_products(request):
         except:
             max_price = ''
     
-    # ✅ FIXED SORTING
+    # SORTING
     if sort_by == 'price_low':
         products = products.annotate(
             min_variant_price=Min('variants__price', filter=Q(variants__is_active=True)),
@@ -1019,11 +980,7 @@ def check_item_review_status(request, order_item_id):
 @login_required
 @require_POST
 def add_to_cart(request, uuid):
-    """
-    ✅ FIXED: Add product to cart with proper variant handling
-    - Products WITHOUT variants: Add base product
-    - Products WITH variants: REQUIRE variant selection
-    """
+
     try:
         product = get_object_or_404(Product, uuid=uuid)
         

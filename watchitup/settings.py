@@ -41,9 +41,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_ratelimit',
     
-    'users',
     'admin_panel',
     'products',
+    'users'
 
     
 ]

@@ -2,6 +2,7 @@
 {% load static %}
 {% load custom_filters %}
 
+
 {% block extra_head %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -839,11 +840,10 @@ $(document).ready(function() {
                     showMessage(response.message, 'success');
                     $btn.html('<i class="fas fa-check"></i> Added!').removeClass('btn-primary').addClass('btn-success');
                     setTimeout(() => {
-                        if (confirm('View cart now?')) {
-                            window.location.href = '{% url "products:cart_view" %}';
-                        } else {
-                            $btn.prop('disabled', false).html(originalText).removeClass('btn-success').addClass('btn-primary');
-                        }
+                        $btn.prop('disabled', false)
+                            .html(originalText)
+                            .removeClass('btn-success')
+                            .addClass('btn-primary');
                     }, 1000);
                 } else {
                     showMessage(response.message, 'error');
