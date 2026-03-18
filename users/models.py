@@ -210,7 +210,6 @@ class CustomUser(AbstractUser):
 
 
 class Wallet(models.Model):
-    """User wallet for storing refunds and making payments"""
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

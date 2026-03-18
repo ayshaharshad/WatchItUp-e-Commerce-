@@ -44,7 +44,10 @@ User = get_user_model()
 
 
 
-# ---------------- Custom DECORATORS ----------------
+########################################################################
+############---------------- CUSTOM DECORATORS ----------------#########
+########################################################################
+
 def superuser_required(view_func):
     decorated_view_func = login_required(login_url='admin_panel:admin_login')(view_func)
     return user_passes_test(
@@ -52,7 +55,38 @@ def superuser_required(view_func):
         login_url='admin_panel:admin_login'
     )(decorated_view_func)
 
-# ---------------- LOGIN ----------------
+
+########################################################################
+############---------- HELPER FUNCTIONS (CALCULATING REFUND) -----#########
+########################################################################
+ 
+def calculate_full_refund_amount(order):
+    return order.total or Decimal('0')
+ 
+ 
+def process_wallet_refund(order, transaction_type, description):
+   
+    refund_amount = calculate_full_refund_amount(order)
+ 
+    if refund_amount <= 0:
+        return None, Decimal('0')
+ 
+    wallet, _ = Wallet.objects.get_or_create(user=order.user)
+    wallet.add_money(
+        amount=refund_amount,
+        transaction_type=transaction_type,
+        description=description,
+        reference_id=order.order_id
+    )
+ 
+    order.payment_status = 'refunded'
+ 
+    return wallet, refund_amount
+
+########################################################################
+############---------------- AUTHENTICATION ---------------##############
+########################################################################
+
 def admin_login(request):
     # Redirect to dashboard if already logged in as superuser
     if request.user.is_authenticated and request.user.is_superuser:
@@ -76,7 +110,9 @@ def admin_logout(request):
     logout(request)
     return redirect("admin_panel:admin_login")
 
-# ---------------- DASHBOARD ----------------
+########################################################################
+############---------------- DASHBOARD ---------------##############
+########################################################################
 
 @superuser_required
 def dashboard(request):
@@ -213,7 +249,10 @@ def dashboard(request):
     
     return render(request, "admin_panel/dashboard.html", context)
 
-# ---------------- USER MANAGEMENT ----------------
+########################################################################
+############---------------- USER MANAGMENT---------------##############
+########################################################################
+
 @superuser_required
 def user_list(request):
     search = request.GET.get("q", "")
@@ -264,8 +303,10 @@ def block_unblock_user(request, user_id):
     return redirect("admin_panel:user_list")
 
 
+########################################################################
+############---------------- CATEGORY MANAGMENT---------------##########
+########################################################################
 
-# ---------------- CATEGORY MANAGEMENT ----------------
 @superuser_required
 def category_list(request):
     search = request.GET.get("q", "")
@@ -308,7 +349,10 @@ def delete_category(request, pk):
     messages.success(request, "Category deleted successfully.")
     return redirect("admin_panel:category_list")
 
-# ---------------- PRODUCT MANAGEMENT ----------------
+########################################################################
+############---------------- PRODUCT MANAGMENT---------------###########
+########################################################################
+
 @superuser_required
 def product_list(request):
     search = request.GET.get("q", "")
@@ -429,7 +473,10 @@ def delete_product(request, pk):
     messages.success(request, "Product deleted successfully.")
     return redirect("admin_panel:product_list")
 
-# ---------------- PRODUCT VARIANT MANAGEMENT ----------------
+###################################################################################
+############---------------- PRODUCT-VARIANT MANAGMENT---------------##############
+###################################################################################
+
 @superuser_required
 def variant_list(request):
     search = request.GET.get("q", "")
@@ -621,8 +668,9 @@ def product_variant_detail(request, product_id):
     return render(request, "admin_panel/product_variant_detail.html", context)
 
 
-# -------------------- ORDER MANAGEMENT --------------------
-
+########################################################################
+############---------------- ORDER MANAGMENT---------------#############
+########################################################################
 
 @superuser_required
 def order_list(request):
@@ -851,11 +899,6 @@ def order_detail_enhanced(request, order_id):
     return render(request, 'admin_panel/order_detail_enhanced.html', context)
 
 
-# ==================== ITEM-LEVEL CANCELLATION ====================
-
-
-
-
 @superuser_required
 def cancel_order_items_admin(request, order_id):
     """✅ Admin can cancel specific items from an order"""
@@ -975,7 +1018,6 @@ def cancel_order_items_admin(request, order_id):
     return render(request, 'admin_panel/cancel_order_items.html', context)
 
 
-# ==================== ITEM-LEVEL RETURN PROCESSING ====================
 
 @superuser_required
 def process_item_return_admin(request, return_id):
@@ -1046,8 +1088,6 @@ def process_item_return_admin(request, return_id):
     return redirect('admin_panel:return_request_detail', pk=return_id)
 
 
-# ==================== CANCELLATION HISTORY ====================
-
 @superuser_required
 def cancellation_history(request):
     """
@@ -1109,8 +1149,6 @@ def cancellation_history(request):
     return render(request, 'admin_panel/cancellation_history.html', context)
 
 
-# ==================== CANCELLATION DETAIL ====================
-
 @superuser_required
 def cancellation_detail(request, cancellation_id):
     """
@@ -1136,8 +1174,6 @@ def cancellation_detail(request, cancellation_id):
     return render(request, 'admin_panel/cancellation_detail.html', context)
 
 
-# ==================== AJAX: GET ORDER ITEMS ====================
-
 @superuser_required
 def get_order_items_for_cancellation(request, order_id):
     """
@@ -1162,9 +1198,6 @@ def get_order_items_for_cancellation(request, order_id):
         'items': items_data,
         'can_cancel': order.can_cancel
     })
-
-
-# ==================== STATISTICS DASHBOARD ====================
 
 @superuser_required
 def order_statistics_dashboard(request):
@@ -1265,26 +1298,34 @@ def order_statistics_dashboard(request):
 
 @superuser_required
 def update_order_status(request, order_id):
-    """✅ FIXED: Update order status with proper refund handling"""
     order = get_object_or_404(Order, order_id=order_id)
-    
+
     if request.method == 'POST':
         form = OrderStatusForm(request.POST, current_status=order.status)
         if form.is_valid():
             new_status = form.cleaned_data['status']
             notes = form.cleaned_data.get('notes', '')
-            
-            # Update order status
             old_status = order.status
+
+            # ✅ Guard: prevent any processing if status hasn't changed
+            if old_status == new_status:
+                messages.info(request, "Order status is already set to this value.")
+                return redirect('admin_panel:order_detail', order_id=order.order_id)
+
             order.status = new_status
-            
-            # 1. DELIVERED STATUS - Set delivered timestamp
+
+            # -----------------------------------------------------------
+            # 1. DELIVERED
+            # -----------------------------------------------------------
             if new_status == 'delivered' and not order.delivered_at:
                 order.delivered_at = timezone.now()
-            
-            # 2. CANCELLED STATUS - Restore stock + refund
+
+            # -----------------------------------------------------------
+            # 2. CANCELLED — restore stock + refund active items
+            # -----------------------------------------------------------
             elif new_status == 'cancelled' and old_status != 'cancelled':
-                # ✅ FIX: Only restore stock for ACTIVE items
+
+                # Restore stock for active items only
                 for item in order.items.filter(status='active'):
                     if item.variant:
                         item.variant.stock_quantity += item.quantity
@@ -1292,28 +1333,29 @@ def update_order_status(request, order_id):
                     else:
                         item.product.stock += item.quantity
                         item.product.save()
-                    
                     item.status = 'cancelled'
                     item.save()
-                
+
                 order.cancelled_at = timezone.now()
-                
-                # ✅ FIX: Refund only ACTIVE items amount
+
+                # ✅ FIXED: Only refund if payment completed AND not already refunded
                 if order.payment_status == 'completed':
-                    refund_amount = order.active_total  # Only active items
-                    order.payment_status = 'refunded'
-                    
-                    # Refund to wallet
-                    from users.models import Wallet
-                    wallet = Wallet.objects.get_or_create(user=order.user)[0]
-                    wallet.add_money(
-                        amount=refund_amount,
-                        transaction_type='credit_refund_cancellation',
-                        description=f'Refund for cancelled order {order.order_id}',
-                        reference_id=order.order_id
-                    )
-            
-            # 3. RETURN_APPROVED STATUS
+                    refund_amount = order.active_total
+
+                    if refund_amount > 0:
+                        order.payment_status = 'refunded'
+
+                        wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                        wallet.add_money(
+                            amount=refund_amount,
+                            transaction_type='credit_refund_cancel',  # ✅ FIXED key
+                            description=f'Refund for cancelled order {order.order_id}',
+                            reference_id=order.order_id
+                        )
+
+            # -----------------------------------------------------------
+            # 3. RETURN APPROVED
+            # -----------------------------------------------------------
             elif new_status == 'return_approved' and old_status == 'return_requested':
                 return_request = order.returns.filter(status='pending').first()
                 if return_request:
@@ -1322,10 +1364,24 @@ def update_order_status(request, order_id):
                     return_request.reviewed_by = request.user
                     return_request.reviewed_at = timezone.now()
                     return_request.save()
-            
-            # 4. ✅ RETURNED STATUS - Complete return + refund
-            elif new_status == 'returned' and old_status in ['return_approved', 'return_requested', 'delivered']:
-                # ✅ FIX: Restore stock only for ACTIVE items
+
+            # -----------------------------------------------------------
+            # 4. RETURNED — restore stock + refund active items
+            # -----------------------------------------------------------
+            elif new_status == 'returned' and old_status in [
+                'return_approved', 'return_requested', 'delivered'
+            ]:
+                # ✅ Guard: prevent double refund
+                if order.payment_status == 'refunded':
+                    messages.warning(
+                        request,
+                        f"Order {order.order_id} has already been refunded. "
+                        "No duplicate refund was processed."
+                    )
+                    order.save()
+                    return redirect('admin_panel:order_detail', order_id=order.order_id)
+
+                # Restore stock for active items
                 for item in order.items.filter(status='active'):
                     if item.variant:
                         item.variant.stock_quantity += item.quantity
@@ -1333,25 +1389,22 @@ def update_order_status(request, order_id):
                     else:
                         item.product.stock += item.quantity
                         item.product.save()
-                    
                     item.status = 'returned'
                     item.save()
-                
-                # ✅ FIX: Refund only ACTIVE items
+
                 refund_amount = order.active_total
                 order.payment_status = 'refunded'
-                
-                # Refund to wallet
-                from users.models import Wallet
-                wallet = Wallet.objects.get_or_create(user=order.user)[0]
+
+                # ✅ FIXED: correct transaction_type key
+                wallet, _ = Wallet.objects.get_or_create(user=order.user)
                 wallet.add_money(
                     amount=refund_amount,
-                    transaction_type='credit_refund_return',
+                    transaction_type='credit_refund_return',  # ✅ Correct key
                     description=f'Refund for returned order {order.order_id}',
                     reference_id=order.order_id
                 )
-                
-                # Update return request
+
+                # Update return request to completed
                 return_request = order.returns.filter(
                     status__in=['pending', 'approved']
                 ).first()
@@ -1359,67 +1412,68 @@ def update_order_status(request, order_id):
                     return_request.status = 'completed'
                     return_request.completed_at = timezone.now()
                     return_request.refund_status = 'processed'
-                    return_request.refund_amount = refund_amount  # ✅ Set correct amount
+                    return_request.refund_amount = refund_amount
                     return_request.reviewed_by = request.user
                     return_request.reviewed_at = timezone.now()
                     return_request.save()
-            
-            # 5. If order was cancelled and now being reactivated
-            if old_status == 'cancelled' and new_status in ['confirmed', 'pending', 'processing']:
+
+            # -----------------------------------------------------------
+            # 5. REACTIVATING a previously cancelled order
+            # -----------------------------------------------------------
+            elif old_status == 'cancelled' and new_status in [
+                'confirmed', 'pending', 'processing'
+            ]:
                 for item in order.items.filter(status='cancelled'):
-                    if item.variant:
-                        if item.variant.stock_quantity >= item.quantity:
-                            item.variant.stock_quantity -= item.quantity
-                            item.variant.save()
-                            item.status = 'active'
-                            item.save()
-                        else:
-                            messages.error(
-                                request, 
-                                f"Insufficient stock for {item.product_name}"
-                            )
-                            return redirect('admin_panel:order_detail', order_id=order.order_id)
+                    target = item.variant if item.variant else item.product
+                    stock_field = 'stock_quantity' if item.variant else 'stock'
+
+                    if getattr(target, stock_field) >= item.quantity:
+                        setattr(target, stock_field,
+                                getattr(target, stock_field) - item.quantity)
+                        target.save()
+                        item.status = 'active'
+                        item.save()
                     else:
-                        if item.product.stock >= item.quantity:
-                            item.product.stock -= item.quantity
-                            item.product.save()
-                            item.status = 'active'
-                            item.save()
-                        else:
-                            messages.error(
-                                request, 
-                                f"Insufficient stock for {item.product_name}"
-                            )
-                            return redirect('admin_panel:order_detail', order_id=order.order_id)
-            
-            # Add notes if provided
+                        messages.error(
+                            request,
+                            f"Insufficient stock for {item.product_name}. "
+                            "Cannot reactivate order."
+                        )
+                        return redirect(
+                            'admin_panel:order_detail',
+                            order_id=order.order_id
+                        )
+
+            # -----------------------------------------------------------
+            # Append audit note
+            # -----------------------------------------------------------
             if notes:
                 timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
-                new_note = f"[{timestamp}] Status changed from {old_status} to {new_status} by {request.user.username}: {notes}"
-                if order.notes:
-                    order.notes = f"{order.notes}\n{new_note}"
-                else:
-                    order.notes = new_note
-            
+                new_note = (
+                    f"[{timestamp}] Status: {old_status} → {new_status} "
+                    f"by {request.user.username}: {notes}"
+                )
+                order.notes = f"{order.notes}\n{new_note}" if order.notes else new_note
+
             order.save()
-            
+
             messages.success(
-                request, 
-                f"Order {order.order_id} status updated to {order.get_status_display()}"
+                request,
+                f"Order {order.order_id} updated to "
+                f"'{order.get_status_display()}' successfully."
             )
-            
             return redirect('admin_panel:order_detail', order_id=order.order_id)
+
         else:
             messages.error(request, "Please correct the errors below.")
+
     else:
         form = OrderStatusForm(current_status=order.status)
-    
-    context = {
+
+    return render(request, 'admin_panel/update_order_status.html', {
         'order': order,
         'form': form,
-    }
-    
-    return render(request, 'admin_panel/update_order_status.html', context)
+    })
 
 
 
@@ -1507,8 +1561,9 @@ def clear_order_filters(request):
     """Clear all order filters and redirect to order list"""
     return redirect('admin_panel:order_list')
 
-
+########################################################################
 # -------------------- COUPON MANAGEMENT --------------------
+########################################################################
 
 @superuser_required
 def coupon_list(request):
@@ -1726,7 +1781,9 @@ def toggle_coupon_status(request, pk):
     return redirect('admin_panel:coupon_list')
 
 
+########################################################################
 # ==================== PRODUCT OFFER MANAGEMENT ====================
+########################################################################
 
 @superuser_required
 def product_offer_list(request):
@@ -1885,8 +1942,9 @@ def toggle_product_offer_status(request, pk):
     
     return redirect('admin_panel:product_offer_list')
 
-
+########################################################################
 # ==================== CATEGORY OFFER MANAGEMENT ====================
+########################################################################
 
 @superuser_required
 def category_offer_list(request):
@@ -2045,8 +2103,9 @@ def toggle_category_offer_status(request, pk):
     
     return redirect('admin_panel:category_offer_list')
 
-
+########################################################################
 # ==================== REFERRAL MANAGEMENT ====================
+########################################################################
 
 @superuser_required
 def referral_list(request):
@@ -2097,8 +2156,9 @@ def referral_list(request):
     return render(request, 'admin_panel/referral_list.html', context)
 
 
-
+########################################################################
 # ==================== RETURN REQUEST MANAGEMENT ====================
+########################################################################
 
 @superuser_required
 def return_request_list(request):
@@ -2257,6 +2317,9 @@ def reject_return_request(request, pk):
 # Add these imports at the top of your views.py
 from users.models import Wallet, WalletTransaction
 
+########################################################################
+##################----------- WALLET MANAGEMENT --------##################
+########################################################################
 
 @superuser_required
 def wallet_transactions(request):
@@ -2612,8 +2675,9 @@ def wallet_statistics(request):
     
     return render(request, 'admin_panel/wallet_statistics.html', context)
 
-
-# ==================== SALES REPORT VIEWS ====================
+########################################################################
+########==================== SALES REPORT ====================####
+########################################################################
 
 @superuser_required
 def sales_report(request):

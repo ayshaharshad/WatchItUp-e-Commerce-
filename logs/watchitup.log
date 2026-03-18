@@ -10671,3 +10671,163 @@ Traceback (most recent call last):
     raise ValueError("Amount must be positive")
 ValueError: Amount must be positive
 ERROR 2026-02-16 21:30:04,225 basehttp 16480 16832 "POST /admin_panel/orders/ORD20260216001/update-status/ HTTP/1.1" 500 95583
+ERROR 2026-03-14 20:00:31,504 log 15392 121316 Internal Server Error: /admin_panel/wallet/transactions/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\admin_panel\views.py", line 2358, in wallet_transactions
+    return render(request, 'admin_panel/wallet_transactions.html', context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+        (
+    ...<2 lines>...
+        )
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 489, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'replace'
+ERROR 2026-03-14 20:00:31,525 basehttp 15392 121316 "GET /admin_panel/wallet/transactions/ HTTP/1.1" 500 367631
+ERROR 2026-03-14 20:00:35,435 log 15392 121316 Internal Server Error: /admin_panel/wallet/transactions/
+Traceback (most recent call last):
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\contrib\auth\decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\user\Desktop\e-WatchitUp\admin_panel\views.py", line 2358, in wallet_transactions
+    return render(request, 'admin_panel/wallet_transactions.html', context)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+        contents,
+    ...<2 lines>...
+        self.engine,
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 299, in do_extends
+    nodelist = parser.parse()
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 962, in do_if
+    nodelist = parser.parse(("elif", "else", "endif"))
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\defaulttags.py", line 862, in do_for
+    nodelist_loop = parser.parse(
+        (
+    ...<2 lines>...
+        )
+    )
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 489, in parse
+    raise self.error(token, e)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 609, in compile_filter
+    return FilterExpression(token, self)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 705, in __init__
+    filter_func = parser.find_filter(filter_name)
+  File "C:\Users\user\Desktop\e-WatchitUp\watchitup_env\Lib\site-packages\django\template\base.py", line 615, in find_filter
+    raise TemplateSyntaxError("Invalid filter: '%s'" % filter_name)
+django.template.exceptions.TemplateSyntaxError: Invalid filter: 'replace'
+ERROR 2026-03-14 20:00:35,456 basehttp 15392 121316 "GET /admin_panel/wallet/transactions/ HTTP/1.1" 500 367643
