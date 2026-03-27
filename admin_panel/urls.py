@@ -44,9 +44,9 @@ urlpatterns = [
          views.cancel_order_items_admin, 
          name='cancel_order_items_admin'),
     
-    path('orders/<str:order_id>/enhanced/', 
-         views.order_detail_enhanced, 
-         name='order_detail_enhanced'),
+#     path('orders/<str:order_id>/enhanced/', 
+#          views.order_detail_enhanced, 
+#          name='order_detail_enhanced'),
 
     # AJAX: Get items for cancellation
     path('orders/<str:order_id>/items/active/', 

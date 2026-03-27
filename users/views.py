@@ -29,7 +29,11 @@ from .models import CustomUser, Address, EmailChangeRequest
 
 logger = logging.getLogger(__name__)
 
-# ------------------ UTILS ------------------
+
+########################################################################
+############---------------- UTILITIES ----------------#########
+########################################################################
+
 def generate_otp():
     return str(random.randint(100000, 999999))
 
@@ -51,27 +55,82 @@ def is_otp_valid(request):
 
     return True
 
-# ------------------ ROOT REDIRECT ------------------
+def send_otp_email(email, otp, purpose='verification'):
+    """Enhanced send OTP email function"""
+    try:
+        subject_map = {
+            'signup': 'Welcome to Watchitup - Verify Your Email',
+            'reset': 'Watchitup - Password Reset OTP',
+            'email_change': 'Watchitup - Email Change Verification'
+        }
+        
+        subject = subject_map.get(purpose, 'Watchitup - OTP Verification')
+        
+        if purpose == 'email_change':
+            message = f"""
+            Hello!
+            
+            You have requested to change your email address on Watchitup.
+            
+            Your verification OTP is: {otp}
+            
+            This OTP will expire in 5 minutes.
+            
+            If you didn't request this change, please ignore this email and your current email will remain unchanged.
+            
+            Best regards,
+            Watchitup Team
+            """
+        else:
+            message = f"""
+            Hello!
+            
+            Your OTP for Watchitup is: {otp}
+            
+            This OTP will expire in 5 minutes.
+            
+            If you didn't request this, please ignore this email.
+            
+            Best regards,
+            Watchitup Team
+            """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False
+        )
+        logger.info(f"OTP email sent successfully to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        return False
+
+
+########################################################################
+############---------------- ROOR REDIRECT ----------------#########
+########################################################################
+
 def root_redirect_view(request):
     if request.user.is_authenticated:
         return redirect('products:home')
     return redirect('users:login')
 
-# ------------------ SIGNUP ------------------
+
+########################################################################
+############---------------- AUTHENTICATION ----------------#########
+########################################################################
 
 @never_cache
 @transaction.atomic
 def signup_view(request):
-    """
-    Properly handle referral codes
-    - Referral code in form is the REFERRER's code
-    - New user gets their OWN unique referral code automatically
-    """
-
-    # ✅ FIX 1: Clear old messages
+    
+    # Clear old messages
     list(messages.get_messages(request))
 
-    # ✅ FIX 2: Clear stale referral + OTP session data
+    # Clear stale referral + OTP session data
     for key in ['referrer_id', 'referral_code_entered', 'otp', 'otp_user', 'otp_timestamp']:
         request.session.pop(key, None)
 
@@ -220,7 +279,8 @@ def process_referral_signup(user, referrer_id=None):
         logger.error(f"Error processing referral: {str(e)}")
 
 
-# ------------------ LOGIN ------------------
+########------------------ LOGIN ------------------######
+
 @never_cache
 def login_view(request):
 
@@ -263,7 +323,7 @@ def login_view(request):
     return render(request, 'users/login.html', {'form': form})
 
 
-# # ------------------ LOGOUT ------------------
+########------------------ LOGOUT ------------------##########
 
 def logout_view(request):
     username = request.user.username if request.user.is_authenticated else None
@@ -275,6 +335,7 @@ def logout_view(request):
         messages.success(request, f"Goodbye, {username}! You've been logged out successfully.")
     return redirect('users:login')
 
+########------------------ VERIFY OTP ------------------##########  
 
 @never_cache
 @ensure_csrf_cookie
@@ -354,7 +415,8 @@ def verify_otp_view(request, purpose):
 
 
 
-# ------------------ RESEND OTP ------------------
+########------------------ RESENT OTP ------------------##########
+
 @never_cache
 @require_POST
 def resend_otp_view(request, purpose):
@@ -435,7 +497,8 @@ def resend_otp_fallback(request, purpose):
     
     return redirect('users:verify_otp', purpose=purpose)
 
-# ------------------ FORGOT PASSWORD ------------------
+########------------------ FORGOT PASSWORD ------------------##########
+
 @never_cache
 def forgot_password_view(request):
     if request.user.is_authenticated:
@@ -475,7 +538,9 @@ def forgot_password_view(request):
     
     return render(request, 'users/forgot_password.html', {'form': form})
 
-# ------------------ RESET PASSWORD ------------------
+########------------------ RESET PASSWORD------------------##########
+
+
 @never_cache
 def reset_password_view(request):
     if not request.session.get('otp_verified') or not request.session.get('otp_user'):
@@ -512,7 +577,10 @@ def reset_password_view(request):
     return render(request, 'users/reset_password.html', {'form': form})
 
 
-# ------------------ PROFILE VIEWS ------------------
+
+########################################################################
+############---------------- USER PROFILE ----------------#########
+########################################################################
 
 @login_required
 def profile_view(request):
@@ -596,7 +664,7 @@ def edit_profile_view(request):
     return render(request, 'users/profile/edit_profile.html', context)
 
 
-# ------------------ EMAIL CHANGE VIEWS ------------------
+######## ------------------ EMAIL CHANGE VIEWS ------------------######
 
 @login_required
 def change_email_view(request):
@@ -700,7 +768,7 @@ def verify_email_change_view(request):
     }
     return render(request, 'users/profile/verify_email_change.html', context)
 
-# ------------------ PASSWORD CHANGE VIEWS ------------------
+#######------------------ PASSWORD CHANGE VIEWS ------------------########
 
 @login_required
 def change_password_view(request):
@@ -746,7 +814,10 @@ def change_password_view(request):
     
     return render(request, 'users/profile/change_password.html', {'form': form})
 
-# ------------------ ADDRESS MANAGEMENT VIEWS ------------------
+
+########################################################################
+############---------------- ADDRESS MANAGEMENT ----------------#########
+########################################################################
 
 
 @login_required
@@ -797,15 +868,7 @@ def add_address_view(request):
 
 @login_required
 def edit_address_view(request, address_id):
-    """
-    COMPLETE FIX: Edit existing address with proper default handling
     
-    The Address model's save() method automatically handles:
-    - Ensuring only one default address per user
-    - Setting first address as default
-    
-    This view just needs to save the form properly
-    """
     address = get_object_or_404(Address, id=address_id, user=request.user)
     
     if request.method == 'POST':
@@ -985,220 +1048,11 @@ def addresses_view(request):
     }
     return render(request, 'users/addresses/addresses.html', context)
 
-# @login_required
-# def addresses_view(request):
-#     """Display all user addresses"""
-#     addresses = Address.objects.filter(user=request.user)
-#     context = {
-#         'addresses': addresses
-#     }
-#     return render(request, 'users/addresses/addresses.html', context)
-
-# @login_required
-# @require_POST
-# def set_default_address_view(request, address_id):
-#     """Set an address as default"""
-#     address = get_object_or_404(Address, id=address_id, user=request.user)
-    
-#     # Remove default from all other addresses
-#     Address.objects.filter(user=request.user).update(is_default=False)
-    
-#     # Set this address as default
-#     address.is_default = True
-#     address.save()
-    
-#     messages.success(request, f'"{address.full_name}" set as default address.')
-#     return redirect('users:addresses')
 
 
-# # Add this new view for AJAX address submission from checkout
-# @login_required
-# @require_POST
-# def add_address_ajax_view(request):
-#     """Add address via AJAX from checkout page"""
-#     form = AddressForm(request.POST)
-    
-#     if form.is_valid():
-#         address = form.save(commit=False)
-#         address.user = request.user
-#         address.save()
-        
-#         return JsonResponse({
-#             'success': True,
-#             'message': 'Address added successfully!',
-#             'address': {
-#                 'id': address.id,
-#                 'full_name': address.full_name,
-#                 'address_line1': address.address_line1,
-#                 'address_line2': address.address_line2,
-#                 'city': address.city,
-#                 'state': address.state,
-#                 'postal_code': address.postal_code,
-#                 'phone': address.phone,
-#                 'is_default': address.is_default,
-#                 'full_address': address.full_address
-#             }
-#         })
-#     else:
-#         # Return form errors
-#         errors = {}
-#         for field, error_list in form.errors.items():
-#             errors[field] = [str(error) for error in error_list]
-        
-#         return JsonResponse({
-#             'success': False,
-#             'errors': errors
-#         })
-# @login_required
-# def add_address_view(request):
-#     """Add new address with optional redirect to checkout"""
-#     if request.method == 'POST':
-#         form = AddressForm(request.POST)
-#         if form.is_valid():
-#             address = form.save(commit=False)
-#             address.user = request.user
-#             address.save()
-#             messages.success(request, 'Address added successfully!')
-            
-#             # ✅ FIX: Check if coming from checkout
-#             next_url = request.POST.get('next') or request.GET.get('next')
-#             if next_url == 'checkout':
-#                 # Redirect back to checkout view in products app
-#                 return redirect('products:checkout_view')  # ✅ FIXED: Use correct namespace
-            
-#             return redirect('users:addresses')  # Default redirect to addresses page
-#         else:
-#             for field, errors in form.errors.items():
-#                 for error in errors:
-#                     messages.error(request, error)
-#     else:
-#         form = AddressForm()
-    
-#     # ✅ FIX: Get the next parameter to pass to template
-#     next_url = request.GET.get('next', '')
-    
-#     return render(request, 'users/addresses/add_address.html', {
-#         'form': form,
-#         'next': next_url  # Pass to template
-#     })
-
-
-
-# @login_required
-# def edit_address_view(request, address_id):
-#     """Edit existing address with optional redirect to checkout"""
-#     address = get_object_or_404(Address, id=address_id, user=request.user)
-    
-#     if request.method == 'POST':
-#         form = AddressForm(request.POST, instance=address)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'Address updated successfully!')
-            
-#             # FIXED: Check if coming from checkout
-#             next_url = request.POST.get('next') or request.GET.get('next')
-#             if next_url == 'checkout':
-#                 return redirect('products:checkout_view')
-            
-#             return redirect('users:profile')
-#         else:
-#             for field, errors in form.errors.items():
-#                 for error in errors:
-#                     messages.error(request, error)
-#     else:
-#         form = AddressForm(instance=address)
-    
-#     # FIXED: Get the next parameter to pass to template
-#     next_url = request.GET.get('next', '')
-    
-#     return render(request, 'users/addresses/edit_address.html', {
-#         'form': form,
-#         'address': address,
-#         'next': next_url
-#     })
-
-
-# @login_required
-# def delete_address_view(request, address_id):
-#     """Delete address"""
-#     address = get_object_or_404(Address, id=address_id, user=request.user)
-    
-#     if request.method == 'POST':
-#         address.delete()
-#         messages.success(request, 'Address deleted successfully!')
-        
-#         # FIXED: Check if coming from checkout
-#         next_url = request.POST.get('next') or request.GET.get('next')
-#         if next_url == 'checkout':
-#             return redirect('products:checkout_view')
-        
-#         return redirect('users:profile')
-    
-#     # FIXED: Pass next parameter to template for delete confirmation
-#     next_url = request.GET.get('next', '')
-    
-#     return render(request, 'users/addresses/delete_address.html', {
-#         'address': address,
-#         'next': next_url
-#     })
-
-# ------------------ UTILITY FUNCTIONS ------------------
-
-def send_otp_email(email, otp, purpose='verification'):
-    """Enhanced send OTP email function"""
-    try:
-        subject_map = {
-            'signup': 'Welcome to Watchitup - Verify Your Email',
-            'reset': 'Watchitup - Password Reset OTP',
-            'email_change': 'Watchitup - Email Change Verification'
-        }
-        
-        subject = subject_map.get(purpose, 'Watchitup - OTP Verification')
-        
-        if purpose == 'email_change':
-            message = f"""
-            Hello!
-            
-            You have requested to change your email address on Watchitup.
-            
-            Your verification OTP is: {otp}
-            
-            This OTP will expire in 5 minutes.
-            
-            If you didn't request this change, please ignore this email and your current email will remain unchanged.
-            
-            Best regards,
-            Watchitup Team
-            """
-        else:
-            message = f"""
-            Hello!
-            
-            Your OTP for Watchitup is: {otp}
-            
-            This OTP will expire in 5 minutes.
-            
-            If you didn't request this, please ignore this email.
-            
-            Best regards,
-            Watchitup Team
-            """
-        
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False
-        )
-        logger.info(f"OTP email sent successfully to {email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
-        return False
-
-
-# ------------------ WALLET VIEWS ------------------
+########################################################################
+############---------------- USER WALLET MANAGEMENT----------------#########
+########################################################################
 
 @login_required
 def wallet_view(request):

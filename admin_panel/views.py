@@ -674,248 +674,457 @@ def product_variant_detail(request, product_id):
 
 @superuser_required
 def order_list(request):
-    """✅ FIXED: List all orders with correct calculations"""
-    # Get filter parameters
-    search = request.GET.get('search', '').strip()
-    status_filter = request.GET.get('status', '')
+    """List all orders with search, filters, sorting and pagination."""
+ 
+    # --- Read filter params ---
+    search         = request.GET.get('search', '').strip()
+    status_filter  = request.GET.get('status', '')
     payment_filter = request.GET.get('payment_method', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    sort_by = request.GET.get('sort', '-created_at')
-    
-    # Base queryset
+    date_from      = request.GET.get('date_from', '')
+    date_to        = request.GET.get('date_to', '')
+    sort_by        = request.GET.get('sort', '-created_at')
+ 
+    # --- Base queryset ---
     orders = Order.objects.select_related('user').prefetch_related(
-        'items',
-        'items__product',
-        'items__variant'
+        'items', 'items__product', 'items__variant'
     ).all()
-    
-    # Apply search
+ 
+    # --- Search ---
     if search:
         orders = orders.filter(
-            Q(order_id__icontains=search) |
-            Q(user__username__icontains=search) |
-            Q(user__email__icontains=search) |
-            Q(shipping_full_name__icontains=search) |
+            Q(order_id__icontains=search)          |
+            Q(user__username__icontains=search)    |
+            Q(user__email__icontains=search)       |
+            Q(shipping_full_name__icontains=search)|
             Q(shipping_phone__icontains=search)
         )
-    
-    # Apply filters
+ 
+    # --- Filters ---
     if status_filter:
         orders = orders.filter(status=status_filter)
-    
+ 
     if payment_filter:
         orders = orders.filter(payment_method=payment_filter)
-    
+ 
     if date_from:
         try:
-            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
-            orders = orders.filter(created_at__gte=date_from_obj)
+            orders = orders.filter(
+                created_at__gte=datetime.strptime(date_from, '%Y-%m-%d')
+            )
         except ValueError:
             pass
-    
+ 
     if date_to:
         try:
-            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
-            orders = orders.filter(created_at__lte=date_to_obj)
+            orders = orders.filter(
+                created_at__lte=datetime.strptime(date_to, '%Y-%m-%d')
+            )
         except ValueError:
             pass
-    
-    # Apply sorting
+ 
+    # --- Sorting ---
     valid_sort_fields = [
         'created_at', '-created_at',
         'total', '-total',
         'status', '-status',
-        'order_id', '-order_id'
+        'order_id', '-order_id',
     ]
-    if sort_by in valid_sort_fields:
-        orders = orders.order_by(sort_by)
-    else:
-        orders = orders.order_by('-created_at')
-    
-    # ✅ FIX: Calculate statistics from ACTIVE items only
-    total_orders = orders.count()
-    
-    # Calculate revenue from active items only
-    total_revenue = Decimal('0')
-    for order in orders:
-        total_revenue += order.active_total
-    
-    # Pagination
-    paginator = Paginator(orders, 20)
-    page = request.GET.get('page')
-    orders_page = paginator.get_page(page)
-    
-    # ✅ FIX: Add cached counts as regular attributes (Django templates don't allow underscore)
+    orders = orders.order_by(sort_by if sort_by in valid_sort_fields else '-created_at')
+ 
+    # --- Statistics (using DB aggregation — NOT a Python loop) ---
+    # ✅ FIX: was looping in Python over all orders which is very slow.
+    # order.total = what was paid; we aggregate directly in the DB.
+    total_orders  = orders.count()
+    total_revenue = orders.aggregate(total=Sum('total'))['total'] or Decimal('0')
+ 
+    # --- Pagination ---
+    paginator   = Paginator(orders, 20)
+    orders_page = paginator.get_page(request.GET.get('page'))
+ 
+    # --- Attach cached per-order display values (avoids N+1 in template) ---
     for order in orders_page:
-        # Cache these values to avoid multiple DB queries
-        order.cached_active_count = order.items.filter(status='active').count()
+        order.cached_active_count    = order.items.filter(status='active').count()
         order.cached_cancelled_count = order.items.filter(status='cancelled').count()
-        order.cached_returned_count = order.items.filter(status='returned').count()
-        
-        # Add display fields
-        order.cached_display_total = order.active_total
-        order.cached_refund_total = order.refunded_amount
-    
-    # Filter form
-    filter_form = OrderFilterForm(request.GET)
-    
+        order.cached_returned_count  = order.items.filter(status='returned').count()
+        order.cached_display_total   = order.active_total
+        order.cached_refund_total    = order.refunded_amount
+ 
     context = {
-        'orders': orders_page,
-        'filter_form': filter_form,
-        'search': search,
-        'status_filter': status_filter,
-        'payment_filter': payment_filter,
-        'date_from': date_from,
-        'date_to': date_to,
-        'sort_by': sort_by,
-        'total_orders': total_orders,
-        'total_revenue': total_revenue,  # ✅ Now correct - active items only
+        'orders':          orders_page,
+        'filter_form':     OrderFilterForm(request.GET),
+        'search':          search,
+        'status_filter':   status_filter,
+        'payment_filter':  payment_filter,
+        'date_from':       date_from,
+        'date_to':         date_to,
+        'sort_by':         sort_by,
+        'total_orders':    total_orders,
+        'total_revenue':   total_revenue,
     }
-    
+ 
     return render(request, 'admin_panel/order_list.html', context)
-
-
-
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 3 — ORDER DETAIL
+# Single unified view. order_detail_enhanced was a duplicate — removed.
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def order_detail(request, order_id):
-    """✅ FIXED: Enhanced order detail with proper item grouping"""
-    order = get_object_or_404(
-        Order.objects.select_related('user').prefetch_related(
-            'items__product',
-            'items__variant',
-            'cancellations',
-            'returns'
-        ),
-        order_id=order_id
-    )
-    
-    # ✅ FIX: Use model properties to group items by status
-    # These are already defined in the Order model as properties
-    active_items = order.items.filter(status='active')
-    cancelled_items = order.items.filter(status='cancelled')
-    returned_items = order.items.filter(status='returned')
-    
-    # Get cancellation history
-    cancellations = order.cancellations.all().order_by('-cancelled_at')
-    
-    # Get return requests
-    return_requests = order.returns.all().order_by('-requested_at')
-    
-    # ✅ FIX: Calculate correct refund totals
-    total_refunds = Decimal('0')
-    for cancellation in cancellations:
-        if cancellation.refund_status == 'processed':
-            total_refunds += cancellation.refund_amount
-    
-    for return_req in return_requests.filter(refund_status='processed'):
-        total_refunds += return_req.refund_amount
-    
-    context = {
-        'order': order,
-        
-        # ✅ Item groupings (already filtered)
-        'active_items': active_items,
-        'cancelled_items': cancelled_items,
-        'returned_items': returned_items,
-        
-        # Cancellation/return history
-        'cancellations': cancellations,
-        'return_requests': return_requests,
-        
-        # ✅ Statistics
-        'active_items_count': active_items.count(),
-        'cancelled_items_count': cancelled_items.count(),
-        'returned_items_count': returned_items.count(),
-        'total_refunds': total_refunds,
-        
-        # ✅ Note: active_subtotal, active_tax, active_total are accessed 
-        # directly in template via order.active_subtotal etc (model properties)
-    }
-    
-    return render(request, 'admin_panel/order_detail.html', context)
-
-
-
-@superuser_required
-def order_detail_enhanced(request, order_id):
     """
-    ✅ ENHANCED: Order detail view with item-level cancellation/return tracking
-    This replaces your existing order_detail view
+    Full order detail: items grouped by status, cancellation history,
+    return requests, and financial summary.
     """
     order = get_object_or_404(
         Order.objects.select_related('user').prefetch_related(
             'items__product',
             'items__variant',
             'cancellations',
-            'returns'
+            'returns',
         ),
         order_id=order_id
     )
-    
-    # ✅ Group items by status
-    active_items = order.items.filter(status='active')
+ 
+    # --- Group items by status ---
+    active_items    = order.items.filter(status='active')
     cancelled_items = order.items.filter(status='cancelled')
-    returned_items = order.items.filter(status='returned')
-    
-    # ✅ Get cancellation history (both full order and item-level)
-    cancellations = order.cancellations.all().order_by('-cancelled_at')
+    returned_items  = order.items.filter(status='returned')
+ 
+    # --- Cancellation history (full-order and item-level) ---
+    cancellations            = order.cancellations.all().order_by('-cancelled_at')
     full_order_cancellations = cancellations.filter(cancellation_type='full_order')
-    item_cancellations = cancellations.filter(cancellation_type='single_item')
-    
-    # ✅ Get return requests
+    item_cancellations       = cancellations.filter(cancellation_type='single_item')
+ 
+    # --- Return requests ---
     return_requests = order.returns.all().order_by('-requested_at')
-    
-    # ✅ Calculate refund totals
-    total_refunds = Decimal('0')
-    for cancellation in cancellations:
-        if cancellation.refund_status == 'processed':
-            total_refunds += cancellation.refund_amount
-    
-    for return_req in return_requests.filter(refund_status='processed'):
-        total_refunds += return_req.refund_amount
-    
+ 
+    # --- Total refunds already processed ---
+    cancel_refunds = cancellations.filter(
+        refund_status='processed'
+    ).aggregate(total=Sum('refund_amount'))['total'] or Decimal('0')
+ 
+    return_refunds = return_requests.filter(
+        refund_status='processed'
+    ).aggregate(total=Sum('refund_amount'))['total'] or Decimal('0')
+ 
+    total_refunds = cancel_refunds + return_refunds
+ 
     context = {
         'order': order,
-        
-        # Item groupings
-        'active_items': active_items,
+ 
+        # Item groups
+        'active_items':    active_items,
         'cancelled_items': cancelled_items,
-        'returned_items': returned_items,
-        
-        # Cancellation/return history
-        'cancellations': cancellations,
-        'full_order_cancellations': full_order_cancellations,
-        'item_cancellations': item_cancellations,
-        'return_requests': return_requests,
-        
-        # Statistics
-        'active_items_count': active_items.count(),
+        'returned_items':  returned_items,
+ 
+        # Counts
+        'active_items_count':    active_items.count(),
         'cancelled_items_count': cancelled_items.count(),
-        'returned_items_count': returned_items.count(),
-        'total_refunds': total_refunds,
+        'returned_items_count':  returned_items.count(),
+ 
+        # Cancellation history (split for template clarity)
+        'cancellations':             cancellations,
+        'full_order_cancellations':  full_order_cancellations,
+        'item_cancellations':        item_cancellations,
+ 
+        # Return history
+        'return_requests': return_requests,
+ 
+        # Financials
+        'cancel_refunds': cancel_refunds,
+        'return_refunds': return_refunds,
+        'total_refunds':  total_refunds,
     }
-    
-    return render(request, 'admin_panel/order_detail_enhanced.html', context)
-
-
+ 
+    return render(request, 'admin_panel/order_detail.html', context)
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 4 — ORDER STATUS UPDATE
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+@superuser_required
+def update_order_status(request, order_id):
+    """
+    Admin updates order status. Handles all side-effects:
+        delivered      → sets delivered_at timestamp
+        cancelled      → restores stock + full wallet refund
+        return_approved→ marks return request as approved
+        returned       → restores stock + full wallet refund
+        reactivation   → re-deducts stock when un-cancelling
+    """
+    order = get_object_or_404(Order, order_id=order_id)
+ 
+    if request.method == 'POST':
+        form = OrderStatusForm(request.POST, current_status=order.status)
+ 
+        if form.is_valid():
+            new_status = form.cleaned_data['status']
+            notes      = form.cleaned_data.get('notes', '')
+            old_status = order.status
+ 
+            # Guard: no-op if status unchanged
+            if old_status == new_status:
+                messages.info(request, "Order is already set to that status.")
+                return redirect('admin_panel:order_detail', order_id=order.order_id)
+ 
+            order.status = new_status
+ 
+            # -----------------------------------------------------------------
+            # 1. DELIVERED
+            # -----------------------------------------------------------------
+            if new_status == 'delivered' and not order.delivered_at:
+                order.delivered_at = timezone.now()
+ 
+            # -----------------------------------------------------------------
+            # 2. CANCELLED — restore stock for active items + full refund
+            # ✅ FIX: was using order.active_total (excludes shipping)
+            #         now uses process_wallet_refund → order.total (full amount)
+            # -----------------------------------------------------------------
+            elif new_status == 'cancelled' and old_status != 'cancelled':
+ 
+                # Restore stock
+                for item in order.items.filter(status='active'):
+                    _restore_stock(item)
+                    item.status = 'cancelled'
+                    item.save()
+ 
+                order.cancelled_at = timezone.now()
+ 
+                # Refund only if payment was completed and not already refunded
+                if order.payment_status == 'completed':
+                    _, refund_amount = process_wallet_refund(
+                        order=order,
+                        transaction_type='credit_refund_cancel',
+                        description=(
+                            f'Full refund for cancelled order {order.order_id} '
+                            f'(items ₹{order.active_total} + '
+                            f'shipping ₹{order.shipping_charge})'
+                        )
+                    )
+ 
+            # -----------------------------------------------------------------
+            # 3. RETURN APPROVED — mark return request, wait for physical return
+            # -----------------------------------------------------------------
+            elif new_status == 'return_approved' and old_status == 'return_requested':
+                return_request = order.returns.filter(status='pending').first()
+                if return_request:
+                    return_request.status      = 'approved'
+                    return_request.approved_at = timezone.now()
+                    return_request.reviewed_by = request.user
+                    return_request.reviewed_at = timezone.now()
+                    return_request.save()
+ 
+            # -----------------------------------------------------------------
+            # 4. RETURNED — restore stock + full refund
+            # ✅ FIX: was using order.active_total (excludes shipping)
+            #         now uses process_wallet_refund → order.total (full amount)
+            # -----------------------------------------------------------------
+            elif new_status == 'returned' and old_status in [
+                'return_approved', 'return_requested', 'delivered'
+            ]:
+                # Guard: prevent double refund
+                if order.payment_status == 'refunded':
+                    messages.warning(
+                        request,
+                        f"Order {order.order_id} was already refunded. "
+                        "No duplicate refund processed."
+                    )
+                    return redirect('admin_panel:order_detail', order_id=order.order_id)
+ 
+                # Restore stock
+                for item in order.items.filter(status='active'):
+                    _restore_stock(item)
+                    item.status = 'returned'
+                    item.save()
+ 
+                # Full refund to wallet
+                _, refund_amount = process_wallet_refund(
+                    order=order,
+                    transaction_type='credit_refund_return',
+                    description=(
+                        f'Full refund for returned order {order.order_id} '
+                        f'(items ₹{order.active_total} + '
+                        f'shipping ₹{order.shipping_charge})'
+                    )
+                )
+ 
+                # Complete the return request record
+                return_request = order.returns.filter(
+                    status__in=['pending', 'approved']
+                ).first()
+                if return_request:
+                    return_request.status        = 'completed'
+                    return_request.completed_at  = timezone.now()
+                    return_request.refund_status  = 'processed'
+                    return_request.refund_amount  = refund_amount
+                    return_request.reviewed_by   = request.user
+                    return_request.reviewed_at   = timezone.now()
+                    return_request.save()
+ 
+            # -----------------------------------------------------------------
+            # 5. REACTIVATING a cancelled order — re-deduct stock
+            # -----------------------------------------------------------------
+            elif old_status == 'cancelled' and new_status in [
+                'confirmed', 'pending', 'processing'
+            ]:
+                for item in order.items.filter(status='cancelled'):
+                    target      = item.variant if item.variant else item.product
+                    stock_field = 'stock_quantity' if item.variant else 'stock'
+                    current     = getattr(target, stock_field)
+ 
+                    if current >= item.quantity:
+                        setattr(target, stock_field, current - item.quantity)
+                        target.save()
+                        item.status = 'active'
+                        item.save()
+                    else:
+                        messages.error(
+                            request,
+                            f"Insufficient stock for '{item.product_name}'. "
+                            "Cannot reactivate order."
+                        )
+                        return redirect(
+                            'admin_panel:order_detail',
+                            order_id=order.order_id
+                        )
+ 
+            # --- Audit trail note ---
+            if notes:
+                timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
+                new_note  = (
+                    f"[{timestamp}] Status: {old_status} → {new_status} "
+                    f"by {request.user.username}: {notes}"
+                )
+                order.notes = f"{order.notes}\n{new_note}" if order.notes else new_note
+ 
+            order.save()
+ 
+            messages.success(
+                request,
+                f"Order {order.order_id} updated to "
+                f"'{order.get_status_display()}' successfully."
+            )
+            return redirect('admin_panel:order_detail', order_id=order.order_id)
+ 
+        else:
+            messages.error(request, "Please correct the errors below.")
+ 
+    else:
+        form = OrderStatusForm(current_status=order.status)
+ 
+    return render(request, 'admin_panel/update_order_status.html', {
+        'order': order,
+        'form':  form,
+    })
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 5 — ORDER CANCELLATION
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+@superuser_required
+def cancel_order(request, order_id):
+    """
+    Admin cancels an entire order.
+    ✅ FIX: was missing wallet refund entirely.
+    ✅ FIX: now restores stock for both variant and non-variant items.
+    """
+    order = get_object_or_404(Order, order_id=order_id)
+ 
+    if not order.can_cancel:
+        messages.error(request, "This order cannot be cancelled.")
+        return redirect('admin_panel:order_detail', order_id=order.order_id)
+ 
+    if request.method == 'POST':
+        reason = request.POST.get('reason', 'Cancelled by admin').strip()
+ 
+        try:
+            with transaction.atomic():
+ 
+                # Restore stock for ALL active items
+                # ✅ FIX: old code only restored variant items, skipped product-only items
+                for item in order.items.filter(status='active'):
+                    _restore_stock(item)
+                    item.status = 'cancelled'
+                    item.save()
+ 
+                order.status       = 'cancelled'
+                order.cancelled_at = timezone.now()
+                order.notes = (
+                    f"{order.notes}\n[{timezone.now().strftime('%Y-%m-%d %H:%M')}] "
+                    f"Cancelled by {request.user.username}: {reason}"
+                    if order.notes
+                    else f"Cancelled by {request.user.username}: {reason}"
+                )
+ 
+                # ✅ FIX: refund to wallet (was completely missing before)
+                refund_amount = Decimal('0')
+                if order.payment_status == 'completed':
+                    _, refund_amount = process_wallet_refund(
+                        order=order,
+                        transaction_type='credit_refund_cancel',
+                        description=(
+                            f'Full refund for cancelled order {order.order_id} '
+                            f'(items ₹{order.active_total} + '
+                            f'shipping ₹{order.shipping_charge})'
+                        )
+                    )
+ 
+                # Create cancellation audit record
+                OrderCancellation.objects.create(
+                    order              = order,
+                    cancellation_type  = 'full_order',
+                    reason             = reason,
+                    refund_amount      = refund_amount,
+                    refund_status      = 'processed' if refund_amount > 0 else 'not_applicable',
+                    cancelled_by       = request.user,
+                    processed_at       = timezone.now() if refund_amount > 0 else None,
+                )
+ 
+                order.save()
+ 
+                success_msg = f"Order {order.order_id} cancelled and stock restored."
+                if refund_amount > 0:
+                    success_msg += f" ₹{refund_amount} refunded to customer wallet."
+ 
+                messages.success(request, success_msg)
+ 
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            messages.error(request, f"Error cancelling order: {str(e)}")
+ 
+        return redirect('admin_panel:order_detail', order_id=order.order_id)
+ 
+    return render(request, 'admin_panel/cancel_order.html', {'order': order})
+ 
+ 
 @superuser_required
 def cancel_order_items_admin(request, order_id):
-    """✅ Admin can cancel specific items from an order"""
+    """
+    Admin cancels specific items from an order (partial cancellation).
+ 
+    Refund logic for partial cancellation:
+        - Refund = sum of cancelled item_totals ONLY
+        - Shipping is NOT refunded because the order is still active
+        - If ALL items end up cancelled → shipping IS included via cancel_order logic
+    """
     order = get_object_or_404(Order, order_id=order_id)
-    
+ 
     if request.method == 'POST':
         item_ids = request.POST.getlist('item_ids[]')
-        reason = request.POST.get('reason', '').strip()
-        
+        reason   = request.POST.get('reason', '').strip()
+ 
         if not item_ids:
             messages.error(request, 'Please select at least one item to cancel.')
             return redirect('admin_panel:order_detail', order_id=order.order_id)
-        
+ 
         if not reason:
             messages.error(request, 'Please provide a cancellation reason.')
             return redirect('admin_panel:order_detail', order_id=order.order_id)
-        
+ 
         try:
             with transaction.atomic():
                 items_to_cancel = OrderItem.objects.filter(
@@ -923,643 +1132,386 @@ def cancel_order_items_admin(request, order_id):
                     order=order,
                     status='active'
                 )
-                
+ 
                 if not items_to_cancel.exists():
-                    messages.error(request, 'No valid items found to cancel.')
+                    messages.error(request, 'No valid active items found to cancel.')
                     return redirect('admin_panel:order_detail', order_id=order.order_id)
-                
-                total_refund = Decimal('0')
-                cancelled_count = 0
-                
+ 
+                total_item_refund = Decimal('0')
+                cancelled_count   = 0
+ 
                 for item in items_to_cancel:
                     # Restore stock
-                    if item.variant:
-                        item.variant.stock_quantity += item.quantity
-                        item.variant.save()
-                    else:
-                        item.product.stock += item.quantity
-                        item.product.save()
-                    
-                    # ✅ FIX: Calculate refund (only if payment was completed)
-                    refund_amount = Decimal('0')
+                    _restore_stock(item)
+ 
+                    # Per-item refund (only if payment completed)
+                    item_refund = Decimal('0')
                     if order.payment_status == 'completed':
-                        refund_amount = item.item_total
-                        total_refund += refund_amount
-                    
-                    # Update item status
+                        item_refund        = item.item_total
+                        total_item_refund += item_refund
+ 
                     item.status = 'cancelled'
                     item.save()
-                    
-                    # Create cancellation record
+ 
+                    # Audit record per item
                     OrderCancellation.objects.create(
-                        order=order,
-                        order_item=item,
-                        cancellation_type='single_item',
-                        reason=f"Admin cancellation: {reason}",
-                        refund_amount=refund_amount,
-                        refund_status='processed' if refund_amount > 0 else 'not_applicable',
-                        cancelled_by=request.user,
-                        processed_at=timezone.now() if refund_amount > 0 else None
+                        order             = order,
+                        order_item        = item,
+                        cancellation_type = 'single_item',
+                        reason            = f"Admin cancellation: {reason}",
+                        refund_amount     = item_refund,
+                        refund_status     = 'processed' if item_refund > 0 else 'not_applicable',
+                        cancelled_by      = request.user,
+                        processed_at      = timezone.now() if item_refund > 0 else None,
                     )
-                    
+ 
                     cancelled_count += 1
-                
-                # ✅ FIX: Process refund to wallet
-                if total_refund > 0:
-                    wallet = Wallet.objects.get_or_create(user=order.user)[0]
+ 
+                # Credit wallet for item totals
+                if total_item_refund > 0:
+                    wallet, _ = Wallet.objects.get_or_create(user=order.user)
                     wallet.add_money(
-                        amount=total_refund,
-                        transaction_type='credit_refund_cancel',
-                        description=f'Refund for {cancelled_count} cancelled item(s) from order {order.order_id}',
-                        reference_id=order.order_id
+                        amount           = total_item_refund,
+                        transaction_type = 'credit_refund_cancel',
+                        description      = (
+                            f'Partial refund: {cancelled_count} item(s) cancelled '
+                            f'from order {order.order_id}'
+                        ),
+                        reference_id = order.order_id
                     )
-                
-                # ✅ FIX: Check if ALL items are cancelled
+ 
+                # If ALL items are now cancelled, mark full order as cancelled
+                # and additionally refund the shipping charge
                 if not order.items.filter(status='active').exists():
-                    order.status = 'cancelled'
+                    shipping_refund = order.shipping_charge or Decimal('0')
+ 
+                    if order.payment_status == 'completed' and shipping_refund > 0:
+                        wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                        wallet.add_money(
+                            amount           = shipping_refund,
+                            transaction_type = 'credit_refund_cancel',
+                            description      = (
+                                f'Shipping refund: all items cancelled '
+                                f'from order {order.order_id}'
+                            ),
+                            reference_id = order.order_id
+                        )
+                        total_item_refund += shipping_refund
+ 
+                    order.status       = 'cancelled'
                     order.cancelled_at = timezone.now()
                     if order.payment_status == 'completed':
                         order.payment_status = 'refunded'
-                    order.save()
-                
-                # Add note to order
+ 
+                # Audit note on order
                 timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
-                note = f"[{timestamp}] Admin cancelled {cancelled_count} item(s) by {request.user.username}: {reason}"
-                if total_refund > 0:
-                    note += f" | Refund: ₹{total_refund}"
-                
-                if order.notes:
-                    order.notes = f"{order.notes}\n{note}"
-                else:
-                    order.notes = note
-                order.save()
-                
-                messages.success(
-                    request,
-                    f'Successfully cancelled {cancelled_count} item(s). '
-                    f'{"₹" + str(total_refund) + " refunded to customer wallet." if total_refund > 0 else ""}'
+                note = (
+                    f"[{timestamp}] Admin cancelled {cancelled_count} item(s) "
+                    f"by {request.user.username}: {reason}"
                 )
-                
+                if total_item_refund > 0:
+                    note += f" | Refunded: ₹{total_item_refund}"
+ 
+                order.notes = f"{order.notes}\n{note}" if order.notes else note
+                order.save()
+ 
+                success_msg = f"Successfully cancelled {cancelled_count} item(s)."
+                if total_item_refund > 0:
+                    success_msg += f" ₹{total_item_refund} refunded to customer wallet."
+                messages.success(request, success_msg)
+ 
         except Exception as e:
             import traceback
             traceback.print_exc()
             messages.error(request, f'Error cancelling items: {str(e)}')
-        
+ 
         return redirect('admin_panel:order_detail', order_id=order.order_id)
-    
-    # GET request - show cancellation form
-    active_items = order.items.filter(status='active')
-    
-    context = {
-        'order': order,
-        'active_items': active_items,
-    }
-    
-    return render(request, 'admin_panel/cancel_order_items.html', context)
-
-
-
+ 
+    # GET: show item selection form
+    return render(request, 'admin_panel/cancel_order_items.html', {
+        'order':        order,
+        'active_items': order.items.filter(status='active'),
+    })
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 6 — RETURN PROCESSING
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def process_item_return_admin(request, return_id):
-    """
-    ✅ NEW: Admin processes individual item returns
-    """
+    """Approve or reject a return request. Refund happens when status → 'returned'."""
     return_request = get_object_or_404(OrderReturn, pk=return_id)
-    order = return_request.order
-    
+    order          = return_request.order
+ 
     if request.method == 'POST':
-        action = request.POST.get('action')  # 'approve' or 'reject'
+        action      = request.POST.get('action')
         admin_notes = request.POST.get('admin_notes', '').strip()
-        
+ 
         try:
             with transaction.atomic():
+ 
                 if action == 'approve':
-                    # Approve return
-                    return_request.status = 'approved'
+                    return_request.status      = 'approved'
                     return_request.reviewed_by = request.user
                     return_request.reviewed_at = timezone.now()
                     return_request.approved_at = timezone.now()
                     return_request.admin_notes = admin_notes
                     return_request.save()
-                    
-                    # Update order status
+ 
                     order.status = 'return_approved'
                     order.save()
-                    
+ 
                     messages.success(
                         request,
-                        f'Return request approved. Waiting for items to be returned. '
-                        f'Change order status to "Returned" to complete the refund.'
+                        'Return approved. Change order status to "Returned" '
+                        'once items are physically received to trigger the refund.'
                     )
-                    
+ 
                 elif action == 'reject':
                     rejection_reason = request.POST.get('rejection_reason', '').strip()
-                    
+ 
                     if not rejection_reason:
                         messages.error(request, 'Please provide a rejection reason.')
                         return redirect('admin_panel:return_request_detail', pk=return_id)
-                    
-                    # Reject return
-                    return_request.status = 'rejected'
-                    return_request.reviewed_by = request.user
-                    return_request.reviewed_at = timezone.now()
-                    return_request.rejected_at = timezone.now()
+ 
+                    return_request.status           = 'rejected'
+                    return_request.reviewed_by      = request.user
+                    return_request.reviewed_at      = timezone.now()
+                    return_request.rejected_at      = timezone.now()
                     return_request.rejection_reason = rejection_reason
-                    return_request.admin_notes = admin_notes
+                    return_request.admin_notes      = admin_notes
                     return_request.save()
-                    
-                    # Restore order to delivered
+ 
                     order.status = 'delivered'
                     order.save()
-                    
-                    messages.success(request, 'Return request rejected successfully.')
-                
+ 
+                    messages.success(request, 'Return request rejected.')
+ 
                 else:
                     messages.error(request, 'Invalid action.')
-                    
+ 
         except Exception as e:
             import traceback
             traceback.print_exc()
             messages.error(request, f'Error processing return: {str(e)}')
-        
+ 
         return redirect('admin_panel:return_request_detail', pk=return_id)
-    
-    # GET request - redirect to return detail page
+ 
     return redirect('admin_panel:return_request_detail', pk=return_id)
-
-
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 7 — CANCELLATION HISTORY
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def cancellation_history(request):
-    """
-    ✅ NEW: View all order cancellations (both full orders and individual items)
-    """
-    search = request.GET.get('search', '').strip()
-    cancellation_type_filter = request.GET.get('type', '')
-    refund_status_filter = request.GET.get('refund_status', '')
-    
-    # Base queryset
+    """List all order cancellations with search and filters."""
+    search                    = request.GET.get('search', '').strip()
+    cancellation_type_filter  = request.GET.get('type', '')
+    refund_status_filter      = request.GET.get('refund_status', '')
+ 
     cancellations = OrderCancellation.objects.select_related(
-        'order',
-        'order__user',
-        'order_item',
-        'order_item__product',
+        'order', 'order__user',
+        'order_item', 'order_item__product',
         'cancelled_by'
     ).all().order_by('-cancelled_at')
-    
-    # Apply search
+ 
     if search:
         cancellations = cancellations.filter(
-            Q(order__order_id__icontains=search) |
-            Q(order__user__username__icontains=search) |
-            Q(order__user__email__icontains=search) |
+            Q(order__order_id__icontains=search)      |
+            Q(order__user__username__icontains=search)|
+            Q(order__user__email__icontains=search)   |
             Q(reason__icontains=search)
         )
-    
-    # Apply filters
+ 
     if cancellation_type_filter:
         cancellations = cancellations.filter(cancellation_type=cancellation_type_filter)
-    
+ 
     if refund_status_filter:
         cancellations = cancellations.filter(refund_status=refund_status_filter)
-    
-    # Pagination
-    paginator = Paginator(cancellations, 20)
-    page = request.GET.get('page')
-    cancellations_page = paginator.get_page(page)
-    
+ 
     # Statistics
-    total_cancellations = cancellations.count()
-    full_order_cancellations = cancellations.filter(cancellation_type='full_order').count()
-    item_cancellations = cancellations.filter(cancellation_type='single_item').count()
-    total_refunded = cancellations.filter(
-        refund_status='processed'
-    ).aggregate(total=Sum('refund_amount'))['total'] or Decimal('0')
-    
+    stats = cancellations.aggregate(
+        total_refunded=Sum(
+            'refund_amount',
+            filter=Q(refund_status='processed')
+        )
+    )
+ 
+    paginator         = Paginator(cancellations, 20)
+    cancellations_page = paginator.get_page(request.GET.get('page'))
+ 
     context = {
-        'cancellations': cancellations_page,
-        'search': search,
-        'cancellation_type_filter': cancellation_type_filter,
-        'refund_status_filter': refund_status_filter,
-        'total_cancellations': total_cancellations,
-        'full_order_cancellations': full_order_cancellations,
-        'item_cancellations': item_cancellations,
-        'total_refunded': total_refunded,
+        'cancellations':              cancellations_page,
+        'search':                     search,
+        'cancellation_type_filter':   cancellation_type_filter,
+        'refund_status_filter':       refund_status_filter,
+        'total_cancellations':        cancellations.count(),
+        'full_order_cancellations':   cancellations.filter(cancellation_type='full_order').count(),
+        'item_cancellations':         cancellations.filter(cancellation_type='single_item').count(),
+        'total_refunded':             stats['total_refunded'] or Decimal('0'),
     }
-    
+ 
     return render(request, 'admin_panel/cancellation_history.html', context)
-
-
+ 
+ 
 @superuser_required
 def cancellation_detail(request, cancellation_id):
-    """
-    ✅ NEW: View detailed information about a specific cancellation
-    """
+    """Detail view for a single cancellation record."""
     cancellation = get_object_or_404(
         OrderCancellation.objects.select_related(
-            'order',
-            'order__user',
-            'order_item',
-            'order_item__product',
-            'order_item__variant',
+            'order', 'order__user',
+            'order_item', 'order_item__product', 'order_item__variant',
             'cancelled_by'
         ),
         pk=cancellation_id
     )
-    
-    context = {
+ 
+    return render(request, 'admin_panel/cancellation_detail.html', {
         'cancellation': cancellation,
-        'order': cancellation.order,
-    }
-    
-    return render(request, 'admin_panel/cancellation_detail.html', context)
-
-
+        'order':        cancellation.order,
+    })
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 8 — AJAX ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def get_order_items_for_cancellation(request, order_id):
-    """
-    ✅ NEW: AJAX endpoint to get active items for cancellation
-    """
+    """AJAX: returns active items for a given order (used by cancel modal)."""
     order = get_object_or_404(Order, order_id=order_id)
-    active_items = order.items.filter(status='active')
-    
-    items_data = []
-    for item in active_items:
-        items_data.append({
-            'id': item.id,
+ 
+    items_data = [
+        {
+            'id':           item.id,
             'product_name': item.product_name,
             'variant_name': item.variant_name or 'N/A',
-            'quantity': item.quantity,
-            'price': str(item.price),
-            'item_total': str(item.item_total),
-        })
-    
+            'quantity':     item.quantity,
+            'price':        str(item.price),
+            'item_total':   str(item.item_total),
+        }
+        for item in order.items.filter(status='active')
+    ]
+ 
     return JsonResponse({
-        'success': True,
-        'items': items_data,
-        'can_cancel': order.can_cancel
+        'success':    True,
+        'items':      items_data,
+        'can_cancel': order.can_cancel,
     })
-
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 9 — STATISTICS & REPORTS
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def order_statistics_dashboard(request):
-    """
-    ✅ NEW: Comprehensive order statistics including cancellations/returns
-    """
-    from datetime import timedelta
-    
-    # Date range (default last 30 days)
-    days = int(request.GET.get('days', 30))
+    """Comprehensive statistics: orders, cancellations, returns, financials."""
+    days       = int(request.GET.get('days', 30))
     start_date = timezone.now() - timedelta(days=days)
-    
-    # Order statistics
-    total_orders = Order.objects.count()
-    orders_in_period = Order.objects.filter(created_at__gte=start_date).count()
-    
-    # Status breakdown
-    status_breakdown = Order.objects.values('status').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Cancellation statistics
-    total_cancellations = OrderCancellation.objects.count()
-    recent_cancellations = OrderCancellation.objects.filter(
-        cancelled_at__gte=start_date
-    ).count()
-    
-    full_order_cancellations = OrderCancellation.objects.filter(
-        cancellation_type='full_order'
-    ).count()
-    
-    item_cancellations = OrderCancellation.objects.filter(
-        cancellation_type='single_item'
-    ).count()
-    
-    # Return statistics
-    total_returns = OrderReturn.objects.count()
-    pending_returns = OrderReturn.objects.filter(status='pending').count()
-    approved_returns = OrderReturn.objects.filter(status='approved').count()
-    completed_returns = OrderReturn.objects.filter(status='completed').count()
-    rejected_returns = OrderReturn.objects.filter(status='rejected').count()
-    
-    # Financial statistics
-    total_refunded = OrderCancellation.objects.filter(
+ 
+    # Cancellation financials
+    cancel_stats = OrderCancellation.objects.filter(
         refund_status='processed'
-    ).aggregate(total=Sum('refund_amount'))['total'] or Decimal('0')
-    
-    return_refunds = OrderReturn.objects.filter(
+    ).aggregate(total=Sum('refund_amount'))
+ 
+    return_stats = OrderReturn.objects.filter(
         refund_status='processed'
-    ).aggregate(total=Sum('refund_amount'))['total'] or Decimal('0')
-    
-    total_refunds = total_refunded + return_refunds
-    
-    # Top cancellation reasons
-    cancellation_reasons = OrderCancellation.objects.values('reason').annotate(
-        count=Count('id')
-    ).order_by('-count')[:10]
-    
-    # Top return reasons
-    return_reasons = OrderReturn.objects.values('reason').annotate(
-        count=Count('id')
-    ).order_by('-count')[:10]
-    
+    ).aggregate(total=Sum('refund_amount'))
+ 
+    total_refunded  = cancel_stats['total'] or Decimal('0')
+    return_refunds  = return_stats['total'] or Decimal('0')
+ 
     context = {
-        'days': days,
+        'days':       days,
         'start_date': start_date,
-        
-        # Order stats
-        'total_orders': total_orders,
-        'orders_in_period': orders_in_period,
-        'status_breakdown': status_breakdown,
-        
-        # Cancellation stats
-        'total_cancellations': total_cancellations,
-        'recent_cancellations': recent_cancellations,
-        'full_order_cancellations': full_order_cancellations,
-        'item_cancellations': item_cancellations,
-        
-        # Return stats
-        'total_returns': total_returns,
-        'pending_returns': pending_returns,
-        'approved_returns': approved_returns,
-        'completed_returns': completed_returns,
-        'rejected_returns': rejected_returns,
-        
-        # Financial stats
+ 
+        # Orders
+        'total_orders':       Order.objects.count(),
+        'orders_in_period':   Order.objects.filter(created_at__gte=start_date).count(),
+        'status_breakdown':   Order.objects.values('status').annotate(count=Count('id')).order_by('-count'),
+ 
+        # Cancellations
+        'total_cancellations':       OrderCancellation.objects.count(),
+        'recent_cancellations':      OrderCancellation.objects.filter(cancelled_at__gte=start_date).count(),
+        'full_order_cancellations':  OrderCancellation.objects.filter(cancellation_type='full_order').count(),
+        'item_cancellations':        OrderCancellation.objects.filter(cancellation_type='single_item').count(),
+ 
+        # Returns
+        'total_returns':     OrderReturn.objects.count(),
+        'pending_returns':   OrderReturn.objects.filter(status='pending').count(),
+        'approved_returns':  OrderReturn.objects.filter(status='approved').count(),
+        'completed_returns': OrderReturn.objects.filter(status='completed').count(),
+        'rejected_returns':  OrderReturn.objects.filter(status='rejected').count(),
+ 
+        # Financials
         'total_refunded': total_refunded,
         'return_refunds': return_refunds,
-        'total_refunds': total_refunds,
-        
+        'total_refunds':  total_refunded + return_refunds,
+ 
         # Top reasons
-        'cancellation_reasons': cancellation_reasons,
-        'return_reasons': return_reasons,
+        'cancellation_reasons': OrderCancellation.objects.values('reason').annotate(count=Count('id')).order_by('-count')[:10],
+        'return_reasons':       OrderReturn.objects.values('reason').annotate(count=Count('id')).order_by('-count')[:10],
     }
-    
+ 
     return render(request, 'admin_panel/order_statistics.html', context)
-
-
-@superuser_required
-def update_order_status(request, order_id):
-    order = get_object_or_404(Order, order_id=order_id)
-
-    if request.method == 'POST':
-        form = OrderStatusForm(request.POST, current_status=order.status)
-        if form.is_valid():
-            new_status = form.cleaned_data['status']
-            notes = form.cleaned_data.get('notes', '')
-            old_status = order.status
-
-            # ✅ Guard: prevent any processing if status hasn't changed
-            if old_status == new_status:
-                messages.info(request, "Order status is already set to this value.")
-                return redirect('admin_panel:order_detail', order_id=order.order_id)
-
-            order.status = new_status
-
-            # -----------------------------------------------------------
-            # 1. DELIVERED
-            # -----------------------------------------------------------
-            if new_status == 'delivered' and not order.delivered_at:
-                order.delivered_at = timezone.now()
-
-            # -----------------------------------------------------------
-            # 2. CANCELLED — restore stock + refund active items
-            # -----------------------------------------------------------
-            elif new_status == 'cancelled' and old_status != 'cancelled':
-
-                # Restore stock for active items only
-                for item in order.items.filter(status='active'):
-                    if item.variant:
-                        item.variant.stock_quantity += item.quantity
-                        item.variant.save()
-                    else:
-                        item.product.stock += item.quantity
-                        item.product.save()
-                    item.status = 'cancelled'
-                    item.save()
-
-                order.cancelled_at = timezone.now()
-
-                # ✅ FIXED: Only refund if payment completed AND not already refunded
-                if order.payment_status == 'completed':
-                    refund_amount = order.active_total
-
-                    if refund_amount > 0:
-                        order.payment_status = 'refunded'
-
-                        wallet, _ = Wallet.objects.get_or_create(user=order.user)
-                        wallet.add_money(
-                            amount=refund_amount,
-                            transaction_type='credit_refund_cancel',  # ✅ FIXED key
-                            description=f'Refund for cancelled order {order.order_id}',
-                            reference_id=order.order_id
-                        )
-
-            # -----------------------------------------------------------
-            # 3. RETURN APPROVED
-            # -----------------------------------------------------------
-            elif new_status == 'return_approved' and old_status == 'return_requested':
-                return_request = order.returns.filter(status='pending').first()
-                if return_request:
-                    return_request.status = 'approved'
-                    return_request.approved_at = timezone.now()
-                    return_request.reviewed_by = request.user
-                    return_request.reviewed_at = timezone.now()
-                    return_request.save()
-
-            # -----------------------------------------------------------
-            # 4. RETURNED — restore stock + refund active items
-            # -----------------------------------------------------------
-            elif new_status == 'returned' and old_status in [
-                'return_approved', 'return_requested', 'delivered'
-            ]:
-                # ✅ Guard: prevent double refund
-                if order.payment_status == 'refunded':
-                    messages.warning(
-                        request,
-                        f"Order {order.order_id} has already been refunded. "
-                        "No duplicate refund was processed."
-                    )
-                    order.save()
-                    return redirect('admin_panel:order_detail', order_id=order.order_id)
-
-                # Restore stock for active items
-                for item in order.items.filter(status='active'):
-                    if item.variant:
-                        item.variant.stock_quantity += item.quantity
-                        item.variant.save()
-                    else:
-                        item.product.stock += item.quantity
-                        item.product.save()
-                    item.status = 'returned'
-                    item.save()
-
-                refund_amount = order.active_total
-                order.payment_status = 'refunded'
-
-                # ✅ FIXED: correct transaction_type key
-                wallet, _ = Wallet.objects.get_or_create(user=order.user)
-                wallet.add_money(
-                    amount=refund_amount,
-                    transaction_type='credit_refund_return',  # ✅ Correct key
-                    description=f'Refund for returned order {order.order_id}',
-                    reference_id=order.order_id
-                )
-
-                # Update return request to completed
-                return_request = order.returns.filter(
-                    status__in=['pending', 'approved']
-                ).first()
-                if return_request:
-                    return_request.status = 'completed'
-                    return_request.completed_at = timezone.now()
-                    return_request.refund_status = 'processed'
-                    return_request.refund_amount = refund_amount
-                    return_request.reviewed_by = request.user
-                    return_request.reviewed_at = timezone.now()
-                    return_request.save()
-
-            # -----------------------------------------------------------
-            # 5. REACTIVATING a previously cancelled order
-            # -----------------------------------------------------------
-            elif old_status == 'cancelled' and new_status in [
-                'confirmed', 'pending', 'processing'
-            ]:
-                for item in order.items.filter(status='cancelled'):
-                    target = item.variant if item.variant else item.product
-                    stock_field = 'stock_quantity' if item.variant else 'stock'
-
-                    if getattr(target, stock_field) >= item.quantity:
-                        setattr(target, stock_field,
-                                getattr(target, stock_field) - item.quantity)
-                        target.save()
-                        item.status = 'active'
-                        item.save()
-                    else:
-                        messages.error(
-                            request,
-                            f"Insufficient stock for {item.product_name}. "
-                            "Cannot reactivate order."
-                        )
-                        return redirect(
-                            'admin_panel:order_detail',
-                            order_id=order.order_id
-                        )
-
-            # -----------------------------------------------------------
-            # Append audit note
-            # -----------------------------------------------------------
-            if notes:
-                timestamp = timezone.now().strftime('%Y-%m-%d %H:%M')
-                new_note = (
-                    f"[{timestamp}] Status: {old_status} → {new_status} "
-                    f"by {request.user.username}: {notes}"
-                )
-                order.notes = f"{order.notes}\n{new_note}" if order.notes else new_note
-
-            order.save()
-
-            messages.success(
-                request,
-                f"Order {order.order_id} updated to "
-                f"'{order.get_status_display()}' successfully."
-            )
-            return redirect('admin_panel:order_detail', order_id=order.order_id)
-
-        else:
-            messages.error(request, "Please correct the errors below.")
-
-    else:
-        form = OrderStatusForm(current_status=order.status)
-
-    return render(request, 'admin_panel/update_order_status.html', {
-        'order': order,
-        'form': form,
-    })
-
-
-
-@superuser_required
-def cancel_order(request, order_id):
-    """Cancel an order and restore stock"""
-    order = get_object_or_404(Order, order_id=order_id)
-    
-    if not order.can_cancel:
-        messages.error(request, "This order cannot be cancelled.")
-        return redirect('admin_panel:order_detail', order_id=order.order_id)
-    
-    if request.method == 'POST':
-        reason = request.POST.get('reason', 'Cancelled by admin')
-        
-        # Update order status
-        order.status = 'cancelled'
-        order.notes = f"{order.notes}\n[{timezone.now().strftime('%Y-%m-%d %H:%M')}] Cancelled: {reason}" if order.notes else f"Cancelled: {reason}"
-        order.save()
-        
-        # Restore stock
-        for item in order.items.all():
-            if item.variant:
-                item.variant.stock_quantity += item.quantity
-                item.variant.save()
-        
-        # Create cancellation record
-        from products.models import OrderCancellation
-        OrderCancellation.objects.create(
-            order=order,
-            reason=reason,
-            cancelled_by=request.user
-        )
-        
-        messages.success(request, f"Order {order.order_id} has been cancelled and stock restored.")
-        return redirect('admin_panel:order_detail', order_id=order.order_id)
-    
-    context = {
-        'order': order,
-    }
-    
-    return render(request, 'admin_panel/cancel_order.html', context)
-
-
+ 
+ 
 @superuser_required
 def order_inventory_report(request):
-    """View inventory/stock management report"""
-    # Get all variants with stock information
+    """Stock management report: low stock and out-of-stock variants."""
     variants = ProductVariant.objects.filter(
         is_active=True
     ).select_related('product').order_by('stock_quantity')
-    
-    # Low stock variants (stock <= 10)
-    low_stock = variants.filter(stock_quantity__lte=10)
-    
-    # Out of stock variants
-    out_of_stock = variants.filter(stock_quantity=0)
-    
-    # Get recent orders to show stock movement
+ 
+    low_stock     = variants.filter(stock_quantity__lte=10, stock_quantity__gt=0)
+    out_of_stock  = variants.filter(stock_quantity=0)
     recent_orders = Order.objects.filter(
-        created_at__gte=timezone.now() - timezone.timedelta(days=30)
+        created_at__gte=timezone.now() - timedelta(days=30)
     ).select_related('user').order_by('-created_at')[:10]
-    
-    # Calculate stock statistics
-    total_variants = variants.count()
-    low_stock_count = low_stock.count()
-    out_of_stock_count = out_of_stock.count()
-    total_stock_value = sum(v.price * v.stock_quantity for v in variants)
-    
+ 
     context = {
-        'low_stock': low_stock,
-        'out_of_stock': out_of_stock,
-        'recent_orders': recent_orders,
-        'total_variants': total_variants,
-        'low_stock_count': low_stock_count,
-        'out_of_stock_count': out_of_stock_count,
-        'total_stock_value': total_stock_value,
+        'low_stock':          low_stock,
+        'out_of_stock':       out_of_stock,
+        'recent_orders':      recent_orders,
+        'total_variants':     variants.count(),
+        'low_stock_count':    low_stock.count(),
+        'out_of_stock_count': out_of_stock.count(),
+        'total_stock_value':  sum(v.price * v.stock_quantity for v in variants),
     }
-    
+ 
     return render(request, 'admin_panel/order_inventory_report.html', context)
-
-
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 10 — UTILITIES
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @superuser_required
 def clear_order_filters(request):
-    """Clear all order filters and redirect to order list"""
+    """Clear all order filters."""
     return redirect('admin_panel:order_list')
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# PRIVATE HELPER — not a view, used internally only
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+def _restore_stock(item):
+    """
+    Restores stock for a single OrderItem.
+    Handles both variant-based and product-based stock.
+    Prefix with _ to signal this is internal, not a URL-mapped view.
+    """
+    if item.variant:
+        item.variant.stock_quantity += item.quantity
+        item.variant.save()
+    else:
+        item.product.stock += item.quantity
+        item.product.save()
 
 ########################################################################
 # -------------------- COUPON MANAGEMENT --------------------

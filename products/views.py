@@ -5,13 +5,14 @@ from django.contrib import messages
 from django.http import Http404,  JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db.models.functions import Coalesce
 from weasyprint import HTML
+from django.db import transaction
 import json
 import razorpay
 import hmac
@@ -24,13 +25,14 @@ from .models import (
 )
 from users.models import Address, Wallet
 
-# Initialize Razorpay client object
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-
 
 COD_MAX_AMOUNT = Decimal('1000.00')  
 
-# |---------Products----------|
+
+########################################################################
+############---------------- PRODUCTS VIEWS ----------------#########
+########################################################################
 
 def home(request):
     return render(request, 'products/home.html')
@@ -145,7 +147,10 @@ def product_list(request):
     return render(request, 'products/product_list.html', context)
 
 
-# |---------Categories----------|
+
+########################################################################
+############---------------- CATEGORIES ----------------#########
+########################################################################
 
 def men_products(request):
     products = Product.objects.filter(
@@ -350,13 +355,14 @@ def women_products(request):
     return render(request, 'products/category_products.html', context)
 
 
-# |---------Product Detail----------|
+
+########################################################################
+############---------------- PRODUCT  DETAIL VIEW  ----------------#########
+########################################################################
 
 
 def product_detail(request, uuid):
-    """
-    Product detail view with optimized Related Products feature
-    """
+
     try:
         product = get_object_or_404(Product, uuid=uuid)
         
@@ -507,7 +513,7 @@ def product_detail(request, uuid):
 
 
 
-# |---------Variant----------|
+###############|--------PRODUCT VARIANT----------|############
 
 
 @require_GET
@@ -579,7 +585,9 @@ def get_variant_data(request, product_uuid, variant_color):
  
 
 
-# ================== COUPON VIEWS ==================
+########################################################################
+############---------------- COUPON VIEWS----------------#########
+########################################################################
 
 @login_required
 @require_POST
@@ -695,16 +703,15 @@ def remove_coupon(request):
             'message': 'Cart not found.'
         })
     
-#----Rating & Reviews---------#
 
+########################################################################
+############---------------- RATING AND REVIEWS ----------------#########
+########################################################################
 
 @login_required
 @require_POST
 def add_review(request, order_item_id):
-    """
-    Add a new review for a product via order item.
-    Only allows reviews for delivered orders.
-    """
+    
     try:
         # Get the order item and validate ownership
         order_item = get_object_or_404(
@@ -975,7 +982,10 @@ def check_item_review_status(request, order_item_id):
         }, status=500)
 
 
-# ================== CART VIEWS ==================
+
+########################################################################
+############---------------- CART VIEWS----------------#########
+########################################################################
 
 @login_required
 @require_POST
@@ -1454,7 +1464,7 @@ def clear_cart(request):
     return redirect('products:cart_view')
 
 
-# ================== NEW: CANCEL CART ITEM FUNCTIONALITY ==================
+# ================== CANCEL CART ITEM FUNCTIONALITY ==================
 
 @login_required
 @require_POST
@@ -1680,7 +1690,10 @@ def cancel_selected_items(request):
             'message': 'Failed to cancel selected items.'
         })
 
- #================== CHECKOUT & PAYMENT VIEWS ==================
+
+#################################################################################
+############---------------- CHECKOUT AND PAYMENT VIEWS ----------------#########
+#################################################################################
 
 @login_required
 def checkout_view(request):
@@ -1851,7 +1864,7 @@ def checkout_view(request):
 
 
 
-# ✅ NEW: Store selected items for checkout
+# Store selected items for checkout
 @login_required
 @require_POST
 def proceed_to_checkout_with_selection(request):
@@ -1877,6 +1890,10 @@ def proceed_to_checkout_with_selection(request):
         return redirect('products:cart_view')
     
     
+
+########################################################################
+############---------------- PAYMENT VIEWS----------------#########
+########################################################################
 
 @login_required
 @require_POST
@@ -2591,6 +2608,11 @@ def place_order_wallet(request):
         messages.error(request, 'Failed to place order. Please try again.')
         return redirect('products:checkout_view')
 
+
+########################################################################
+############---------------- ORDER VIEWS ----------------###############
+########################################################################
+
 @login_required
 def order_success(request, order_id):
     """Order success page"""
@@ -2755,371 +2777,245 @@ def download_invoice(request, order_id):
     return response
 
 
-#================== ORDER MANAGEMENT VIEWS ==================
 
-@login_required(login_url='users:login')  # ✅ ADDED
+########################################################################
+#================== ORDER MANAGEMENT VIEWS ==================
+########################################################################
+
+
+@login_required(login_url='users:login')
 def order_list(request):
-    """List all user orders with search and filters - FIXED to exclude incomplete orders"""
+    """List all user orders with search and filters."""
     from datetime import timedelta
-    
-    # ✅ FIXED: Only fetch orders that have been properly placed
+
     thirty_minutes_ago = timezone.now() - timedelta(minutes=30)
-    
+
     orders = Order.objects.filter(
-        user=request.user  # ✅ CRITICAL: User can only see their own orders
+        user=request.user
     ).filter(
-        Q(payment_status='completed') |  # Completed payments
-        Q(payment_status='refunded') |  # Refunded orders
-        Q(
-            payment_method='cod',
-            status__in=['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']
-        ) |  # Confirmed COD orders
-        Q(
-            created_at__gte=thirty_minutes_ago,
-            status='pending',
-            payment_status='pending'
-        ) |  # Recent pending orders (still processing)
-        Q(status='cancelled') |  # Cancelled orders
-        Q(status__in=['return_requested', 'return_approved', 'returned'])  # Returned orders
+        Q(payment_status='completed') |
+        Q(payment_status='refunded') |
+        Q(payment_method='cod',
+          status__in=['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']) |
+        Q(created_at__gte=thirty_minutes_ago, status='pending', payment_status='pending') |
+        Q(status='cancelled') |
+        Q(status__in=['return_requested', 'return_approved', 'returned'])
     ).prefetch_related('items').distinct().order_by('-created_at')
-    
-    # Search functionality
+
     search_query = request.GET.get('q', '')
     if search_query:
         orders = orders.filter(
             Q(order_id__icontains=search_query) |
             Q(items__product_name__icontains=search_query)
         ).distinct()
-    
-    # Status filter
+
     status_filter = request.GET.get('status', '')
     if status_filter:
         orders = orders.filter(status=status_filter)
-    
-    # Pagination
-    paginator = Paginator(orders, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
+
+    paginator    = Paginator(orders, 10)
+    page_obj     = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'page_obj': page_obj,
-        'orders': page_obj.object_list,
-        'search_query': search_query,
-        'status_filter': status_filter,
+        'page_obj':       page_obj,
+        'orders':         page_obj.object_list,
+        'search_query':   search_query,
+        'status_filter':  status_filter,
         'status_choices': Order.STATUS_CHOICES,
     }
-    
     return render(request, 'products/order_list.html', context)
 
 
 @login_required(login_url='users:login')
 def order_detail(request, order_id):
-    """Order detail page - USER FACING with individual item selection"""
-    # Ensure user can only see their own orders
+    """Order detail — user facing."""
     order = get_object_or_404(
         Order.objects.prefetch_related('items__product', 'items__variant'),
         order_id=order_id,
         user=request.user
     )
-    
-    # Get items grouped by status for easier display
-    active_items = order.items.filter(status='active')
+
+    active_items    = order.items.filter(status='active')
     cancelled_items = order.items.filter(status='cancelled')
-    returned_items = order.items.filter(status='returned')
-    
+    returned_items  = order.items.filter(status='returned')
+
     context = {
-        'order': order,
-        'active_items': active_items,
-        'cancelled_items': cancelled_items,
-        'returned_items': returned_items,
-        'can_cancel_items': order.can_cancel and active_items.exists(),
-        'can_return_items': order.can_return and active_items.exists(),
+        'order':             order,
+        'active_items':      active_items,
+        'cancelled_items':   cancelled_items,
+        'returned_items':    returned_items,
+        'can_cancel_items':  order.can_cancel and active_items.exists(),
+        'can_return_items':  order.can_return and active_items.exists(),
     }
-    
     return render(request, 'products/order_detail.html', context)
 
 
 @login_required(login_url='users:login')
 def download_invoice(request, order_id):
-    """
-    Download order invoice as PDF with security checks
-    """
-    # ✅ SECURITY: Filter by user to ensure users can only access their own invoices
+    """Download order invoice as PDF."""
     order = get_object_or_404(
         Order.objects.prefetch_related('items__product', 'items__variant'),
         order_id=order_id,
         user=request.user
     )
-    
-    # ✅ SECURITY: Only allow invoice for valid orders
+
     if order.payment_status not in ['completed', 'refunded']:
         messages.error(request, 'Invoice not available for this order yet.')
         return redirect('products:order_detail', order_id=order.order_id)
-    
-    # Calculate active items total (excluding cancelled/returned)
-    active_items = order.items.filter(status='active')
+
+    active_items       = order.items.filter(status='active')
     active_items_total = sum(item.item_total for item in active_items)
-    
-    # Prepare context for invoice template
+
     context = {
-        'order': order,
-        'active_items': active_items,
+        'order':             order,
+        'active_items':      active_items,
         'active_items_total': active_items_total,
-        'company_name': 'WatchItUp',
-        'company_address': 'Kochi, Kerala, India',
-        'company_email': 'support@watchitup.com',
-        'company_phone': '+91 1234567890',
-        'company_website': 'www.watchitup.com',
+        'company_name':      'WatchItUp',
+        'company_address':   'Kochi, Kerala, India',
+        'company_email':     'support@watchitup.com',
+        'company_phone':     '+91 1234567890',
+        'company_website':   'www.watchitup.com',
     }
-    
-    # ✅ CHANGED: Use 'invoice_download.html' instead of 'invoice_pdf.html'
+
     html_string = render_to_string('products/invoice_download.html', context)
-    
-    # Generate PDF from HTML
-    html = HTML(string=html_string)
-    pdf_file = html.write_pdf()
-    
-    # Create HTTP response with PDF
+    html        = HTML(string=html_string)
+    pdf_file    = html.write_pdf()
+
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="WatchItUp_Invoice_{order.order_id}.pdf"'
-    
+    response['Content-Disposition'] = (
+        f'attachment; filename="WatchItUp_Invoice_{order.order_id}.pdf"'
+    )
     return response
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 2: CANCEL VIEWS
+# ─────────────────────────────────────────────────────────────────────────────
 
-@login_required(login_url='users:login')  # ✅ ADDED
-@require_POST
-def cancel_order(request, order_id):
-    """Cancel entire order with wallet refund"""
-    # ✅ CRITICAL: Filter by user
-    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+def _calculate_item_refund(item, order):
     
-    if not order.can_cancel:
-        return JsonResponse({
-            'success': False,
-            'message': 'This order cannot be cancelled.'
-        })
-    
-    reason = request.POST.get('reason', '').strip()
-    
-    if not reason:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please provide a cancellation reason.'
-        })
-    
-    # Restore stock for all active items
-    for item in order.items.filter(status='active'):
-        if item.variant:
-            item.variant.stock_quantity += item.quantity
-            item.variant.save()
-        else:
-            item.product.stock += item.quantity
-            item.product.save()
-        
-        item.status = 'cancelled'
-        item.save()
-    
-    # Calculate refund amount
-    refund_amount = Decimal('0')
-    if order.payment_status == 'completed':
-        refund_amount = order.total
-        
-        # Refund to wallet
-        wallet = Wallet.objects.get_or_create(user=request.user)[0]
-        wallet.add_money(
-            amount=refund_amount,
-            transaction_type='credit_refund_cancel',
-            description=f'Refund for cancelled order {order.order_id}',
-            reference_id=order.order_id
-        )
-    
-    # Update order status
-    order.status = 'cancelled'
-    order.cancelled_at = timezone.now()
-    order.payment_status = 'refunded' if refund_amount > 0 else order.payment_status
-    order.save()
-    
-    # Create cancellation record
-    OrderCancellation.objects.create(
-        order=order,
-        cancellation_type='full_order',
-        reason=reason,
-        refund_amount=refund_amount,
-        refund_status='processed' if refund_amount > 0 else 'pending',
-        cancelled_by=request.user,
-        processed_at=timezone.now() if refund_amount > 0 else None
-    )
-    
-    message = f'Order {order.order_id} cancelled successfully.'
-    if refund_amount > 0:
-        message += f' ₹{refund_amount} has been refunded to your wallet.'
-    
-    return JsonResponse({
-        'success': True,
-        'message': message,
-        'refund_amount': float(refund_amount) if refund_amount > 0 else None
-    })
+    """
+    Calculate the correct refund for one item in a partial cancellation/return.
 
-
-@login_required(login_url='users:login')  # ✅ ADDED
-@require_POST
-def cancel_order_item(request, item_uuid):
-    """Cancel individual order item with reason"""
-    # ✅ CRITICAL: Filter by user
-    item = get_object_or_404(OrderItem, id=item_uuid, order__user=request.user)
-    
-    if not item.can_cancel:
-        return JsonResponse({
-            'success': False,
-            'message': 'This item cannot be cancelled.'
-        })
-    
-    reason = request.POST.get('reason', '').strip()
-    
-    if not reason:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please provide a cancellation reason.'
-        })
-    
-    # Restore stock
-    if item.variant:
-        item.variant.stock_quantity += item.quantity
-        item.variant.save()
-    else:
-        item.product.stock += item.quantity
-        item.product.save()
-    
-    # Calculate proportional refund if paid
-    refund_amount = Decimal('0')
-    if item.order.payment_status == 'completed':
-        refund_amount = item.item_total
-    
-    item.status = 'cancelled'
-    item.save()
-    
-    # Create cancellation record
-    OrderCancellation.objects.create(
-        order=item.order,
-        order_item=item,
-        cancellation_type='single_item',
-        reason=reason,
-        refund_amount=refund_amount,
-        cancelled_by=request.user
-    )
-    
-    # Check if all items are cancelled
-    if not item.order.items.filter(status='active').exists():
-        item.order.status = 'cancelled'
-        item.order.cancelled_at = timezone.now()
-        item.order.save()
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Item cancelled successfully.',
-        'refund_amount': float(refund_amount) if refund_amount > 0 else None
-    })
-
-
-@login_required(login_url='users:login')  # ✅ ADDED
-@require_POST
-def return_order(request, order_id):
-    """Request order return - admin approval required for wallet refund"""
-    # ✅ CRITICAL: Filter by user
-    order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    
-    if not order.can_return:
-        return JsonResponse({
-            'success': False,
-            'message': 'This order cannot be returned. Return window may have expired or order is not delivered.'
-        })
-    
-    reason = request.POST.get('reason', '').strip()
-    comments = request.POST.get('comments', '').strip()
-    
-    if not reason:
-        return JsonResponse({
-            'success': False,
-            'message': 'Please provide a return reason.'
-        })
-    
-    # Check if return already requested
-    existing_return = OrderReturn.objects.filter(order=order).first()
-    if existing_return:
-        return JsonResponse({
-            'success': False,
-            'message': f'Return already {existing_return.status}.'
-        })
-    
-    # Create return request (pending admin approval)
-    OrderReturn.objects.create(
-        order=order,
-        reason=reason,
-        additional_comments=comments,
-        requested_by=request.user,
-        refund_amount=order.total,
-        status='pending'
-    )
-    
-    order.status = 'return_requested'
-    order.save()
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Return request submitted successfully. Admin will review and process your refund to wallet.'
-    })
-
-
-# ==================== CANCEL SELECTED ITEMS ====================
-
+    """
+    if order.subtotal <= 0:
+        return item.item_total
+ 
+    item_ratio = item.item_total / order.subtotal
+ 
+    # Proportional shares
+    tax_share      = (order.tax            * item_ratio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    shipping_share = (order.shipping_charge * item_ratio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    discount_share = (order.discount        * item_ratio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+ 
+    refund = item.item_total + tax_share + shipping_share - discount_share
+ 
+    return max(refund, Decimal('0'))  
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 1: CANCEL VIEWS
+# ─────────────────────────────────────────────────────────────────────────────
+ 
 @login_required(login_url='users:login')
 @require_POST
-def cancel_selected_items(request, order_id):
-    """Cancel multiple selected items from an order"""
+def cancel_order(request, order_id):
+    """
+    Cancel entire order — full refund.
+ 
+    """
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+ 
+    if not order.can_cancel:
+        return JsonResponse({'success': False, 'message': 'This order cannot be cancelled.'})
+ 
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        return JsonResponse({'success': False, 'message': 'Please provide a cancellation reason.'})
+ 
     try:
-        order = get_object_or_404(Order, order_id=order_id, user=request.user)
-        
-        if not order.can_cancel:
-            return JsonResponse({
-                'success': False,
-                'message': 'This order cannot be cancelled anymore.'
-            })
-        
-        # Get selected item IDs
-        selected_item_ids = request.POST.getlist('item_ids[]')
-        reason = request.POST.get('reason', '').strip()
-        
-        if not selected_item_ids:
-            return JsonResponse({
-                'success': False,
-                'message': 'Please select at least one item to cancel.'
-            })
-        
-        if not reason:
-            return JsonResponse({
-                'success': False,
-                'message': 'Please provide a cancellation reason.'
-            })
-        
-        # Validate and get items
-        items_to_cancel = OrderItem.objects.filter(
-            id__in=selected_item_ids,
-            order=order,
-            status='active'
-        )
-        
-        if not items_to_cancel.exists():
-            return JsonResponse({
-                'success': False,
-                'message': 'No valid items found to cancel.'
-            })
-        
-        # Calculate refund amount
-        total_refund = Decimal('0')
-        cancelled_items_info = []
-        
-        for item in items_to_cancel:
+        with transaction.atomic():
+ 
+            # Restore stock and mark items cancelled
+            for item in order.items.filter(status='active'):
+                if item.variant:
+                    item.variant.stock_quantity += item.quantity
+                    item.variant.save()
+                else:
+                    item.product.stock += item.quantity
+                    item.product.save()
+                item.status = 'cancelled'
+                item.save()
+ 
+            # Full refund = order.total (includes tax + shipping)
+            refund_amount = Decimal('0')
+            if order.payment_status == 'completed':
+                refund_amount = order.total  # subtotal + tax + shipping - discount
+ 
+                wallet, _ = Wallet.objects.get_or_create(user=request.user)
+                wallet.add_money(
+                    amount           = refund_amount,
+                    transaction_type = 'credit_refund_cancel',
+                    description      = (
+                        f'Full refund for cancelled order {order.order_id} '
+                        f'(subtotal Rs.{order.subtotal} + tax Rs.{order.tax} '
+                        f'+ shipping Rs.{order.shipping_charge} '
+                        f'- discount Rs.{order.discount})'
+                    ),
+                    reference_id = order.order_id
+                )
+ 
+            order.status         = 'cancelled'
+            order.cancelled_at   = timezone.now()
+            order.payment_status = 'refunded' if refund_amount > 0 else order.payment_status
+            order.save()
+ 
+            OrderCancellation.objects.create(
+                order             = order,
+                cancellation_type = 'full_order',
+                reason            = reason,
+                refund_amount     = refund_amount,
+                refund_status     = 'processed' if refund_amount > 0 else 'not_applicable',
+                cancelled_by      = request.user,
+                processed_at      = timezone.now() if refund_amount > 0 else None,
+            )
+ 
+        message = f'Order {order.order_id} cancelled successfully.'
+        if refund_amount > 0:
+            message += f' Rs.{refund_amount} (including tax) refunded to your wallet.'
+ 
+        return JsonResponse({
+            'success':       True,
+            'message':       message,
+            'refund_amount': float(refund_amount) if refund_amount > 0 else None,
+        })
+ 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': 'Failed to cancel order. Please try again.'})
+ 
+ 
+@login_required(login_url='users:login')
+@require_POST
+def cancel_order_item(request, item_id):
+    """
+    Cancel a single item — proportional refund.
+ 
+    """
+    item  = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    order = item.order
+ 
+    if not item.can_cancel:
+        return JsonResponse({'success': False, 'message': 'This item cannot be cancelled.'})
+ 
+    reason = request.POST.get('reason', '').strip()
+    if not reason:
+        return JsonResponse({'success': False, 'message': 'Please provide a cancellation reason.'})
+ 
+    try:
+        with transaction.atomic():
+ 
             # Restore stock
             if item.variant:
                 item.variant.stock_quantity += item.quantity
@@ -3127,202 +3023,995 @@ def cancel_selected_items(request, order_id):
             else:
                 item.product.stock += item.quantity
                 item.product.save()
-            
-            # Calculate item refund
-            if order.payment_status == 'completed':
-                item_refund = item.item_total
-                total_refund += item_refund
-            
-            # Update item status
+ 
             item.status = 'cancelled'
             item.save()
-            
-            cancelled_items_info.append({
-                'name': item.product_name,
-                'variant': item.variant_name,
-                'quantity': item.quantity
-            })
-            
-            # Create individual cancellation record
+ 
+            remaining_active = order.items.filter(status='active').count()
+ 
+            refund_amount = Decimal('0')
+            if order.payment_status == 'completed':
+ 
+                if remaining_active == 0:
+                    # Last item — refund full order.total (tax + shipping included)
+                    refund_amount = order.total
+                    description   = (
+                        f'Full refund: last item cancelled from order {order.order_id} '
+                        f'(Rs.{order.total} = subtotal + tax + shipping)'
+                    )
+                else:
+                    # Partial — proportional share of tax+shipping
+                    refund_amount = _calculate_item_refund(item, order)
+                    description   = (
+                        f'Partial refund: {item.product_name} cancelled '
+                        f'from order {order.order_id} '
+                        f'(item Rs.{item.item_total} + proportional tax/shipping)'
+                    )
+ 
+                wallet, _ = Wallet.objects.get_or_create(user=request.user)
+                wallet.add_money(
+                    amount           = refund_amount,
+                    transaction_type = 'credit_refund_cancel',
+                    description      = description,
+                    reference_id     = order.order_id
+                )
+ 
+            if remaining_active == 0:
+                order.status         = 'cancelled'
+                order.cancelled_at   = timezone.now()
+                order.payment_status = 'refunded' if refund_amount > 0 else order.payment_status
+                order.save()
+ 
             OrderCancellation.objects.create(
-                order=order,
-                order_item=item,
-                cancellation_type='single_item',
-                reason=reason,
-                refund_amount=item_refund if order.payment_status == 'completed' else Decimal('0'),
-                refund_status='processed' if order.payment_status == 'completed' else 'pending',
-                cancelled_by=request.user,
-                processed_at=timezone.now() if order.payment_status == 'completed' else None
+                order             = order,
+                order_item        = item,
+                cancellation_type = 'single_item',
+                reason            = reason,
+                refund_amount     = refund_amount,
+                refund_status     = 'processed' if refund_amount > 0 else 'not_applicable',
+                cancelled_by      = request.user,
+                processed_at      = timezone.now() if refund_amount > 0 else None,
             )
-        
-        # Process refund to wallet if payment was completed
-        if total_refund > 0:
-            wallet = Wallet.objects.get_or_create(user=request.user)[0]
-            wallet.add_money(
-                amount=total_refund,
-                transaction_type='credit_refund_cancel',
-                description=f'Refund for cancelled items in order {order.order_id}',
-                reference_id=order.order_id
-            )
-        
-        # Check if all items are now cancelled
-        remaining_active = order.items.filter(status='active').count()
-        if remaining_active == 0:
-            order.status = 'cancelled'
-            order.cancelled_at = timezone.now()
-            order.payment_status = 'refunded' if total_refund > 0 else order.payment_status
-            order.save()
-            
-            message = f'All items cancelled successfully.'
-        else:
-            message = f'{len(cancelled_items_info)} item(s) cancelled successfully.'
-        
-        if total_refund > 0:
-            message += f' ₹{total_refund} has been refunded to your wallet.'
-        
+ 
+        message = f'{item.product_name} cancelled successfully.'
+        if refund_amount > 0:
+            message += f' Rs.{refund_amount} (including tax) refunded to your wallet.'
+ 
         return JsonResponse({
-            'success': True,
-            'message': message,
-            'refund_amount': float(total_refund) if total_refund > 0 else None,
-            'cancelled_count': len(cancelled_items_info),
-            'all_items_cancelled': remaining_active == 0
+            'success':       True,
+            'message':       message,
+            'refund_amount': float(refund_amount) if refund_amount > 0 else None,
         })
-        
+ 
     except Exception as e:
         import traceback
         traceback.print_exc()
+        return JsonResponse({'success': False, 'message': 'Failed to cancel item. Please try again.'})
+ 
+ 
+@login_required(login_url='users:login')
+@require_POST
+def cancel_selected_items(request, order_id):
+    """
+    Cancel multiple selected items.
+
+    """
+    try:
+        order = get_object_or_404(Order, order_id=order_id, user=request.user)
+ 
+        if not order.can_cancel:
+            return JsonResponse({'success': False, 'message': 'This order cannot be cancelled anymore.'})
+ 
+        selected_item_ids = request.POST.getlist('item_ids[]')
+        reason            = request.POST.get('reason', '').strip()
+ 
+        if not selected_item_ids:
+            return JsonResponse({'success': False, 'message': 'Please select at least one item to cancel.'})
+        if not reason:
+            return JsonResponse({'success': False, 'message': 'Please provide a cancellation reason.'})
+ 
+        items_to_cancel = OrderItem.objects.filter(
+            id__in=selected_item_ids,
+            order=order,
+            status='active'
+        )
+ 
+        if not items_to_cancel.exists():
+            return JsonResponse({'success': False, 'message': 'No valid active items found to cancel.'})
+ 
+        with transaction.atomic():
+ 
+            # Determine BEFORE cancelling: will all items be cancelled?
+            total_active         = order.items.filter(status='active').count()
+            items_being_cancelled = items_to_cancel.count()
+            all_will_be_cancelled = (items_being_cancelled >= total_active)
+ 
+            cancelled_count = 0
+            # We'll use order.total for full cancel, sum for partial
+            # Pre-calculate proportional refunds for partial cancel
+            proportional_total = Decimal('0')
+ 
+            for item in items_to_cancel:
+                # Restore stock
+                if item.variant:
+                    item.variant.stock_quantity += item.quantity
+                    item.variant.save()
+                else:
+                    item.product.stock += item.quantity
+                    item.product.save()
+ 
+                # Always initialise item_refund
+                item_refund = Decimal('0')
+                if order.payment_status == 'completed' and not all_will_be_cancelled:
+                    # Proportional refund for partial cancel
+                    item_refund         = _calculate_item_refund(item, order)
+                    proportional_total += item_refund
+ 
+                item.status = 'cancelled'
+                item.save()
+                cancelled_count += 1
+ 
+                OrderCancellation.objects.create(
+                    order             = order,
+                    order_item        = item,
+                    cancellation_type = 'single_item',
+                    reason            = reason,
+                    refund_amount     = item_refund,
+                    refund_status     = 'processed' if item_refund > 0 else 'not_applicable',
+                    cancelled_by      = request.user,
+                    processed_at      = timezone.now() if item_refund > 0 else None,
+                )
+ 
+            # Decide final refund amount
+            if order.payment_status == 'completed':
+                if all_will_be_cancelled:
+                    # Full cancel — use order.total (tax + shipping + subtotal - discount)
+                    total_refund = order.total
+                    description  = (
+                        f'Full refund: all items cancelled from order {order.order_id} '
+                        f'(Rs.{order.total} = subtotal + tax + shipping)'
+                    )
+                else:
+                    # Partial cancel — sum of proportional refunds
+                    total_refund = proportional_total
+                    description  = (
+                        f'Partial refund: {cancelled_count} item(s) cancelled '
+                        f'from order {order.order_id} '
+                        f'(item totals + proportional tax/shipping)'
+                    )
+ 
+                if total_refund > 0:
+                    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+                    wallet.add_money(
+                        amount           = total_refund,
+                        transaction_type = 'credit_refund_cancel',
+                        description      = description,
+                        reference_id     = order.order_id
+                    )
+            else:
+                total_refund = Decimal('0')
+ 
+            # Mark order cancelled if fully cancelled
+            if all_will_be_cancelled:
+                order.status         = 'cancelled'
+                order.cancelled_at   = timezone.now()
+                order.payment_status = 'refunded' if total_refund > 0 else order.payment_status
+                order.save()
+ 
+        message = 'All items cancelled.' if all_will_be_cancelled else f'{cancelled_count} item(s) cancelled.'
+        if total_refund > 0:
+            message += f' Rs.{total_refund} (including tax) refunded to your wallet.'
+ 
+        return JsonResponse({
+            'success':             True,
+            'message':             message,
+            'refund_amount':       float(total_refund) if total_refund > 0 else None,
+            'cancelled_count':     cancelled_count,
+            'all_items_cancelled': all_will_be_cancelled,
+        })
+ 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': 'Failed to cancel items. Please try again.'})
+ 
+ 
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 2: RETURN VIEWS
+# ─────────────────────────────────────────────────────────────────────────────
+ 
+@login_required(login_url='users:login')
+@require_POST
+def return_order(request, order_id):
+
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+ 
+    if not order.can_return:
         return JsonResponse({
             'success': False,
-            'message': 'Failed to cancel items. Please try again.'
+            'message': 'This order cannot be returned. Return window may have expired or order is not delivered.'
         })
-
-
-# ==================== RETURN SELECTED ITEMS ====================
-
+ 
+    reason   = request.POST.get('reason', '').strip()
+    comments = request.POST.get('comments', '').strip()
+ 
+    if not reason:
+        return JsonResponse({'success': False, 'message': 'Please provide a return reason.'})
+ 
+    existing_return = OrderReturn.objects.filter(order=order).first()
+    if existing_return:
+        return JsonResponse({
+            'success': False,
+            'message': f'A return request is already {existing_return.status} for this order.'
+        })
+ 
+    # order.total = subtotal + tax + shipping - discount
+    refund_amount = order.total
+ 
+    try:
+        with transaction.atomic():
+            OrderReturn.objects.create(
+                order               = order,
+                reason              = reason,
+                additional_comments = (
+                    f'Full order return.\n'
+                    f'Refund breakdown: subtotal Rs.{order.subtotal} + '
+                    f'tax Rs.{order.tax} + shipping Rs.{order.shipping_charge} '
+                    f'- discount Rs.{order.discount} = Rs.{refund_amount}\n\n'
+                    f'{comments}'
+                ),
+                requested_by        = request.user,
+                refund_amount       = refund_amount,  # includes tax
+                status              = 'pending'
+            )
+ 
+            order.status = 'return_requested'
+            order.save()
+ 
+        return JsonResponse({
+            'success':         True,
+            'message':         (
+                f'Return request submitted. Admin will review and refund '
+                f'Rs.{refund_amount} (including tax) to your wallet.'
+            ),
+            'expected_refund': float(refund_amount),
+        })
+ 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': 'Failed to submit return request. Please try again.'})
+ 
+ 
 @login_required(login_url='users:login')
 @require_POST
 def return_selected_items(request, order_id):
-    """Request return for multiple selected items"""
+    """
+    Request return for selected items.
+ 
+    If ALL active items selected:
+        refund_amount = order.total (full exact amount, tax included)
+ 
+    If SOME items remain:
+        refund_amount = sum of _calculate_item_refund() per item
+        (proportional tax + shipping per item, no full shipping refund)
+ 
+    Admin credits this stored refund_amount when marking 'returned'.
+    """
     try:
         order = get_object_or_404(Order, order_id=order_id, user=request.user)
-        
+ 
         if not order.can_return:
             return JsonResponse({
                 'success': False,
-                'message': 'This order is not eligible for return. Return window may have expired or order is not delivered.'
+                'message': 'This order is not eligible for return.'
             })
-        
-        # Get selected item IDs
+ 
         selected_item_ids = request.POST.getlist('item_ids[]')
-        reason = request.POST.get('reason', '').strip()
-        comments = request.POST.get('comments', '').strip()
-        
+        reason            = request.POST.get('reason', '').strip()
+        comments          = request.POST.get('comments', '').strip()
+ 
         if not selected_item_ids:
-            return JsonResponse({
-                'success': False,
-                'message': 'Please select at least one item to return.'
-            })
-        
+            return JsonResponse({'success': False, 'message': 'Please select at least one item to return.'})
         if not reason:
-            return JsonResponse({
-                'success': False,
-                'message': 'Please provide a return reason.'
-            })
-        
-        # Validate and get items
+            return JsonResponse({'success': False, 'message': 'Please provide a return reason.'})
+ 
         items_to_return = OrderItem.objects.filter(
             id__in=selected_item_ids,
             order=order,
             status='active'
         )
-        
+ 
         if not items_to_return.exists():
+            return JsonResponse({'success': False, 'message': 'No valid active items found to return.'})
+ 
+        existing_return = OrderReturn.objects.filter(order=order).first()
+        if existing_return:
             return JsonResponse({
                 'success': False,
-                'message': 'No valid items found to return.'
+                'message': f'A return request is already {existing_return.status} for this order.'
             })
-        
-        # Calculate potential refund amount
-        total_refund = sum(item.item_total for item in items_to_return)
-        
-        # Create return request
-        order_return = OrderReturn.objects.create(
-            order=order,
-            reason=reason,
-            additional_comments=comments,
-            requested_by=request.user,
-            refund_amount=total_refund,
-            status='pending'
-        )
-        
-        # Store which items are being returned
-        # You might want to create a separate model for this, but for now we'll use comments
-        item_details = []
+ 
+        # Determine if ALL active items are being returned
+        total_active         = order.items.filter(status='active').count()
+        items_being_returned = items_to_return.count()
+        all_being_returned   = (items_being_returned >= total_active)
+ 
+        # ── Refund calculation ──────────────────────────────────────────────
+        if all_being_returned:
+            # Full return — use order.total (tax + shipping included)
+            total_refund     = order.total
+            includes_tax     = True
+            includes_shipping = order.shipping_charge > 0
+        else:
+            # Partial return — proportional per item
+            total_refund     = sum(_calculate_item_refund(item, order) for item in items_to_return)
+            includes_tax     = True   # proportional tax is included per item
+            includes_shipping = False
+ 
+        # ── Build detail string for admin ───────────────────────────────────
+        item_lines = []
         for item in items_to_return:
-            item_name = f"{item.product_name}"
+            label = item.product_name
             if item.variant_name:
-                item_name += f" ({item.variant_name})"
-            item_details.append(f"{item_name} x{item.quantity}")
-        
-        order_return.additional_comments = f"Items: {', '.join(item_details)}\n\n{comments}"
-        order_return.save()
-        
-        # Update order status
-        order.status = 'return_requested'
-        order.save()
-        
+                label += f' ({item.variant_name})'
+            item_lines.append(f'{label} x{item.quantity} = Rs.{item.item_total}')
+ 
+        if all_being_returned:
+            breakdown = (
+                f'Full return: Rs.{order.subtotal} (subtotal) + '
+                f'Rs.{order.tax} (tax) + Rs.{order.shipping_charge} (shipping) '
+                f'- Rs.{order.discount} (discount) = Rs.{total_refund}'
+            )
+        else:
+            breakdown = (
+                f'Partial return ({items_being_returned} items): '
+                f'Rs.{total_refund} (item totals + proportional tax/shipping)'
+            )
+ 
+        full_comments = (
+            'Return items:\n' +
+            '\n'.join(item_lines) +
+            f'\n\nRefund breakdown: {breakdown}' +
+            (f'\n\nCustomer notes: {comments}' if comments else '')
+        )
+ 
+        with transaction.atomic():
+            OrderReturn.objects.create(
+                order               = order,
+                reason              = reason,
+                additional_comments = full_comments,
+                requested_by        = request.user,
+                refund_amount       = total_refund,  # includes tax
+                status              = 'pending'
+            )
+ 
+            order.status = 'return_requested'
+            order.save()
+ 
+        scope   = 'all items' if all_being_returned else f'{items_being_returned} item(s)'
+        message = (
+            f'Return request submitted for {scope}. '
+            f'Admin will review and refund Rs.{total_refund} (including tax) to your wallet.'
+        )
+ 
         return JsonResponse({
-            'success': True,
-            'message': f'Return request submitted for {len(items_to_return)} item(s). Admin will review and process your refund to wallet.',
-            'items_count': len(items_to_return),
-            'potential_refund': float(total_refund)
+            'success':            True,
+            'message':            message,
+            'items_count':        items_being_returned,
+            'expected_refund':    float(total_refund),
+            'includes_tax':       includes_tax,
+            'includes_shipping':  includes_shipping,
         })
-        
+ 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'message': 'Failed to submit return request. Please try again.'
-        })
-
-
-# ==================== HELPER: GET ITEM SELECTION DATA ====================
+        return JsonResponse({'success': False, 'message': 'Failed to submit return request. Please try again.'})
+    
+# ─────────────────────────────────────────────────────────────────────────────
+# SECTION 4: AJAX HELPER  (no changes needed)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @login_required(login_url='users:login')
 @require_GET
 def get_order_items_data(request, order_id):
-    """Get order items data for selection (AJAX)"""
+    """AJAX: returns active items data for cancel/return selection modals."""
     try:
         order = get_object_or_404(Order, order_id=order_id, user=request.user)
-        
-        items_data = []
-        for item in order.items.filter(status='active'):
-            items_data.append({
-                'id': item.id,
-                'name': item.product_name,
-                'variant': item.variant_name,
-                'quantity': item.quantity,
-                'price': float(item.price),
-                'total': float(item.item_total),
-                'image_url': item.product_image.url if item.product_image else None
-            })
-        
+
+        items_data = [
+            {
+                'id':        item.id,
+                'name':      item.product_name,
+                'variant':   item.variant_name,
+                'quantity':  item.quantity,
+                'price':     float(item.price),
+                'total':     float(item.item_total),
+                'image_url': item.product_image.url if item.product_image else None,
+            }
+            for item in order.items.filter(status='active')
+        ]
+
         return JsonResponse({
-            'success': True,
-            'items': items_data,
+            'success':    True,
+            'items':      items_data,
             'can_cancel': order.can_cancel,
-            'can_return': order.can_return
+            'can_return': order.can_return,
         })
-        
+
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        })
+        return JsonResponse({'success': False, 'message': str(e)})
+    
+
+# @login_required(login_url='users:login')  # ✅ ADDED
+# def order_list(request):
+#     """List all user orders with search and filters - FIXED to exclude incomplete orders"""
+#     from datetime import timedelta
+    
+#     # ✅ FIXED: Only fetch orders that have been properly placed
+#     thirty_minutes_ago = timezone.now() - timedelta(minutes=30)
+    
+#     orders = Order.objects.filter(
+#         user=request.user  # ✅ CRITICAL: User can only see their own orders
+#     ).filter(
+#         Q(payment_status='completed') |  # Completed payments
+#         Q(payment_status='refunded') |  # Refunded orders
+#         Q(
+#             payment_method='cod',
+#             status__in=['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']
+#         ) |  # Confirmed COD orders
+#         Q(
+#             created_at__gte=thirty_minutes_ago,
+#             status='pending',
+#             payment_status='pending'
+#         ) |  # Recent pending orders (still processing)
+#         Q(status='cancelled') |  # Cancelled orders
+#         Q(status__in=['return_requested', 'return_approved', 'returned'])  # Returned orders
+#     ).prefetch_related('items').distinct().order_by('-created_at')
+    
+#     # Search functionality
+#     search_query = request.GET.get('q', '')
+#     if search_query:
+#         orders = orders.filter(
+#             Q(order_id__icontains=search_query) |
+#             Q(items__product_name__icontains=search_query)
+#         ).distinct()
+    
+#     # Status filter
+#     status_filter = request.GET.get('status', '')
+#     if status_filter:
+#         orders = orders.filter(status=status_filter)
+    
+#     # Pagination
+#     paginator = Paginator(orders, 10)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+    
+#     context = {
+#         'page_obj': page_obj,
+#         'orders': page_obj.object_list,
+#         'search_query': search_query,
+#         'status_filter': status_filter,
+#         'status_choices': Order.STATUS_CHOICES,
+#     }
+    
+#     return render(request, 'products/order_list.html', context)
 
 
-#|===========WISHLIST & WISHLIST MANAGEMENT=============|
+# @login_required(login_url='users:login')
+# def order_detail(request, order_id):
+#     """Order detail page - USER FACING with individual item selection"""
+#     # Ensure user can only see their own orders
+#     order = get_object_or_404(
+#         Order.objects.prefetch_related('items__product', 'items__variant'),
+#         order_id=order_id,
+#         user=request.user
+#     )
+    
+#     # Get items grouped by status for easier display
+#     active_items = order.items.filter(status='active')
+#     cancelled_items = order.items.filter(status='cancelled')
+#     returned_items = order.items.filter(status='returned')
+    
+#     context = {
+#         'order': order,
+#         'active_items': active_items,
+#         'cancelled_items': cancelled_items,
+#         'returned_items': returned_items,
+#         'can_cancel_items': order.can_cancel and active_items.exists(),
+#         'can_return_items': order.can_return and active_items.exists(),
+#     }
+    
+#     return render(request, 'products/order_detail.html', context)
+
+
+# @login_required(login_url='users:login')
+# def download_invoice(request, order_id):
+#     """
+#     Download order invoice as PDF with security checks
+#     """
+#     # ✅ SECURITY: Filter by user to ensure users can only access their own invoices
+#     order = get_object_or_404(
+#         Order.objects.prefetch_related('items__product', 'items__variant'),
+#         order_id=order_id,
+#         user=request.user
+#     )
+    
+#     # ✅ SECURITY: Only allow invoice for valid orders
+#     if order.payment_status not in ['completed', 'refunded']:
+#         messages.error(request, 'Invoice not available for this order yet.')
+#         return redirect('products:order_detail', order_id=order.order_id)
+    
+#     # Calculate active items total (excluding cancelled/returned)
+#     active_items = order.items.filter(status='active')
+#     active_items_total = sum(item.item_total for item in active_items)
+    
+#     # Prepare context for invoice template
+#     context = {
+#         'order': order,
+#         'active_items': active_items,
+#         'active_items_total': active_items_total,
+#         'company_name': 'WatchItUp',
+#         'company_address': 'Kochi, Kerala, India',
+#         'company_email': 'support@watchitup.com',
+#         'company_phone': '+91 1234567890',
+#         'company_website': 'www.watchitup.com',
+#     }
+    
+#     # ✅ CHANGED: Use 'invoice_download.html' instead of 'invoice_pdf.html'
+#     html_string = render_to_string('products/invoice_download.html', context)
+    
+#     # Generate PDF from HTML
+#     html = HTML(string=html_string)
+#     pdf_file = html.write_pdf()
+    
+#     # Create HTTP response with PDF
+#     response = HttpResponse(pdf_file, content_type='application/pdf')
+#     response['Content-Disposition'] = f'attachment; filename="WatchItUp_Invoice_{order.order_id}.pdf"'
+    
+#     return response
+
+
+
+# @login_required(login_url='users:login')  # ✅ ADDED
+# @require_POST
+# def cancel_order(request, order_id):
+#     """Cancel entire order with wallet refund"""
+#     # ✅ CRITICAL: Filter by user
+#     order = get_object_or_404(Order, order_id=order_id, user=request.user)
+    
+#     if not order.can_cancel:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'This order cannot be cancelled.'
+#         })
+    
+#     reason = request.POST.get('reason', '').strip()
+    
+#     if not reason:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Please provide a cancellation reason.'
+#         })
+    
+#     # Restore stock for all active items
+#     for item in order.items.filter(status='active'):
+#         if item.variant:
+#             item.variant.stock_quantity += item.quantity
+#             item.variant.save()
+#         else:
+#             item.product.stock += item.quantity
+#             item.product.save()
+        
+#         item.status = 'cancelled'
+#         item.save()
+    
+#     # Calculate refund amount
+#     refund_amount = Decimal('0')
+#     if order.payment_status == 'completed':
+#         refund_amount = order.total
+        
+#         # Refund to wallet
+#         wallet = Wallet.objects.get_or_create(user=request.user)[0]
+#         wallet.add_money(
+#             amount=refund_amount,
+#             transaction_type='credit_refund_cancel',
+#             description=f'Refund for cancelled order {order.order_id}',
+#             reference_id=order.order_id
+#         )
+    
+#     # Update order status
+#     order.status = 'cancelled'
+#     order.cancelled_at = timezone.now()
+#     order.payment_status = 'refunded' if refund_amount > 0 else order.payment_status
+#     order.save()
+    
+#     # Create cancellation record
+#     OrderCancellation.objects.create(
+#         order=order,
+#         cancellation_type='full_order',
+#         reason=reason,
+#         refund_amount=refund_amount,
+#         refund_status='processed' if refund_amount > 0 else 'pending',
+#         cancelled_by=request.user,
+#         processed_at=timezone.now() if refund_amount > 0 else None
+#     )
+    
+#     message = f'Order {order.order_id} cancelled successfully.'
+#     if refund_amount > 0:
+#         message += f' ₹{refund_amount} has been refunded to your wallet.'
+    
+#     return JsonResponse({
+#         'success': True,
+#         'message': message,
+#         'refund_amount': float(refund_amount) if refund_amount > 0 else None
+#     })
+
+
+# @login_required(login_url='users:login')  # ✅ ADDED
+# @require_POST
+# def cancel_order_item(request, item_uuid):
+#     """Cancel individual order item with reason"""
+#     # ✅ CRITICAL: Filter by user
+#     item = get_object_or_404(OrderItem, id=item_uuid, order__user=request.user)
+    
+#     if not item.can_cancel:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'This item cannot be cancelled.'
+#         })
+    
+#     reason = request.POST.get('reason', '').strip()
+    
+#     if not reason:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Please provide a cancellation reason.'
+#         })
+    
+#     # Restore stock
+#     if item.variant:
+#         item.variant.stock_quantity += item.quantity
+#         item.variant.save()
+#     else:
+#         item.product.stock += item.quantity
+#         item.product.save()
+    
+#     # Calculate proportional refund if paid
+#     refund_amount = Decimal('0')
+#     if item.order.payment_status == 'completed':
+#         refund_amount = item.item_total
+    
+#     item.status = 'cancelled'
+#     item.save()
+    
+#     # Create cancellation record
+#     OrderCancellation.objects.create(
+#         order=item.order,
+#         order_item=item,
+#         cancellation_type='single_item',
+#         reason=reason,
+#         refund_amount=refund_amount,
+#         cancelled_by=request.user
+#     )
+    
+#     # Check if all items are cancelled
+#     if not item.order.items.filter(status='active').exists():
+#         item.order.status = 'cancelled'
+#         item.order.cancelled_at = timezone.now()
+#         item.order.save()
+    
+#     return JsonResponse({
+#         'success': True,
+#         'message': 'Item cancelled successfully.',
+#         'refund_amount': float(refund_amount) if refund_amount > 0 else None
+#     })
+
+
+# @login_required(login_url='users:login')  # ✅ ADDED
+# @require_POST
+# def return_order(request, order_id):
+#     """Request order return - admin approval required for wallet refund"""
+#     # ✅ CRITICAL: Filter by user
+#     order = get_object_or_404(Order, order_id=order_id, user=request.user)
+    
+#     if not order.can_return:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'This order cannot be returned. Return window may have expired or order is not delivered.'
+#         })
+    
+#     reason = request.POST.get('reason', '').strip()
+#     comments = request.POST.get('comments', '').strip()
+    
+#     if not reason:
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Please provide a return reason.'
+#         })
+    
+#     # Check if return already requested
+#     existing_return = OrderReturn.objects.filter(order=order).first()
+#     if existing_return:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Return already {existing_return.status}.'
+#         })
+    
+#     # Create return request (pending admin approval)
+#     OrderReturn.objects.create(
+#         order=order,
+#         reason=reason,
+#         additional_comments=comments,
+#         requested_by=request.user,
+#         refund_amount=order.total,
+#         status='pending'
+#     )
+    
+#     order.status = 'return_requested'
+#     order.save()
+    
+#     return JsonResponse({
+#         'success': True,
+#         'message': 'Return request submitted successfully. Admin will review and process your refund to wallet.'
+#     })
+
+
+# # ==================== CANCEL SELECTED ITEMS ====================
+
+# @login_required(login_url='users:login')
+# @require_POST
+# def cancel_selected_items(request, order_id):
+#     """Cancel multiple selected items from an order"""
+#     try:
+#         order = get_object_or_404(Order, order_id=order_id, user=request.user)
+        
+#         if not order.can_cancel:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'This order cannot be cancelled anymore.'
+#             })
+        
+#         # Get selected item IDs
+#         selected_item_ids = request.POST.getlist('item_ids[]')
+#         reason = request.POST.get('reason', '').strip()
+        
+#         if not selected_item_ids:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Please select at least one item to cancel.'
+#             })
+        
+#         if not reason:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Please provide a cancellation reason.'
+#             })
+        
+#         # Validate and get items
+#         items_to_cancel = OrderItem.objects.filter(
+#             id__in=selected_item_ids,
+#             order=order,
+#             status='active'
+#         )
+        
+#         if not items_to_cancel.exists():
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'No valid items found to cancel.'
+#             })
+        
+#         # Calculate refund amount
+#         total_refund = Decimal('0')
+#         cancelled_items_info = []
+        
+#         for item in items_to_cancel:
+#             # Restore stock
+#             if item.variant:
+#                 item.variant.stock_quantity += item.quantity
+#                 item.variant.save()
+#             else:
+#                 item.product.stock += item.quantity
+#                 item.product.save()
+            
+#             # Calculate item refund
+#             if order.payment_status == 'completed':
+#                 item_refund = item.item_total
+#                 total_refund += item_refund
+            
+#             # Update item status
+#             item.status = 'cancelled'
+#             item.save()
+            
+#             cancelled_items_info.append({
+#                 'name': item.product_name,
+#                 'variant': item.variant_name,
+#                 'quantity': item.quantity
+#             })
+            
+#             # Create individual cancellation record
+#             OrderCancellation.objects.create(
+#                 order=order,
+#                 order_item=item,
+#                 cancellation_type='single_item',
+#                 reason=reason,
+#                 refund_amount=item_refund if order.payment_status == 'completed' else Decimal('0'),
+#                 refund_status='processed' if order.payment_status == 'completed' else 'pending',
+#                 cancelled_by=request.user,
+#                 processed_at=timezone.now() if order.payment_status == 'completed' else None
+#             )
+        
+#         # Process refund to wallet if payment was completed
+#         if total_refund > 0:
+#             wallet = Wallet.objects.get_or_create(user=request.user)[0]
+#             wallet.add_money(
+#                 amount=total_refund,
+#                 transaction_type='credit_refund_cancel',
+#                 description=f'Refund for cancelled items in order {order.order_id}',
+#                 reference_id=order.order_id
+#             )
+        
+#         # Check if all items are now cancelled
+#         remaining_active = order.items.filter(status='active').count()
+#         if remaining_active == 0:
+#             order.status = 'cancelled'
+#             order.cancelled_at = timezone.now()
+#             order.payment_status = 'refunded' if total_refund > 0 else order.payment_status
+#             order.save()
+            
+#             message = f'All items cancelled successfully.'
+#         else:
+#             message = f'{len(cancelled_items_info)} item(s) cancelled successfully.'
+        
+#         if total_refund > 0:
+#             message += f' ₹{total_refund} has been refunded to your wallet.'
+        
+#         return JsonResponse({
+#             'success': True,
+#             'message': message,
+#             'refund_amount': float(total_refund) if total_refund > 0 else None,
+#             'cancelled_count': len(cancelled_items_info),
+#             'all_items_cancelled': remaining_active == 0
+#         })
+        
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Failed to cancel items. Please try again.'
+#         })
+
+
+# # ==================== RETURN SELECTED ITEMS ====================
+
+# @login_required(login_url='users:login')
+# @require_POST
+# def return_selected_items(request, order_id):
+#     """Request return for multiple selected items"""
+#     try:
+#         order = get_object_or_404(Order, order_id=order_id, user=request.user)
+        
+#         if not order.can_return:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'This order is not eligible for return. Return window may have expired or order is not delivered.'
+#             })
+        
+#         # Get selected item IDs
+#         selected_item_ids = request.POST.getlist('item_ids[]')
+#         reason = request.POST.get('reason', '').strip()
+#         comments = request.POST.get('comments', '').strip()
+        
+#         if not selected_item_ids:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Please select at least one item to return.'
+#             })
+        
+#         if not reason:
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Please provide a return reason.'
+#             })
+        
+#         # Validate and get items
+#         items_to_return = OrderItem.objects.filter(
+#             id__in=selected_item_ids,
+#             order=order,
+#             status='active'
+#         )
+        
+#         if not items_to_return.exists():
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'No valid items found to return.'
+#             })
+        
+#         # Calculate potential refund amount
+#         total_refund = sum(item.item_total for item in items_to_return)
+        
+#         # Create return request
+#         order_return = OrderReturn.objects.create(
+#             order=order,
+#             reason=reason,
+#             additional_comments=comments,
+#             requested_by=request.user,
+#             refund_amount=total_refund,
+#             status='pending'
+#         )
+        
+#         # Store which items are being returned
+#         # You might want to create a separate model for this, but for now we'll use comments
+#         item_details = []
+#         for item in items_to_return:
+#             item_name = f"{item.product_name}"
+#             if item.variant_name:
+#                 item_name += f" ({item.variant_name})"
+#             item_details.append(f"{item_name} x{item.quantity}")
+        
+#         order_return.additional_comments = f"Items: {', '.join(item_details)}\n\n{comments}"
+#         order_return.save()
+        
+#         # Update order status
+#         order.status = 'return_requested'
+#         order.save()
+        
+#         return JsonResponse({
+#             'success': True,
+#             'message': f'Return request submitted for {len(items_to_return)} item(s). Admin will review and process your refund to wallet.',
+#             'items_count': len(items_to_return),
+#             'potential_refund': float(total_refund)
+#         })
+        
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return JsonResponse({
+#             'success': False,
+#             'message': 'Failed to submit return request. Please try again.'
+#         })
+
+
+# # ==================== HELPER: GET ITEM SELECTION DATA ====================
+
+# @login_required(login_url='users:login')
+# @require_GET
+# def get_order_items_data(request, order_id):
+#     """Get order items data for selection (AJAX)"""
+#     try:
+#         order = get_object_or_404(Order, order_id=order_id, user=request.user)
+        
+#         items_data = []
+#         for item in order.items.filter(status='active'):
+#             items_data.append({
+#                 'id': item.id,
+#                 'name': item.product_name,
+#                 'variant': item.variant_name,
+#                 'quantity': item.quantity,
+#                 'price': float(item.price),
+#                 'total': float(item.item_total),
+#                 'image_url': item.product_image.url if item.product_image else None
+#             })
+        
+#         return JsonResponse({
+#             'success': True,
+#             'items': items_data,
+#             'can_cancel': order.can_cancel,
+#             'can_return': order.can_return
+#         })
+        
+#     except Exception as e:
+#         return JsonResponse({
+#             'success': False,
+#             'message': str(e)
+#         })
+
+
+#######################################################################################
+############---------------- WISHLIST AND WISHLIST MANAGEMENT ----------------#########
+#######################################################################################
 
 @login_required
 def wishlist_view(request):
