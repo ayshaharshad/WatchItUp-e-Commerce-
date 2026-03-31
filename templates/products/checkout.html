@@ -297,13 +297,23 @@
                         <strong>Available Coupons:</strong>
                         <ul class="list-unstyled mt-2">
                             {% for coupon in available_coupons %}
-                            <li class="mb-1">
-                                <span class="badge bg-secondary">{{ coupon.code }}</span> -
-                                {% if coupon.discount_type == 'percentage' %}
-                                {{ coupon.discount_value }}% OFF
-                                {% else %}
-                                ₹{{ coupon.discount_value }} OFF
-                                {% endif %}
+                            <li class="mb-2">
+                                <div class="d-flex align-items-center gap-2 p-2 rounded" 
+                                    style="background: #fff8e1; border: 1.5px dashed #f59e0b; cursor: pointer;"
+                                    onclick="document.getElementById('couponCode').value='{{ coupon.code }}'">
+                                    <span class="badge fs-6 px-3 py-2" 
+                                        style="background: linear-gradient(135deg, #f59e0b, #ef4444); letter-spacing: 1px;">
+                                        🏷️ {{ coupon.code }}
+                                    </span>
+                                    <span class="fw-semibold text-dark">
+                                        {% if coupon.discount_type == 'percentage' %}
+                                        {{ coupon.discount_value }}% OFF
+                                        {% else %}
+                                        ₹{{ coupon.discount_value }} OFF
+                                        {% endif %}
+                                    </span>
+                                    <small class="text-muted ms-auto">Click to apply</small>
+                                </div>
                             </li>
                             {% endfor %}
                         </ul>

@@ -51,4 +51,59 @@
         </div>
     </div>
 </div>
+
+<style>
+    .password-wrapper {
+        position: relative;
+    }
+    .password-wrapper #id_password {
+        padding-right: 2.5rem;
+    }
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6c757d;
+        padding: 0;
+    }
+    .toggle-password:hover {
+        color: #495057;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const passwordField = document.getElementById('id_password');
+
+        if (passwordField) {
+            // Wrap the password field
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('password-wrapper');
+            passwordField.parentNode.insertBefore(wrapper, passwordField);
+            wrapper.appendChild(passwordField);
+
+            // Create the eye button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.classList.add('toggle-password');
+            toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            wrapper.appendChild(toggleBtn);
+
+            // Toggle logic
+            toggleBtn.addEventListener('click', function () {
+                const isPassword = passwordField.type === 'password';
+                passwordField.type = isPassword ? 'text' : 'password';
+                toggleBtn.innerHTML = isPassword
+                    ? '<i class="fas fa-eye-slash"></i>'
+                    : '<i class="fas fa-eye"></i>';
+                passwordField.focus();
+            });
+        }
+    });
+</script>
+
 {% endblock %}
